@@ -6,10 +6,16 @@ edition = "2021"
 [dependencies]
 chrono = { version = "0.4.38", features = ["serde"] }
 colored = "2.1.0"
-diesel = { version = "2.2.2", features = ["r2d2", "postgres", "uuid"] }
+diesel = { version = "2.2.2", features = [
+    "r2d2",
+    "postgres",
+    "uuid",
+    "chrono",
+] }
 diesel_migrations = { version = "2.2.0", features = ["postgres"] }
 dotenv = "0.15.0"
 r2d2 = "0.8.10"
 serde = { version = "1.0.204", features = ["derive"] }
 uuid = { version = "1.10.0", features = ["serde", "v4"] }
+shared = { path = "../shared" }
 #uuid = "1.10.0"

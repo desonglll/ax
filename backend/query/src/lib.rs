@@ -1,5 +1,5 @@
-mod user;
-
+pub mod schema;
+pub mod user;
 use colored::Colorize;
 use diesel::r2d2::ConnectionManager;
 use diesel::PgConnection;

@@ -4,6 +4,7 @@ use actix_session::SessionMiddleware;
 use actix_web::cookie::Key;
 use actix_web::{web, App, HttpServer};
 use query::establish_pool;
+use server::routes::user::user_routes;
 use server::session::log_session::{index, login, logout};
 
 // #[get("/")]
@@ -36,6 +37,7 @@ async fn main() -> std::io::Result<()> {
             .route("/", web::get().to(index))
             .route("/api/login", web::post().to(login))
             .route("/api/logout", web::post().to(logout))
+            .configure(user_routes)
     })
     .bind(("0.0.0.0", 8000))?
     .run()
