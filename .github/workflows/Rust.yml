@@ -68,7 +68,7 @@ jobs:
         run: curl --proto '=https' --tlsv1.2 -LsSf https://github.com/diesel-rs/diesel/releases/download/v2.2.1/diesel_cli-installer.sh | sh
 
       - name: Database initialization
-        run: cd ./modules/schemas/cb_schema && diesel setup && diesel database reset
+        run: cd ./backend/query && diesel setup && diesel database reset
 
       - name: Run tests
         run: cargo test --workspace -- --test-threads=1
