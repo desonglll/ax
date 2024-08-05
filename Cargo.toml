@@ -1,0 +1,3 @@
+[workspace]
+members = ["backend/query", "backend/server"]
+resolver = "2"
