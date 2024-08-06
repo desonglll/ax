@@ -1,13 +1,12 @@
 use std::env;
 
-use colored::Colorize;
 use diesel::PgConnection;
 use diesel::r2d2::ConnectionManager;
 use diesel_migrations::{embed_migrations, EmbeddedMigrations};
 use dotenv::dotenv;
 use r2d2::{Pool, PooledConnection};
 
-use shared::log::Log;
+use shared::lib::log::Log;
 
 pub mod filter;
 pub mod schema;
@@ -22,7 +21,7 @@ pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("./migrations");
 pub type DbPool = Pool<ConnectionManager<PgConnection>>;
 
 pub fn establish_pool() -> DbPool {
-    Log::system(format!("Establishing Pool"));
+    Log::system("Establishing Pool".to_string());
     dotenv().ok();
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
@@ -30,14 +29,14 @@ pub fn establish_pool() -> DbPool {
     let pool = Pool::builder()
         .build(manager)
         .expect("Failed to create pool.");
-    Log::success(format!("Establish Pool successfully"));
+    Log::success("Establish Pool successfully".to_string());
     pool
 }
 
 pub fn establish_pg_connection(
     pool: &Pool<ConnectionManager<PgConnection>>,
 ) -> Result<PooledConnection<ConnectionManager<PgConnection>>, r2d2::Error> {
-    println!("{}", "Using Database Pool".green());
+    Log::info("Using Database Pool".to_string());
     pool.get()
 }
 

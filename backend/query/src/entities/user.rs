@@ -4,8 +4,8 @@ use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use shared::data::Data;
-use shared::hash::Hash;
+use shared::lib::data::Data;
+use shared::lib::hash::Hash;
 use shared::request::request::ListRequest;
 use shared::response::pagination::ResponsePagination;
 
@@ -73,11 +73,18 @@ impl User {
         let result = users::dsl::users
             .filter(users::user_name.eq(user_name))
             .first::<User>(&mut conn);
-
-        if Hash::verify_password(password, result.unwrap().password_hash).unwrap() {
-            Ok(true)
-        } else {
-            Ok(false)
+        match result {
+            Ok(result) => {
+                match Hash::verify_password(password, result.password_hash) {
+                    Ok(result) => Ok(result),
+                    Err(e) => {
+                        Ok(false)
+                    }
+                }
+            }
+            Err(e) => {
+                Err(e)
+            }
         }
     }
 
@@ -351,10 +358,8 @@ mod test {
     use diesel::{ExpressionMethods, RunQueryDsl};
     use uuid::Uuid;
 
-    use shared::{
-        hash::Hash,
-        request::{pagination::RequestPagination, request::ListRequest},
-    };
+    use shared::lib::hash::Hash;
+    use shared::request::{pagination::RequestPagination, request::ListRequest};
 
     use crate::{
         establish_pool,
@@ -449,8 +454,10 @@ mod test {
         assert!(is_correct);
 
         let is_wrong_password =
-            User::check_password_correct(&pool, user_name, "wrong_password".to_string()).unwrap();
+            User::check_password_correct(&pool, user_name.clone(), "wrong_password".to_string()).unwrap();
         assert!(!is_wrong_password);
+        // 删除测试用户
+        let _ = User::delete_user(&pool, user_name.clone());
     }
 
     #[test]
