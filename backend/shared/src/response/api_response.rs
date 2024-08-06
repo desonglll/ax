@@ -19,7 +19,7 @@ use serde::{Deserialize, Serialize};
 /// let error_response: ApiResponse<String> = ApiResponse::error(Box::new(std::io::Error::new(std::io::ErrorKind::Other, "Something went wrong")));
 /// println!("{:?}", error_response);
 /// ```
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct ApiResponse<T> {
     /// 响应的状态码
     code: StatusCode,
@@ -52,8 +52,7 @@ pub struct ApiResponse<T> {
 ///
 /// use shared::response::api_response::StatusCode;
 /// let status = StatusCode::Success;
-/// let http_status = status.as_http_status_code();
-/// println!("HTTP Status: {:?}", http_status);
+/// println!("Status: {:?}", status);
 /// ```
 #[derive(Debug, Serialize, Deserialize)]
 pub enum StatusCode {
@@ -86,40 +85,6 @@ pub enum StatusCode {
 
     /// 自定义状态码
     Custom(u16),
-}
-
-impl StatusCode {
-    /// 将 `StatusCode` 转换为 `http::StatusCode`
-    ///
-    /// 该方法将 `StatusCode` 转换为 `http::StatusCode`，用于 HTTP 响应。
-    ///
-    /// # Returns
-    ///
-    /// 返回对应的 `http::StatusCode`。如果自定义状态码无效，则返回 `INTERNAL_SERVER_ERROR`。
-    ///
-    /// # Examples
-    ///
-    /// ```
-    ///
-    /// use shared::response::api_response::StatusCode;
-    /// let status = StatusCode::Success;
-    /// let http_status = status.as_http_status_code();
-    /// println!("HTTP Status: {:?}", http_status);
-    /// ```
-    pub fn as_http_status_code(&self) -> http::StatusCode {
-        match self {
-            StatusCode::Success => http::StatusCode::OK,
-            StatusCode::NotFound => http::StatusCode::NOT_FOUND,
-            StatusCode::Unauthorized => http::StatusCode::UNAUTHORIZED,
-            StatusCode::BadRequest => http::StatusCode::BAD_REQUEST,
-            StatusCode::InternalServerError => http::StatusCode::INTERNAL_SERVER_ERROR,
-            StatusCode::Forbidden => http::StatusCode::FORBIDDEN,
-            StatusCode::Conflict => http::StatusCode::CONFLICT,
-            StatusCode::UnprocessableEntity => http::StatusCode::UNPROCESSABLE_ENTITY,
-            StatusCode::ServiceUnavailable => http::StatusCode::SERVICE_UNAVAILABLE,
-            StatusCode::Custom(code) => http::StatusCode::from_u16(*code).unwrap_or(http::StatusCode::INTERNAL_SERVER_ERROR),
-        }
-    }
 }
 
 impl<T: Default> ApiResponse<T> {
@@ -198,7 +163,7 @@ impl<T: Default> ApiResponse<T> {
     ///
     /// use shared::response::api_response::ApiResponse;
     /// let error = Box::new(std::io::Error::new(std::io::ErrorKind::Other, "Something went wrong"));
-    /// let response = ApiResponse::error(error);
+    /// let response = ApiResponse::<String>::error(error);
     /// println!("{:?}", response);
     /// ```
     pub fn error(e: Box<dyn std::error::Error>) -> Self {

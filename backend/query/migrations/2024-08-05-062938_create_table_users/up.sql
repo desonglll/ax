@@ -16,7 +16,7 @@ CREATE TABLE "users" (
 );
 
 INSERT INTO "users" ("user_name", "email", "password_hash", "full_name", "phone", "created_at", "updated_at", "last_login", "is_active", "is_admin", "profile_picture") VALUES
-('alice', 'alice@example.com', 'hash1', 'Alice Johnson', '123-456-7890', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, true, false, NULL),
+('alice', 'alice@example.com', '$2b$12$o/MDTP/oBct4J/yT2tGbUek5DZdBOrFWCvxy5UERnrda6.MniuHBu', 'Alice Johnson', '123-456-7890', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, true, false, NULL),
 ('bob', 'bob@example.com', 'hash2', 'Bob Smith', '234-567-8901', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, true, false, NULL),
 ('carol', 'carol@example.com', 'hash3', 'Carol White', '345-678-9012', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, true, false, NULL),
 ('dave', 'dave@example.com', 'hash4', 'Dave Brown', '456-789-0123', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, true, false, NULL),

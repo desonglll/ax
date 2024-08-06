@@ -18,10 +18,9 @@ use super::pagination::RequestPagination;
 /// # Examples
 ///
 /// ```
-///
 /// use shared::request::pagination::RequestPagination;
 /// use shared::request::request::ListRequest;
-/// let request = ListRequest::new(
+/// let request = ListRequest::<String,String>::new(
 ///     None,
 ///     Some(RequestPagination::default()),
 ///     None
@@ -61,7 +60,7 @@ impl<F, S> ListRequest<F, S> {
     ///
     /// use shared::request::pagination::RequestPagination;
     /// use shared::request::request::ListRequest;
-    /// let request = ListRequest::new(
+    /// let request = ListRequest::<String,String>::new(
     ///     None,
     ///     Some(RequestPagination::default()),
     ///     None

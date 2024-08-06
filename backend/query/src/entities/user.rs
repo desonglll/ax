@@ -370,45 +370,24 @@ mod test {
     use crate::entities::user::{CreateUserRequest, User};
 
     #[test]
-    fn test_user_creation() {
-        let id = 1;
-        let user_name = "john doe".to_string();
-        let email = "john.doe@example.com".to_string();
-        let password = "super_secure_password".to_string();
-        let full_name = Some("John Doe".to_string());
-        let phone = Some("1234567890".to_string());
-        let created_at = Some(chrono::Utc::now().naive_utc());
-        let updated_at = Some(chrono::Utc::now().naive_utc());
-        let last_login = None;
-        let is_active = true;
-        let is_admin = false;
-        let profile_picture = None;
+    fn test_insert_user() {
+        let pool = establish_pool();
+        let request_user = CreateUserRequest::new(
+            "test_insert_user".to_string(),
+            "lindesong666@gmail.com".to_string(),
+            "070011".to_string(),
+            None,
+            None,
+            true,
+            true,
+            None);
+        let result = User::insert_user(&pool, request_user.into()).unwrap();
 
-        let user = User::new(
-            id,
-            user_name,
-            email,
-            password.clone(),
-            full_name,
-            phone,
-            created_at,
-            updated_at,
-            last_login,
-            is_active,
-            is_admin,
-            profile_picture,
-        );
+        assert_eq!(result.data.user_name, "test_insert_user");
+        assert_eq!(result.data.email, "lindesong666@gmail.com");
+        // 可以添加更多的断言来验证插入的数据
 
-        // 验证 User 实例的字段
-        assert_eq!(user.id, id);
-        assert_eq!(user.user_name, "john doe");
-        assert_eq!(user.email, "john.doe@example.com");
-        assert_eq!(user.is_active, true);
-        assert_eq!(user.is_admin, false);
-
-        // 验证密码哈希是否正确生成
-        let is_valid = Hash::verify_password(password, user.password_hash).unwrap();
-        assert!(is_valid);
+        let _ = User::delete_user(&pool, "test_insert_user".to_string());
     }
 
     #[test]
