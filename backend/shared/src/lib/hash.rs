@@ -8,7 +8,7 @@ use bcrypt::{DEFAULT_COST, hash, verify};
 ///
 /// ```
 ///
-/// use shared::hash::Hash;
+/// use shared::lib::hash::Hash;
 /// let password = "my_secret_password".to_string();
 ///
 /// // 创建密码哈希
@@ -37,8 +37,7 @@ impl Hash {
     /// # Examples
     ///
     /// ```
-    ///
-    /// use shared::hash::Hash;
+    /// use shared::lib::hash::Hash;
     /// let password = "my_secret_password".to_string();
     /// let hashed = Hash::create_password_hash(password).expect("Failed to hash password");
     /// ```
@@ -64,8 +63,7 @@ impl Hash {
     /// # Examples
     ///
     /// ```
-    ///
-    /// use shared::hash::Hash;
+    /// use shared::lib::hash::Hash;
     /// let password = "my_secret_password".to_string();
     /// let hashed = Hash::create_password_hash(password.clone()).expect("Failed to hash password");
     /// let is_valid = Hash::verify_password(password, hashed).expect("Failed to verify password");

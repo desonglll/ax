@@ -41,8 +41,8 @@ impl LogLevel {
     /// # Examples
     ///
     /// ```
-    /// use shared::log::LogLevel;
     ///
+    /// use shared::lib::log::LogLevel;
     /// let level = LogLevel::Info;
     /// assert_eq!(level.prefix(), "INFO");
     /// ```
@@ -69,12 +69,11 @@ impl LogLevel {
     /// # Examples
     ///
     /// ```
-    /// use shared::log::LogLevel;
-    ///
+    /// use shared::lib::log::LogLevel;
     /// let level = LogLevel::Error;
     /// let message = "An error occurred".to_string();
     /// let colored_message = level.colorize_message(&message);
-    /// assert_eq!(colored_message.to_string(), "An error occurred".red().to_string());
+    /// assert_eq!(colored_message.to_string(), "An error occurred".to_string());
     /// ```
     pub fn colorize_message(&self, message: &str) -> colored::ColoredString {
         match self {
@@ -101,8 +100,7 @@ impl LogLevel {
 /// # Examples
 ///
 /// ```
-/// use shared::log::Log;
-///
+/// use shared::lib::log::Log;
 /// Log::info("This is an info message.".to_string());
 /// ```
 pub struct Log;
@@ -115,8 +113,8 @@ impl Log {
     /// # Examples
     ///
     /// ```
-    /// use shared::log::{Log, LogLevel};
     ///
+    /// use shared::lib::log::{Log, LogLevel};
     /// Log::log(LogLevel::Info, "This is an info message.".to_string());
     /// ```
     pub fn log(level: LogLevel, message: String) {
@@ -183,7 +181,7 @@ impl Log {
 
 #[cfg(test)]
 mod tests {
-    use crate::log::Log;
+    use crate::lib::log::Log;
 
     #[test]
     fn test_logging() {

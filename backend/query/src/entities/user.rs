@@ -77,7 +77,7 @@ impl User {
             Ok(result) => {
                 match Hash::verify_password(password, result.password_hash) {
                     Ok(result) => Ok(result),
-                    Err(e) => {
+                    Err(_) => {
                         Ok(false)
                     }
                 }

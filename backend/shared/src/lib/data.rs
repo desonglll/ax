@@ -13,7 +13,7 @@ use crate::response::pagination::ResponsePagination;
 ///
 /// ```
 ///
-/// use shared::data::Data;
+/// use shared::lib::data::Data;
 /// use shared::response::pagination::ResponsePagination;
 /// let data = vec![1, 2, 3];
 /// let pagination = ResponsePagination::new(1, 10, 5, 30, Some("http://example.com?page=2".to_string()), None);
@@ -47,7 +47,7 @@ impl<T> Data<T> {
     ///
     /// ```
     ///
-    /// use shared::data::Data;
+    /// use shared::lib::data::Data;
     /// use shared::response::pagination::ResponsePagination;
     /// let data = vec![1, 2, 3];
     /// let pagination = ResponsePagination::new(1, 10, 5, 30, Some("http://example.com?page=2".to_string()), None);
@@ -75,7 +75,7 @@ impl<T: std::fmt::Debug> std::fmt::Display for Data<T> {
     ///
     /// ```
     ///
-    /// use shared::data::Data;
+    /// use shared::lib::data::Data;
     /// use shared::response::pagination::ResponsePagination;
     /// let data = vec![1, 2, 3];
     /// let pagination = ResponsePagination::new(1, 10, 5, 30, Some("http://example.com?page=2".to_string()), None);
