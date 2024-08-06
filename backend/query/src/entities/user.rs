@@ -40,9 +40,9 @@ impl User {
         password: String,
         full_name: Option<String>,
         phone: Option<String>,
-        created_at: Option<chrono::NaiveDateTime>,
-        updated_at: Option<chrono::NaiveDateTime>,
-        last_login: Option<chrono::NaiveDateTime>,
+        created_at: Option<NaiveDateTime>,
+        updated_at: Option<NaiveDateTime>,
+        last_login: Option<NaiveDateTime>,
         is_active: bool,
         is_admin: bool,
         profile_picture: Option<Uuid>,
@@ -264,9 +264,9 @@ pub struct CreateUserRequest {
     pub password: String,
     pub full_name: Option<String>,
     pub phone: Option<String>,
-    // pub created_at: Option<chrono::NaiveDateTime>,
-    // pub updated_at: Option<chrono::NaiveDateTime>,
-    // pub last_login: Option<chrono::NaiveDateTime>,
+    // pub created_at: Option<NaiveDateTime>,
+    // pub updated_at: Option<NaiveDateTime>,
+    // pub last_login: Option<NaiveDateTime>,
     pub is_active: bool,
     pub is_admin: bool,
     pub profile_picture: Option<Uuid>,
@@ -305,9 +305,9 @@ pub struct InsertUser {
     pub password_hash: String,
     pub full_name: Option<String>,
     pub phone: Option<String>,
-    // pub created_at: Option<chrono::NaiveDateTime>,
-    // pub updated_at: Option<chrono::NaiveDateTime>,
-    // pub last_login: Option<chrono::NaiveDateTime>,
+    // pub created_at: Option<NaiveDateTime>,
+    // pub updated_at: Option<NaiveDateTime>,
+    // pub last_login: Option<NaiveDateTime>,
     pub is_active: bool,
     pub is_admin: bool,
     pub profile_picture: Option<Uuid>,
@@ -372,7 +372,7 @@ mod test {
     #[test]
     fn test_user_creation() {
         let id = 1;
-        let user_name = "johndoe".to_string();
+        let user_name = "john doe".to_string();
         let email = "john.doe@example.com".to_string();
         let password = "super_secure_password".to_string();
         let full_name = Some("John Doe".to_string());
@@ -401,7 +401,7 @@ mod test {
 
         // 验证 User 实例的字段
         assert_eq!(user.id, id);
-        assert_eq!(user.user_name, "johndoe");
+        assert_eq!(user.user_name, "john doe");
         assert_eq!(user.email, "john.doe@example.com");
         assert_eq!(user.is_active, true);
         assert_eq!(user.is_admin, false);
@@ -418,7 +418,7 @@ mod test {
         let pool = establish_pool();
 
         // 准备测试数据
-        let user_name = "testuser".to_string();
+        let user_name = "test_user".to_string();
         let email = "testuser@example.com".to_string();
         let password = "test_password".to_string();
         let pw_hash = Hash::create_password_hash(password.clone()).unwrap();
