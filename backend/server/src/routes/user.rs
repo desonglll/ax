@@ -5,6 +5,7 @@ use actix_web::{HttpResponse, Responder, web::{self, Json}};
 
 use query::{DbPool, filter::UserFilter, sort::UserSort};
 use query::entities::user::CreateUserRequest;
+use shared::lib::log::Log;
 use shared::request::pagination::RequestPagination;
 use shared::request::request::ListRequest;
 
@@ -30,15 +31,16 @@ pub async fn list_user(
     request_data: Option<Json<ListRequest<UserFilter, UserSort>>>,
     query: Option<web::Query<HashMap<String, String>>>,
 ) -> impl Responder {
+    Log::info("Access list_user".to_string());
     let limit = query.clone().unwrap().get("limit").unwrap().parse::<i32>().unwrap();
     let offset = query.clone().unwrap().get("offset").unwrap().parse::<i32>().unwrap();
     let param_pagination = RequestPagination::new(Some(limit), Some(offset));
 
     if let Some(_is_login) = session.get::<bool>("is_login").unwrap() {
+        Log::info("Authentication Passed.".to_string());
         let mut request_data = request_data.unwrap_or(Json(ListRequest::default()));
         // 修改分页为不确定参数集
         request_data.pagination = Some(param_pagination);
-        println!("{:#?}", request_data);
 
         let result = UserHandler::handle_list_user(
             &pool,
@@ -46,6 +48,7 @@ pub async fn list_user(
         );
         HttpResponse::Ok().json(result)
     } else {
+        Log::info("Authentication Failed.".to_string());
         HttpResponse::Unauthorized().body("Please log in.")
     }
 }

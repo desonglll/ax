@@ -213,7 +213,6 @@ impl User {
             .offset(pagination.offset.unwrap() as i64);
 
         let data = query.load::<User>(&mut conn)?;
-        println!("Data: {:#?}", data);
 
         // Response pagination.
         let page = (pagination.offset.unwrap() / pagination.limit.unwrap()) + 1;
