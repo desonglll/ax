@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 serde = { version = "1.0.204", features = ["derive"] }
 bcrypt = "0.15.1"
+colored = "2.1.0"

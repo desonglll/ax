@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use crate::pagination::ResponsePagination;
+use crate::response::pagination::ResponsePagination;
 
 #[derive(Serialize, Default, Debug)]
 pub struct Data<T> {

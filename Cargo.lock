@@ -1635,6 +1635,7 @@ dependencies = [
  "actix-redis 0.13.0",
  "actix-session",
  "actix-web",
+ "colored",
  "query",
  "serde",
  "serde_json",
@@ -1668,6 +1669,7 @@ name = "shared"
 version = "0.1.0"
 dependencies = [
  "bcrypt",
+ "colored",
  "serde",
 ]
 

@@ -1,31 +1,7 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, Clone, Copy)]
-pub struct RequestPagination {
-    pub limit: Option<i32>,
-    pub offset: Option<i32>,
-}
-impl RequestPagination {
-    fn new(limit: Option<i32>, offset: Option<i32>) -> Self {
-        Self { limit, offset }
-    }
-    fn demo() -> Self {
-        Self {
-            limit: Some(10),
-            offset: Some(0),
-        }
-    }
-}
-impl Default for RequestPagination {
-    fn default() -> Self {
-        Self {
-            limit: Some(10),
-            offset: Some(0),
-        }
-    }
-}
-
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct ResponsePagination {
     page: i32,
     per_page: i32,

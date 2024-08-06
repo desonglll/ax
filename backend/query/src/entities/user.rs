@@ -1,14 +1,20 @@
+use crate::filter::UserFilter;
+use crate::sort::UserSort;
 use crate::DbPool;
 use crate::{establish_pg_connection, schema::users};
+use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use diesel::{Queryable, Selectable};
 use serde::{Deserialize, Serialize};
 use shared::data::Data;
 use shared::hash::Hash;
+use shared::request::request::ListRequest;
+use shared::response::pagination::ResponsePagination;
 use uuid::Uuid;
 
 #[derive(Deserialize, Serialize, Debug, Queryable, Selectable, Default)]
 #[diesel(table_name = crate::schema::users)]
+#[serde(rename_all = "camelCase")]
 pub struct User {
     pub id: i32,
     pub user_name: String,
@@ -16,9 +22,9 @@ pub struct User {
     pub password_hash: String,
     pub full_name: Option<String>,
     pub phone: Option<String>,
-    pub created_at: Option<chrono::NaiveDateTime>,
-    pub updated_at: Option<chrono::NaiveDateTime>,
-    pub last_login: Option<chrono::NaiveDateTime>,
+    pub created_at: Option<NaiveDateTime>,
+    pub updated_at: Option<NaiveDateTime>,
+    pub last_login: Option<NaiveDateTime>,
     pub is_active: bool,
     pub is_admin: bool,
     pub profile_picture: Option<Uuid>,
@@ -84,8 +90,151 @@ impl User {
         Ok(Data::new(data, None))
     }
 
-    pub fn get_user_list(pool: &DbPool) -> Result<Data<Vec<User>>, diesel::result::Error> {
-        unimplemented!()
+    pub fn list_user(
+        pool: &DbPool,
+        list_request: ListRequest<UserFilter, UserSort>,
+    ) -> Result<Data<Vec<User>>, diesel::result::Error> {
+        use crate::schema::users::dsl::*;
+        use crate::sort::SortOrder;
+        use crate::sort::UserSortBy as SortBy;
+        let mut conn = establish_pg_connection(pool).unwrap();
+        let mut query = users.into_boxed();
+
+        let filter = list_request.filters.unwrap_or_default();
+        let pagination = list_request.pagination.unwrap_or_default();
+        query = query.order_by(id.asc());
+        // Apply filters
+        if let Some(filter_id) = filter.id {
+            query = query.filter(id.eq(filter_id));
+        }
+
+        if let Some(filter_user_name) = filter.user_name {
+            query = query.filter(user_name.like(format!("%{}%", filter_user_name)));
+        }
+
+        if let Some(filter_email) = filter.email {
+            query = query.filter(email.like(format!("%{}%", filter_email)));
+        }
+
+        if let Some(filter_full_name) = filter.full_name {
+            query = query.filter(full_name.like(format!("%{}%", filter_full_name)));
+        }
+
+        if let Some(filter_phone) = filter.phone {
+            query = query.filter(phone.eq(filter_phone));
+        }
+
+        if let Some(filter_created_at_min) = filter.created_at_min {
+            query = query.filter(created_at.ge(filter_created_at_min));
+        }
+
+        if let Some(filter_created_at_max) = filter.created_at_max {
+            query = query.filter(created_at.le(filter_created_at_max));
+        }
+
+        if let Some(filter_updated_at_min) = filter.updated_at_min {
+            query = query.filter(updated_at.ge(filter_updated_at_min));
+        }
+
+        if let Some(filter_updated_at_max) = filter.updated_at_max {
+            query = query.filter(updated_at.le(filter_updated_at_max));
+        }
+
+        if let Some(filter_last_login_min) = filter.last_login_min {
+            query = query.filter(last_login.ge(filter_last_login_min));
+        }
+
+        if let Some(filter_last_login_max) = filter.last_login_max {
+            query = query.filter(last_login.le(filter_last_login_max));
+        }
+
+        if let Some(filter_is_active) = filter.is_active {
+            query = query.filter(is_active.eq(filter_is_active));
+        }
+
+        if let Some(filter_is_admin) = filter.is_admin {
+            query = query.filter(is_admin.eq(filter_is_admin));
+        }
+
+        if let Some(filter_profile_picture) = filter.profile_picture {
+            query = query.filter(profile_picture.eq(filter_profile_picture));
+        }
+        let sort = list_request.sort;
+        // Apply sorting
+        if let Some(sort) = sort {
+            if let Some(sort_by) = sort.sort_by {
+                let order = match sort.order.unwrap_or(SortOrder::Asc) {
+                    SortOrder::Asc => true,
+                    SortOrder::Desc => false,
+                };
+                if order {
+                    query = match sort_by {
+                        SortBy::Id => query.order_by(id.asc()),
+                        SortBy::UserName => query.order_by(user_name.asc()),
+                        SortBy::Email => query.order_by(email.asc()),
+                        SortBy::FullName => query.order_by(full_name.asc()),
+                        SortBy::Phone => query.order_by(phone.asc()),
+                        SortBy::CreatedAt => query.order_by(created_at.asc()),
+                        SortBy::UpdatedAt => query.order_by(updated_at.asc()),
+                        SortBy::LastLogin => query.order_by(last_login.asc()),
+                        SortBy::IsActive => query.order_by(is_active.asc()),
+                        SortBy::IsAdmin => query.order_by(is_admin.asc()),
+                    };
+                } else {
+                    query = match sort_by {
+                        SortBy::Id => query.order_by(id.desc()),
+                        SortBy::UserName => query.order_by(user_name.desc()),
+                        SortBy::Email => query.order_by(email.desc()),
+                        SortBy::FullName => query.order_by(full_name.desc()),
+                        SortBy::Phone => query.order_by(phone.desc()),
+                        SortBy::CreatedAt => query.order_by(created_at.desc()),
+                        SortBy::UpdatedAt => query.order_by(updated_at.desc()),
+                        SortBy::LastLogin => query.order_by(last_login.desc()),
+                        SortBy::IsActive => query.order_by(is_active.desc()),
+                        SortBy::IsAdmin => query.order_by(is_admin.desc()),
+                    };
+                }
+            }
+        }
+
+        // Apply pagination
+        query = query
+            .limit(pagination.limit.unwrap() as i64)
+            .offset(pagination.offset.unwrap() as i64);
+
+        let data = query.load::<User>(&mut conn)?;
+        println!("Data: {:#?}", data);
+
+        // Response pagination.
+        let page = (pagination.offset.unwrap() / pagination.limit.unwrap()) + 1;
+        let per_page = pagination.limit.unwrap();
+        // 获取总记录数
+        // let total_count = users.count().get_result::<i64>(&mut conn)? as i32;
+        let total_count: i32 = data.len() as i32;
+        // println!("total_count: {total_count}");
+        // if total_count < pagination.offset.unwrap() {
+        //     return Err(diesel::NotFound);
+        // }
+
+        // 计算总页数
+        let total_pages = (total_count + per_page - 1) / per_page;
+
+        let previous_page_offset = (page - 2) * per_page;
+        let next_page_offset = page * per_page;
+        let pagination = ResponsePagination::new(
+            page,
+            per_page,
+            total_pages,
+            total_count,
+            Some(format!("?limit={}&offset={}", per_page, next_page_offset)),
+            Some(format!(
+                "?limit={}&offset={}",
+                per_page, previous_page_offset
+            )),
+        );
+
+        let body = Data::new(data, Some(pagination));
+        Ok(body)
     }
 }
 
@@ -185,13 +334,23 @@ impl From<CreateUserRequest> for InsertUser {
         )
     }
 }
+
 #[cfg(test)]
 mod test {
     use diesel::{ExpressionMethods, RunQueryDsl};
-    use shared::hash::Hash;
+    use shared::{
+        hash::Hash,
+        request::{pagination::RequestPagination, request::ListRequest},
+    };
     use uuid::Uuid;
 
-    use crate::{establish_pool, schema::users, user::User};
+    use crate::{
+        establish_pool,
+        filter::UserFilter,
+        schema::users,
+        sort::{SortOrder, UserSort},
+    };
+    use crate::entities::user::User;
 
     #[test]
     fn test_user_creation() {
@@ -234,6 +393,7 @@ mod test {
         let is_valid = Hash::verify_password(password, user.password_hash).unwrap();
         assert!(is_valid);
     }
+
     #[test]
     fn test_check_password_correct() {
         // let binding = establish_pool();
@@ -279,5 +439,51 @@ mod test {
         let is_wrong_password =
             User::check_password_correct(&pool, user_name, "wrong_password".to_string()).unwrap();
         assert!(!is_wrong_password);
+    }
+
+    #[test]
+    fn test_get_user_list() {
+        use crate::sort::UserSortBy as SortBy;
+        let pool = establish_pool(); // 假设你有一个用于获取连接池的函数
+
+        // 创建一个 ListRequest 示例
+        let filters = UserFilter {
+            id: None,
+            user_name: Some("frank".to_string()),
+            email: None,
+            full_name: None,
+            phone: None,
+            created_at_min: None,
+            created_at_max: None,
+            updated_at_min: None,
+            updated_at_max: None,
+            last_login_min: None,
+            last_login_max: None,
+            is_active: Some(true),
+            is_admin: None,
+            profile_picture: None,
+        };
+
+        let sort = UserSort {
+            sort_by: Some(SortBy::UserName),
+            order: Some(SortOrder::Asc),
+        };
+
+        let list_request = ListRequest {
+            filters: Some(filters),
+            sort: Some(sort),
+            pagination: Some(RequestPagination {
+                limit: Some(10),
+                offset: Some(0),
+            }),
+        };
+
+        // 调用 get_user_list 函数
+        let result = User::list_user(&pool, list_request);
+        assert!(result.is_ok());
+
+        let data = result.unwrap().data;
+        assert_eq!(data.len(), 1);
+        assert_eq!(data[0].user_name, "frank");
     }
 }

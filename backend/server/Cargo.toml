@@ -12,3 +12,4 @@ actix-session = { version = "0.9.0", features = ["redis-actor-session"] }
 actix-redis = "0.13.0"
 actix-cors = "0.7.0"
 shared = { path = "../shared" }
+colored = "2.1.0"
