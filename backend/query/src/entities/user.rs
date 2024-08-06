@@ -61,6 +61,7 @@ impl User {
             profile_picture,
         }
     }
+
     pub fn check_password_correct(
         pool: &DbPool,
         user_name: String,
@@ -236,6 +237,14 @@ impl User {
         let body = Data::new(data, Some(pagination));
         Ok(body)
     }
+
+    pub fn delete_user(pool: &DbPool, user_name: String) -> Result<Data<User>, Box<dyn std::error::Error>> {
+        use crate::schema::users::dsl;
+        let mut conn = establish_pg_connection(&pool).unwrap();
+        let data = diesel::delete(dsl::users).filter(dsl::user_name.eq(user_name)).get_result::<User>(&mut conn)?;
+        let body = Data::new(data, None);
+        Ok(body)
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -350,7 +359,7 @@ mod test {
         schema::users,
         sort::{SortOrder, UserSort},
     };
-    use crate::entities::user::User;
+    use crate::entities::user::{CreateUserRequest, User};
 
     #[test]
     fn test_user_creation() {
@@ -485,5 +494,38 @@ mod test {
         let data = result.unwrap().data;
         assert_eq!(data.len(), 1);
         assert_eq!(data[0].user_name, "frank");
+    }
+
+    #[test]
+    fn test_delete_user() {
+        let pool = establish_pool();
+        let user_name = String::from("test_delete_user");
+
+        // Creating a user for testing
+        let new_user = CreateUserRequest {
+            user_name: user_name.clone(),
+            email: "test@example.com".to_string(),
+            password: "password".to_string(),
+            full_name: Some("Test User".to_string()),
+            phone: Some("1234567890".to_string()),
+            is_active: true,
+            is_admin: false,
+            profile_picture: None,
+        };
+
+        // Inserting the user
+        let _ = User::insert_user(&pool, new_user.into());
+
+        // Deleting the user
+        let result = User::delete_user(&pool, user_name.clone());
+
+        // Verifying the user was deleted
+        match result {
+            Ok(data) => {
+                assert_eq!(data.data.user_name, user_name);
+                // Further assertions based on the `User` struct can be added here
+            }
+            Err(e) => panic!("Error deleting user: {:?}", e),
+        }
     }
 }

@@ -7,18 +7,11 @@ use query::establish_pool;
 use server::routes::user::user_routes;
 use server::session::log_session::{index, login, logout};
 
-// #[get("/")]
-// async fn hello() -> impl Responder {
-//     HttpResponse::Ok().body("Hello world!")
-// }
-//
-
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     // 加载密钥，用于加密 session cookie
     let secret_key = Key::generate();
     let redis_connection_string = "127.0.0.1:6379";
-
     // Establish DBPool for diesel access.
     let pool = establish_pool();
     HttpServer::new(move || {
@@ -39,7 +32,7 @@ async fn main() -> std::io::Result<()> {
             .route("/api/logout", web::post().to(logout))
             .configure(user_routes)
     })
-    .bind(("0.0.0.0", 8000))?
-    .run()
-    .await
+        .bind(("0.0.0.0", 8000))?
+        .run()
+        .await
 }

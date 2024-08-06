@@ -28,4 +28,6 @@ impl UserHandler {
             Err(e) => ApiResponse::error(Box::new(e)),
         }
     }
+
+    // pub fn handle_delete_user(pool:&DbPool, user_name:String)
 }
