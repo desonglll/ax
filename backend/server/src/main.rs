@@ -1,8 +1,9 @@
 use actix_cors::Cors;
-use actix_session::storage::RedisActorSessionStore;
 use actix_session::SessionMiddleware;
+use actix_session::storage::RedisActorSessionStore;
+use actix_web::{App, HttpServer, web};
 use actix_web::cookie::Key;
-use actix_web::{web, App, HttpServer};
+
 use query::establish_pool;
 use server::routes::user::user_routes;
 use server::session::log_session::{index, login, logout};

@@ -1,16 +1,18 @@
-use crate::filter::UserFilter;
-use crate::sort::UserSort;
-use crate::DbPool;
-use crate::{establish_pg_connection, schema::users};
 use chrono::NaiveDateTime;
-use diesel::prelude::*;
 use diesel::{Queryable, Selectable};
+use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
+
 use shared::data::Data;
 use shared::hash::Hash;
 use shared::request::request::ListRequest;
 use shared::response::pagination::ResponsePagination;
-use uuid::Uuid;
+
+use crate::{establish_pg_connection, schema::users};
+use crate::DbPool;
+use crate::filter::UserFilter;
+use crate::sort::UserSort;
 
 #[derive(Deserialize, Serialize, Debug, Queryable, Selectable, Default)]
 #[diesel(table_name = crate::schema::users)]
@@ -347,11 +349,12 @@ impl From<CreateUserRequest> for InsertUser {
 #[cfg(test)]
 mod test {
     use diesel::{ExpressionMethods, RunQueryDsl};
+    use uuid::Uuid;
+
     use shared::{
         hash::Hash,
         request::{pagination::RequestPagination, request::ListRequest},
     };
-    use uuid::Uuid;
 
     use crate::{
         establish_pool,

@@ -5,6 +5,7 @@ pub enum SortOrder {
     Asc,
     Desc,
 }
+
 #[derive(Deserialize, Serialize, Debug, Default)]
 pub struct UserSort {
     pub sort_by: Option<UserSortBy>,

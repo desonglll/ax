@@ -1,6 +1,7 @@
-use actix_web::http::StatusCode;
 use std::fmt;
 use std::fmt::Formatter;
+
+use actix_web::http::StatusCode;
 
 #[derive(Debug)]
 pub enum ResponseError {
@@ -30,8 +31,9 @@ impl ResponseError {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use actix_web::http::StatusCode;
+
+    use super::*;
 
     #[test]
     fn test_not_found_status_code() {

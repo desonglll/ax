@@ -1,13 +1,14 @@
 use std::collections::HashMap;
+
 use actix_session::Session;
-use actix_web::{web::{self, Json}, HttpResponse, Responder};
-use query::{filter::UserFilter, sort::UserSort, DbPool};
+use actix_web::{HttpResponse, Responder, web::{self, Json}};
+
+use query::{DbPool, filter::UserFilter, sort::UserSort};
 use query::entities::user::CreateUserRequest;
 use shared::request::pagination::RequestPagination;
 use shared::request::request::ListRequest;
 
 use crate::handlers::user::UserHandler;
-
 
 pub async fn insert_user(
     session: Session,

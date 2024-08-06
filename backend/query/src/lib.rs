@@ -1,3 +1,14 @@
+use std::env;
+
+use colored::Colorize;
+use diesel::PgConnection;
+use diesel::r2d2::ConnectionManager;
+use diesel_migrations::{embed_migrations, EmbeddedMigrations};
+use dotenv::dotenv;
+use r2d2::{Pool, PooledConnection};
+
+use shared::log::Log;
+
 pub mod filter;
 pub mod schema;
 pub mod sort;
@@ -5,15 +16,6 @@ pub mod sort;
 pub mod entities {
     pub mod user;
 }
-
-use colored::Colorize;
-use diesel::r2d2::ConnectionManager;
-use diesel::PgConnection;
-use diesel_migrations::{embed_migrations, EmbeddedMigrations};
-use dotenv::dotenv;
-use r2d2::{Pool, PooledConnection};
-use std::env;
-use shared::log::Log;
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("./migrations");
 
@@ -41,8 +43,9 @@ pub fn establish_pg_connection(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use diesel::Connection;
+
+    use super::*;
 
     #[test]
     fn test_establish_pool() {

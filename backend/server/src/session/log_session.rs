@@ -1,10 +1,11 @@
 use actix_session::Session;
-use actix_web::web::{self, Json};
 use actix_web::{HttpResponse, Responder};
-use query::DbPool;
-use serde::Deserialize;
-use query::entities::user::User;
+use actix_web::web::{self, Json};
 use colored::Colorize;
+use serde::Deserialize;
+
+use query::DbPool;
+use query::entities::user::User;
 
 #[derive(Deserialize)]
 pub struct LoginRequest {

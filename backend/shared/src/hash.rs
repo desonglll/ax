@@ -1,6 +1,7 @@
-use bcrypt::{hash, verify, DEFAULT_COST};
+use bcrypt::{DEFAULT_COST, hash, verify};
 
 pub struct Hash {}
+
 impl Hash {
     pub fn create_password_hash(password: String) -> Result<String, bcrypt::BcryptError> {
         // DEFAULT_COST 表示哈希算法的工作因子，数值越大安全性越高，但计算越慢。
@@ -12,6 +13,7 @@ impl Hash {
         verify(password, hash.as_str())
     }
 }
+
 #[cfg(test)]
 mod test {
     use super::Hash;

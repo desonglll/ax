@@ -1,7 +1,7 @@
 use query::{
+    DbPool,
     filter::UserFilter,
     sort::UserSort,
-    DbPool,
 };
 use query::entities::user::{CreateUserRequest, User};
 use shared::{data::Data, request::request::ListRequest, response::api_response::ApiResponse};

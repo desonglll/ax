@@ -2,8 +2,8 @@ use std::env;
 
 use colored::Colorize;
 use diesel::{
-    r2d2::{ConnectionManager, Pool, PooledConnection},
     PgConnection,
+    r2d2::{ConnectionManager, Pool, PooledConnection},
 };
 use dotenv::dotenv;
 
@@ -31,8 +31,9 @@ pub fn establish_pg_connection(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::env;
+
+    use super::*;
 
     #[test]
     fn test_establish_pool() {
