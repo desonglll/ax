@@ -2,9 +2,9 @@ name: Rust
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 env:
   CARGO_TERM_COLOR: always
@@ -71,4 +71,4 @@ jobs:
         run: cd ./backend/query && diesel setup && diesel database reset
 
       - name: Run tests
-        run: cargo test --workspace -- --test-threads=1
+        run: cargo test --workspace

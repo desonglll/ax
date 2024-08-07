@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 /// ```
 ///
 /// use shared::response::api_response::ApiResponse;
-/// let response: ApiResponse<String> = ApiResponse::success(Some("Data".to_string()));
+/// let response: ApiResponse<String> = ApiResponse::success("Success".to_string(),Some("Data".to_string()));
 /// println!("{:?}", response);
 ///
 /// let error_response: ApiResponse<String> = ApiResponse::error(Box::new(std::io::Error::new(std::io::ErrorKind::Other, "Something went wrong")));
@@ -134,7 +134,7 @@ impl<T: Default> ApiResponse<T> {
     /// ```
     ///
     /// use shared::response::api_response::ApiResponse;
-    /// let response = ApiResponse::success(Some("Data".to_string()));
+    /// let response = ApiResponse::success("Success".to_string(),Some("Data".to_string()));
     /// println!("{:?}", response);
     /// ```
     pub fn success(message: String, body: Option<T>) -> Self {
