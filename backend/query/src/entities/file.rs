@@ -84,50 +84,25 @@ impl File {
         // 返回保存的文件对象
         Ok(Data::new(result, None))
     }
-
-    // pub fn save(
-    //     &self,
-    //     pool: &DbPool,
-    //     session: &Session,
-    //     mut upload_form: UploadForm,
-    // ) -> Result<Data<File>, Box<dyn std::error::Error>> {
-    //     Log::info("Saving file".to_string());
-    //     let mut conn = establish_pg_connection(pool).unwrap();
-    //     // 获取保存路径
-    //     let save_path = Path::new(&self.path);
-
-    //     // 创建目录（如果不存在）
-    //     if let Some(parent) = save_path.parent() {
-    //         fs::create_dir_all(parent)?;
-    //     }
-
-    //     // 打开目标文件进行写入
-    //     let mut file = fs::File::create(&save_path)?;
-
-    //     // 从 NamedTempFile 读取内容并写入到目标文件
-    //     let mut temp_file = upload_form.file.file.as_file(); // 获取文件的可读引用
-    //     // 重置文件指针到文件开头
-    //     temp_file.seek(SeekFrom::Start(0))?;
-    //     let mut buffer = Vec::new();
-    //     let bytes_read = temp_file.read_to_end(&mut buffer)?; // 读取临时文件内容到缓冲区
-
-    //     if bytes_read == 0 {
-    //         println!("Warning: No data read from temp file");
-    //     } else {
-    //         println!("Data read: {} bytes", bytes_read);
-    //     }
-
-    //     file.write_all(&buffer)?; // 将缓冲区内容写入目标文件
-    //     Log::info("Saving file successfully!".to_string());
-
-    //     let insert_file = File::new(session, &mut upload_form);
-    //     // 将文件信息插入数据库
-    //     let result = insert_into(crate::schema::files::table)
-    //         .values(&insert_file)
-    //         .returning(File::as_returning())
-    //         .get_result(&mut conn)?;
-
-    //     // 返回保存的文件对象
-    //     Ok(Data::new(result, None))
-    // }
+    pub fn get_file(pool: &DbPool, id: Uuid) -> Result<Data<File>, diesel::result::Error> {
+        use crate::schema::files::dsl;
+        use diesel::prelude::*;
+        let mut conn = establish_pg_connection(pool).unwrap();
+        let data = dsl::files.filter(dsl::id.eq(id)).first(&mut conn)?;
+        let body = Data::new(data, None);
+        Ok(body)
+    }
+    pub fn delete_file_by_path(
+        pool: &DbPool,
+        path: String,
+    ) -> Result<Data<File>, diesel::result::Error> {
+        use crate::schema::files::dsl;
+        use diesel::prelude::*;
+        let mut conn = establish_pg_connection(&pool).unwrap();
+        let data = diesel::delete(dsl::files)
+            .filter(dsl::path.eq(path))
+            .get_result::<File>(&mut conn)?;
+        let body = Data::new(data, None);
+        Ok(body)
+    }
 }

@@ -1,6 +1,6 @@
 use chrono::NaiveDateTime;
-use diesel::{Queryable, Selectable};
 use diesel::prelude::*;
+use diesel::{Queryable, Selectable};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -9,10 +9,10 @@ use shared::lib::hash::Hash;
 use shared::request::request::ListRequest;
 use shared::response::pagination::ResponsePagination;
 
-use crate::{establish_pg_connection, schema::users};
-use crate::DbPool;
 use crate::filter::UserFilter;
 use crate::sort::UserSort;
+use crate::DbPool;
+use crate::{establish_pg_connection, schema::users};
 
 #[derive(Deserialize, Serialize, Debug, Queryable, Selectable, Default)]
 #[diesel(table_name = crate::schema::users)]
@@ -74,17 +74,11 @@ impl User {
             .filter(users::user_name.eq(user_name))
             .first::<User>(&mut conn);
         match result {
-            Ok(result) => {
-                match Hash::verify_password(password, result.password_hash) {
-                    Ok(result) => Ok(result),
-                    Err(_) => {
-                        Ok(false)
-                    }
-                }
-            }
-            Err(e) => {
-                Err(e)
-            }
+            Ok(result) => match Hash::verify_password(password, result.password_hash) {
+                Ok(result) => Ok(result),
+                Err(_) => Ok(false),
+            },
+            Err(e) => Err(e),
         }
     }
 
@@ -246,17 +240,27 @@ impl User {
         Ok(body)
     }
 
-    pub fn delete_user(pool: &DbPool, user_name: String) -> Result<Data<User>, Box<dyn std::error::Error>> {
+    pub fn delete_user(
+        pool: &DbPool,
+        user_name: String,
+    ) -> Result<Data<User>, Box<dyn std::error::Error>> {
         use crate::schema::users::dsl;
         let mut conn = establish_pg_connection(&pool).unwrap();
-        let data = diesel::delete(dsl::users).filter(dsl::user_name.eq(user_name)).get_result::<User>(&mut conn)?;
+        let data = diesel::delete(dsl::users)
+            .filter(dsl::user_name.eq(user_name))
+            .get_result::<User>(&mut conn)?;
         let body = Data::new(data, None);
         Ok(body)
     }
-    pub fn get_user(pool: &DbPool, user_name: String) -> Result<Data<User>, Box<dyn std::error::Error>> {
+    pub fn get_user(
+        pool: &DbPool,
+        user_name: String,
+    ) -> Result<Data<User>, Box<dyn std::error::Error>> {
         use crate::schema::users::dsl;
         let mut conn = establish_pg_connection(&pool).unwrap();
-        let data = dsl::users.filter(dsl::user_name.eq(user_name)).first(&mut conn)?;
+        let data = dsl::users
+            .filter(dsl::user_name.eq(user_name))
+            .first(&mut conn)?;
         let body = Data::new(data, None);
         Ok(body)
     }
@@ -367,13 +371,13 @@ mod test {
     use shared::lib::hash::Hash;
     use shared::request::{pagination::RequestPagination, request::ListRequest};
 
+    use crate::entities::user::{CreateUserRequest, User};
     use crate::{
         establish_pool,
         filter::UserFilter,
         schema::users,
         sort::{SortOrder, UserSort},
     };
-    use crate::entities::user::{CreateUserRequest, User};
 
     #[test]
     fn test_insert_user() {
@@ -386,7 +390,8 @@ mod test {
             None,
             true,
             true,
-            None);
+            None,
+        );
         let result = User::insert_user(&pool, request_user.into()).unwrap();
 
         assert_eq!(result.data.user_name, "test_insert_user");
@@ -439,7 +444,8 @@ mod test {
         assert!(is_correct);
 
         let is_wrong_password =
-            User::check_password_correct(&pool, user_name.clone(), "wrong_password".to_string()).unwrap();
+            User::check_password_correct(&pool, user_name.clone(), "wrong_password".to_string())
+                .unwrap();
         assert!(!is_wrong_password);
         // 删除测试用户
         let _ = User::delete_user(&pool, user_name.clone());

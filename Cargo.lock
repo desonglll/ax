@@ -1872,6 +1872,7 @@ dependencies = [
  "sha2",
  "shared",
  "tokio",
+ "uuid",
 ]
 
 [[package]]
