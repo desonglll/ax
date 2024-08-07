@@ -14,6 +14,7 @@ pub mod sort;
 
 pub mod entities {
     pub mod user;
+    pub mod file;
 }
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("./migrations");

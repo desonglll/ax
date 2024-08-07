@@ -3,17 +3,16 @@
 diesel::table! {
     files (id) {
         id -> Uuid,
-        name -> Nullable<Varchar>,
-        path -> Nullable<Varchar>,
-        size -> Nullable<Int8>,
-        #[sql_name = "type"]
-        type_ -> Nullable<Varchar>,
+        name -> Varchar,
+        path -> Varchar,
+        size -> Int8,
+        content_type -> Varchar,
         created_at -> Nullable<Timestamp>,
         updated_at -> Nullable<Timestamp>,
-        user_id -> Nullable<Int8>,
+        user_id -> Int4,
         description -> Nullable<Text>,
-        checksum -> Nullable<Varchar>,
-        is_deleted -> Nullable<Bool>,
+        checksum -> Varchar,
+        is_deleted -> Bool,
     }
 }
 

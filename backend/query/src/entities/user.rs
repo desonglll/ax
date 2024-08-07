@@ -253,6 +253,13 @@ impl User {
         let body = Data::new(data, None);
         Ok(body)
     }
+    pub fn get_user(pool: &DbPool, user_name: String) -> Result<Data<User>, Box<dyn std::error::Error>> {
+        use crate::schema::users::dsl;
+        let mut conn = establish_pg_connection(&pool).unwrap();
+        let data = dsl::users.filter(dsl::user_name.eq(user_name)).first(&mut conn)?;
+        let body = Data::new(data, None);
+        Ok(body)
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
