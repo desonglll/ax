@@ -39,7 +39,7 @@ mod tests {
     fn test_establish_pool() {
         // 设置环境变量，确保在测试环境中有正确的数据库连接字符串
         dotenv().ok();
-        env::set_var("DATABASE_URL", "postgres://localhost:5432/hello_rocket");
+        unsafe { env::set_var("DATABASE_URL", "postgres://localhost:5432/hello_rocket"); }
 
         // 调用函数以建立连接池
         let pool = establish_pool();
@@ -51,7 +51,7 @@ mod tests {
     #[test]
     fn test_establish_pg_connection() {
         dotenv().ok();
-        env::set_var("DATABASE_URL", "postgres://localhost:5432/hello_rocket");
+        unsafe { env::set_var("DATABASE_URL", "postgres://localhost:5432/hello_rocket"); }
 
         // 调用函数以建立连接池
         let pool = establish_pool();

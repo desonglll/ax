@@ -1,7 +1,7 @@
+use query::{DbPool, filter::UserFilter, sort::UserSort};
 use query::entities::user::{CreateUserRequest, User};
-use query::{filter::UserFilter, sort::UserSort, DbPool};
-use shared::lib::data::Data;
 use shared::{request::request::ListRequest, response::api_response::ApiResponse};
+use shared::lib::data::Data;
 
 pub struct UserHandler {}
 

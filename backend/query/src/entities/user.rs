@@ -1,6 +1,6 @@
 use chrono::NaiveDateTime;
-use diesel::prelude::*;
 use diesel::{Queryable, Selectable};
+use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -9,10 +9,10 @@ use shared::lib::hash::Hash;
 use shared::request::request::ListRequest;
 use shared::response::pagination::ResponsePagination;
 
+use crate::{establish_pg_connection, schema::users};
+use crate::DbPool;
 use crate::filter::UserFilter;
 use crate::sort::UserSort;
-use crate::DbPool;
-use crate::{establish_pg_connection, schema::users};
 
 #[derive(Deserialize, Serialize, Debug, Queryable, Selectable, Default)]
 #[diesel(table_name = crate::schema::users)]
@@ -371,13 +371,13 @@ mod test {
     use shared::lib::hash::Hash;
     use shared::request::{pagination::RequestPagination, request::ListRequest};
 
-    use crate::entities::user::{CreateUserRequest, User};
     use crate::{
         establish_pool,
         filter::UserFilter,
         schema::users,
         sort::{SortOrder, UserSort},
     };
+    use crate::entities::user::{CreateUserRequest, User};
 
     #[test]
     fn test_insert_user() {

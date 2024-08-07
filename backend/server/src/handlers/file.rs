@@ -1,10 +1,10 @@
 use actix_web::web;
+use uuid::Uuid;
 
-use query::entities::file::File;
 use query::DbPool;
+use query::entities::file::File;
 use shared::lib::data::Data;
 use shared::response::api_response::{ApiResponse, StatusCode};
-use uuid::Uuid;
 
 pub struct FileHandler {}
 

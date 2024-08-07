@@ -1,11 +1,11 @@
 use actix_session::Session;
-use actix_web::web::{self, Json};
 use actix_web::{HttpResponse, Responder};
+use actix_web::web::{self, Json};
 use chrono::{Local, Timelike};
 use serde::{Deserialize, Serialize};
 
-use query::entities::user::User;
 use query::DbPool;
+use query::entities::user::User;
 use shared::lib::log::Log;
 use shared::response::api_response::{ApiResponse, StatusCode};
 

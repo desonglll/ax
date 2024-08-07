@@ -1,16 +1,16 @@
+use actix_multipart::form::MultipartForm;
 use actix_multipart::form::tempfile::TempFile;
 use actix_multipart::form::text::Text;
-use actix_multipart::form::MultipartForm;
 use actix_session::Session;
 use chrono::{Local, NaiveDateTime};
-use diesel::dsl::insert_into;
 use diesel::{Insertable, Queryable, RunQueryDsl, Selectable, SelectableHelper};
+use diesel::dsl::insert_into;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use shared::lib::data::Data;
 
-use crate::{establish_pg_connection, DbPool};
+use crate::{DbPool, establish_pg_connection};
 
 #[derive(Debug, MultipartForm)]
 pub struct UploadForm {

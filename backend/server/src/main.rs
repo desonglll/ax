@@ -1,10 +1,10 @@
 use actix_cors::Cors;
-use actix_session::storage::RedisActorSessionStore;
 use actix_session::SessionMiddleware;
+use actix_session::storage::RedisActorSessionStore;
+use actix_web::{App, HttpServer, web};
 use actix_web::cookie::Key;
 use actix_web::middleware::Logger;
 use actix_web::web::PayloadConfig;
-use actix_web::{web, App, HttpServer};
 use env_logger::Env;
 
 use query::establish_pool;
@@ -41,8 +41,8 @@ async fn main() -> std::io::Result<()> {
                     RedisActorSessionStore::new(redis_connection_string),
                     secret_key.clone(),
                 )
-                .cookie_secure(false) // https://docs.rs/actix-session/latest/actix_session/config/struct.SessionMiddlewareBuilder.html#method.cookie_secure
-                .build(),
+                    .cookie_secure(false) // https://docs.rs/actix-session/latest/actix_session/config/struct.SessionMiddlewareBuilder.html#method.cookie_secure
+                    .build(),
             )
             .wrap(cors)
             .app_data(web::Data::new(pool.clone()))
@@ -55,9 +55,9 @@ async fn main() -> std::io::Result<()> {
             .route("/api/stream/{id}", web::get().to(stream))
             .configure(user_routes)
     })
-    .client_request_timeout(std::time::Duration::from_secs(60)) // 设置请求超时为 60 秒
-    .keep_alive(std::time::Duration::from_secs(75)) // 设置连接保活时间为 75 秒
-    .bind(("0.0.0.0", 8000))?
-    .run()
-    .await
+        .client_request_timeout(std::time::Duration::from_secs(60)) // 设置请求超时为 60 秒
+        .keep_alive(std::time::Duration::from_secs(75)) // 设置连接保活时间为 75 秒
+        .bind(("0.0.0.0", 8000))?
+        .run()
+        .await
 }
