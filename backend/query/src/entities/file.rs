@@ -2,24 +2,25 @@ use std::fs;
 use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 
+use actix_multipart::form::MultipartForm;
 use actix_multipart::form::tempfile::TempFile;
 use actix_multipart::form::text::Text;
-use actix_multipart::form::MultipartForm;
 use actix_session::Session;
 use chrono::{Local, NaiveDateTime};
-use diesel::dsl::insert_into;
 use diesel::{Insertable, Queryable, RunQueryDsl, Selectable, SelectableHelper};
+use diesel::dsl::insert_into;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
 use shared::lib::data::Data;
+use shared::lib::log::Log;
 
-use crate::{establish_pg_connection, DbPool};
+use crate::{DbPool, establish_pg_connection};
 
 #[derive(Debug, MultipartForm)]
 pub struct UploadForm {
-    #[multipart(limit = "100MB")]
+    #[multipart(limit = "300MB")]
     pub file: TempFile,
     pub description: Text<String>,
 }
@@ -82,6 +83,7 @@ impl File {
         session: &Session,
         mut upload_form: UploadForm,
     ) -> Result<Data<File>, Box<dyn std::error::Error>> {
+        Log::info("Saving file".to_string());
         let mut conn = establish_pg_connection(pool).unwrap();
         // 获取保存路径
         let save_path = Path::new(&self.path);
@@ -96,7 +98,7 @@ impl File {
 
         // 从 NamedTempFile 读取内容并写入到目标文件
         let mut temp_file = upload_form.file.file.as_file(); // 获取文件的可读引用
-                                                             // 重置文件指针到文件开头
+        // 重置文件指针到文件开头
         temp_file.seek(SeekFrom::Start(0))?;
         let mut buffer = Vec::new();
         let bytes_read = temp_file.read_to_end(&mut buffer)?; // 读取临时文件内容到缓冲区
@@ -108,6 +110,7 @@ impl File {
         }
 
         file.write_all(&buffer)?; // 将缓冲区内容写入目标文件
+        Log::info("Saving file successfully!".to_string());
 
         let insert_file = File::new(session, &mut upload_form);
         // 将文件信息插入数据库

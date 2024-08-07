@@ -11,7 +11,6 @@ pub struct FileHandler {}
 impl FileHandler {
     pub fn handle_upload(session: &Session, pool: web::Data<DbPool>, mut form: UploadForm) -> ApiResponse<Data<File>> {
         let file = File::new(session, &mut form);
-        println!("{:#?}", file);
         let save_result = file.save(&pool, session, form);
         match save_result {
             Ok(result) => ApiResponse::new(StatusCode::Success, String::from("Saved File Successfully"), Some(result)),
