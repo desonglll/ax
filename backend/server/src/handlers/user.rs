@@ -1,11 +1,7 @@
-use query::{
-    DbPool,
-    filter::UserFilter,
-    sort::UserSort,
-};
 use query::entities::user::{CreateUserRequest, User};
-use shared::{request::request::ListRequest, response::api_response::ApiResponse};
+use query::{filter::UserFilter, sort::UserSort, DbPool};
 use shared::lib::data::Data;
+use shared::{request::request::ListRequest, response::api_response::ApiResponse};
 
 pub struct UserHandler {}
 
@@ -15,7 +11,7 @@ impl UserHandler {
         request_data: CreateUserRequest,
     ) -> ApiResponse<Data<User>> {
         match User::insert_user(&pool, request_data.into()) {
-            Ok(result) => ApiResponse::success(Some(result)),
+            Ok(result) => ApiResponse::success("Insert User Successful.".to_string(), Some(result)),
             Err(e) => ApiResponse::error(Box::new(e)),
         }
     }
@@ -25,7 +21,7 @@ impl UserHandler {
         list_request: ListRequest<UserFilter, UserSort>,
     ) -> ApiResponse<Data<Vec<User>>> {
         match User::list_user(pool, list_request) {
-            Ok(result) => ApiResponse::success(Some(result)),
+            Ok(result) => ApiResponse::success("List User Successful.".to_string(), Some(result)),
             Err(e) => ApiResponse::error(Box::new(e)),
         }
     }

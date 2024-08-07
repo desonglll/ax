@@ -22,13 +22,13 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ApiResponse<T> {
     /// 响应的状态码
-    code: StatusCode,
+    pub code: StatusCode,
 
     /// 响应的消息
-    message: String,
+    pub message: String,
 
     /// 可选的响应体
-    body: Option<T>,
+    pub body: Option<T>,
 }
 
 /// API 响应状态码
@@ -137,10 +137,10 @@ impl<T: Default> ApiResponse<T> {
     /// let response = ApiResponse::success(Some("Data".to_string()));
     /// println!("{:?}", response);
     /// ```
-    pub fn success(body: Option<T>) -> Self {
+    pub fn success(message: String, body: Option<T>) -> Self {
         Self {
             code: StatusCode::Success,
-            message: "Success".to_string(),
+            message,
             body,
         }
     }

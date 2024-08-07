@@ -33,7 +33,7 @@ use query::{entities::file::File, DbPool};
 use sha2::{Digest, Sha256};
 use shared::{
     lib::{data::Data, log::Log},
-    response::api_response::{ApiResponse, StatusCode},
+    response::api_response::ApiResponse,
 };
 use std::io::Write;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -41,7 +41,6 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 // 追踪上次打印大小的全局变量
 static LAST_LOGGED_SIZE_MB: AtomicUsize = AtomicUsize::new(0);
 
-use crate::handlers::file::FileHandler;
 pub async fn upload(
     session: Session,
     pool: web::Data<DbPool>,
@@ -50,11 +49,7 @@ pub async fn upload(
 ) -> Result<impl Responder> {
     use std::fs::File as StdFile;
     Log::info(format!("Accessing upload api."));
-    let mut result: ApiResponse<Data<File>> = ApiResponse::new(
-        StatusCode::NotFound,
-        "Uninitialized File".to_string(),
-        Some(Data::default()),
-    );
+    let mut result: Data<Vec<File>> = Data::default();
 
     if let Some(_is_login) = session.get::<bool>("is_login").unwrap() {
         let user_name = session.get::<String>("user_name").unwrap().unwrap();
@@ -145,11 +140,15 @@ pub async fn upload(
             );
             // 插入数据库完成
             Log::info(format!("Insert Into File Table."));
-            result = FileHandler::handle_upload(&pool, new_file);
+            // result = FileHandler::handle_upload(&pool, new_file);
+            result.data.push(new_file.insert_file(&pool).unwrap().data);
             Log::info(format!("Insert Into File Table Successful."));
         }
         Log::info(format!("Operation Finished Successfully"));
-        Ok(HttpResponse::Ok().json(result))
+        Ok(HttpResponse::Ok().json(ApiResponse::success(
+            "Upload Successful".to_string(),
+            Some(result),
+        )))
     } else {
         Log::info(format!("Please Login To Upload."));
         Log::info(format!("Operation Finished Unsuccessfully"));
