@@ -1,41 +1,14 @@
-// use std::fs::OpenOptions;
-// use std::io::Write;
-
-// use actix_multipart::form::MultipartForm;
-// use actix_session::Session;
-// use actix_web::{web, HttpResponse, Responder};
-
-// use query::entities::file::UploadForm;
-// use query::DbPool;
-// use shared::lib::log::Log;
-
-// use crate::handlers::file::FileHandler;
-// pub fn upload(
-//     session: Session,
-//     pool: web::Data<DbPool>,
-//     MultipartForm(form): MultipartForm<UploadForm>,
-// ) -> impl Responder {
-//     Log::info("Accessing upload route".to_string());
-//     if let Some(_is_login) = session.get::<bool>("is_login").unwrap() {
-//         let _user_name = session.get::<String>("user_name").unwrap().unwrap();
-//         let result = FileHandler::handle_upload(&session, pool, form);
-//         HttpResponse::Ok().json(result)
-//     } else {
-//         HttpResponse::Unauthorized().body("Please log in.")
-//     }
-// }
-
 use actix_multipart::Multipart;
 use actix_session::Session;
 use actix_web::{web, HttpResponse, Responder, Result};
 use futures::stream::unfold;
 use futures::StreamExt;
+use percent_encoding::{percent_encode, NON_ALPHANUMERIC};
 use sha2::{Digest, Sha256};
 use shared::response::api_response::StatusCode;
 use std::io::{Read, Write};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use uuid::Uuid;
-
 // Correct trait import
 use query::{entities::file::File, DbPool};
 use shared::{
@@ -159,9 +132,7 @@ pub async fn upload(
             );
             // 如果数据库中存在path相同的记录，则删掉
             match File::delete_file_by_path(&pool, full_path.clone()) {
-                Ok(deleted_record) => {
-                    Log::info(format!("Delete existed record: {}", deleted_record.data.id))
-                }
+                Ok(_deleted_record) => Log::info(format!("Delete existed record")),
                 Err(_) => {}
             }
             // 插入数据库完成
@@ -189,9 +160,7 @@ pub async fn download(
     use std::fs::File as StdFile;
     Log::info(format!("Accessing download API with file ID: {}", file_id));
 
-    // if let Some(_is_login) = session.get::<bool>("is_login").unwrap() {
-    //     let _user_name = session.get::<String>("user_name").unwrap().unwrap();
-
+    //=====================================================================================
     //-------------------------------------------------------------------------------------
     // 查询数据库，获取文件信息
     let file_info = File::get_file(&pool, *file_id).unwrap();
@@ -219,7 +188,7 @@ pub async fn download(
     let file_path = file_info.data.path;
 
     // 打开文件
-    let file = match StdFile::open(file_path) {
+    let mut file = match StdFile::open(file_path.clone()) {
         Ok(f) => f,
         Err(e) => {
             eprintln!("Error opening file: {:?}", e);
@@ -230,9 +199,101 @@ pub async fn download(
     let mut response = HttpResponse::Ok();
 
     // 设置文件名和Content-Disposition头部
+    let encoded_filename = encode_filename(&file_info.data.name);
     response.insert_header((
         "Content-Disposition",
-        format!("attachment; filename=\"{}\"", file_info.data.name),
+        format!("attachment; filename*=UTF-8''{}", encoded_filename),
+    ));
+
+    // 设置内容类型
+    response.content_type(file_info.data.content_type);
+    // 设置内容长度
+    // 获取文件大小
+    let file_size = match std::fs::metadata(&file_path.clone()) {
+        Ok(metadata) => metadata.len(),
+        Err(e) => {
+            eprintln!("Error getting file metadata: {:?}", e);
+            return Ok(HttpResponse::InternalServerError().finish());
+        }
+    };
+    Log::info(format!("File Size: {:?}", file_size));
+    // response.insert_header(("Content-Length", file_size));
+
+    // 设置一个stream来逐块地将文件内容发送给客户端
+    // let stream = unfold(file, move |mut file| async {
+    //     let mut buffer = vec![0; 4096];
+    //     let bytes_read = match file.read(&mut buffer) {
+    //         Ok(size) if size > 0 => Some((Ok(web::Bytes::copy_from_slice(&buffer[..size])), file)),
+    //         Ok(_) => None,
+    //         Err(e) => Some((Err(e), file)),
+    //     };
+    //     bytes_read
+    // });
+
+    let mut file_content = Vec::new();
+    file.read_to_end(&mut file_content).map_err(|e| {
+        // 错误处理
+        actix_web::error::ErrorInternalServerError(e)
+    })?;
+
+    let content_length = file_content.len();
+    response.insert_header(("Content-Length", content_length));
+    // Ok(response.streaming(stream))
+    Ok(response.body(file_content))
+}
+
+// Untested
+pub async fn stream_download(
+    session: Session,
+    pool: web::Data<DbPool>,
+    file_id: web::Path<Uuid>,
+) -> Result<impl Responder> {
+    use std::fs::File as StdFile;
+    Log::info(format!("Accessing download API with file ID: {}", file_id));
+
+    //=====================================================================================
+    //-------------------------------------------------------------------------------------
+    // 查询数据库，获取文件信息
+    let file_info = File::get_file(&pool, *file_id).unwrap();
+
+    if file_info.data.user_id != -1 {
+        Log::info(String::from("This Is A Permittive File."));
+        if let Some(user_id) = session.get::<i32>("user_id").unwrap() {
+            Log::info(format!("User Id: {}", user_id));
+            if file_info.data.user_id != user_id {
+                return Ok(HttpResponse::Unauthorized().json(ApiResponse::<File>::new(
+                    StatusCode::Unauthorized,
+                    "User Not Permitted To Access This File".to_string(),
+                    None,
+                )));
+            }
+        } else {
+            return Ok(HttpResponse::Unauthorized().json(ApiResponse::<File>::new(
+                StatusCode::Unauthorized,
+                "File Not Permitted".to_string(),
+                None,
+            )));
+        }
+    }
+
+    let file_path = file_info.data.path;
+
+    // 打开文件
+    let file = match StdFile::open(file_path.clone()) {
+        Ok(f) => f,
+        Err(e) => {
+            eprintln!("Error opening file: {:?}", e);
+            return Ok(HttpResponse::InternalServerError().finish());
+        }
+    };
+
+    let mut response = HttpResponse::Ok();
+
+    // 设置文件名和Content-Disposition头部
+    let encoded_filename = encode_filename(&file_info.data.name);
+    response.insert_header((
+        "Content-Disposition",
+        format!("attachment; filename*=UTF-8''{}", encoded_filename),
     ));
 
     // 设置内容类型
@@ -248,12 +309,8 @@ pub async fn download(
         };
         bytes_read
     });
-    //-------------------------------------------------------------------------------------
 
     Ok(response.streaming(stream))
-    // } else {
-    //     Ok(HttpResponse::Unauthorized().body("Please log in."))
-    // }
 }
 /// 获取当前工作目录的路径。
 ///
@@ -294,4 +351,8 @@ fn get_path(name: String) -> String {
     let base_url = get_base_url();
     let path = format!("{}/upload/{}", base_url, name);
     path
+}
+// 编码中文文件名的函数
+fn encode_filename(filename: &str) -> String {
+    percent_encode(filename.as_bytes(), NON_ALPHANUMERIC).to_string()
 }

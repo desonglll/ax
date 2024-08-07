@@ -1,11 +1,11 @@
 use actix_session::Session;
-use actix_web::{HttpResponse, Responder};
 use actix_web::web::{self, Json};
+use actix_web::{HttpResponse, Responder};
 use chrono::{Local, Timelike};
 use serde::{Deserialize, Serialize};
 
-use query::DbPool;
 use query::entities::user::User;
+use query::DbPool;
 use shared::lib::log::Log;
 use shared::response::api_response::{ApiResponse, StatusCode};
 
@@ -47,9 +47,17 @@ pub struct LoginRequest {
 pub async fn index(session: Session) -> impl Responder {
     // 尝试获取 session 中的 `user_name`
     if let Some(user_name) = session.get::<String>("user_name").unwrap() {
-        HttpResponse::Ok().json(ApiResponse::<String>::new(StatusCode::Success, String::from(format!("Welcome back! {}", user_name)), None))
+        HttpResponse::Ok().json(ApiResponse::<String>::new(
+            StatusCode::Success,
+            String::from(format!("Welcome back! {}", user_name)),
+            None,
+        ))
     } else {
-        HttpResponse::Ok().json(ApiResponse::<String>::new(StatusCode::Unauthorized, String::from("Please Log in!"), None))
+        HttpResponse::Ok().json(ApiResponse::<String>::new(
+            StatusCode::Unauthorized,
+            String::from("Please Log in!"),
+            None,
+        ))
     }
 }
 
@@ -112,24 +120,34 @@ pub async fn login(
                 session.insert("user_id", user.id).unwrap();
                 Log::info(format!("Login `{}` successfully!", user_name));
                 // HttpResponse::Ok().body("Logged in!")
-                HttpResponse::Ok().json(ApiResponse::<String>::new(StatusCode::Success, "Logged in!".to_string(), Some(greet(user_name))))
+                HttpResponse::Ok().json(ApiResponse::<String>::new(
+                    StatusCode::Success,
+                    "Logged in!".to_string(),
+                    Some(greet(user_name)),
+                ))
             } else {
                 Log::info(format!("Invalid password for `{}`", user_name));
-                HttpResponse::Ok().json(ApiResponse::new(StatusCode::Unauthorized, "Invalid User Password.".to_string(), Some(login_request.into_inner())))
+                HttpResponse::Ok().json(ApiResponse::new(
+                    StatusCode::Unauthorized,
+                    "Invalid User Password.".to_string(),
+                    Some(login_request.into_inner()),
+                ))
             }
         }
-        Err(e) => {
-            match e {
-                diesel::result::Error::NotFound => {
-                    Log::info(format!("Invalid User Name: {}", user_name));
-                    HttpResponse::Ok().json(ApiResponse::new(StatusCode::Unauthorized, "Invalid User Name.".to_string(), Some(login_request.into_inner())))
-                }
-                _ => {
-                    Log::error(e.to_string());
-                    HttpResponse::BadRequest().body(e.to_string())
-                }
+        Err(e) => match e {
+            diesel::result::Error::NotFound => {
+                Log::info(format!("Invalid User Name: {}", user_name));
+                HttpResponse::Ok().json(ApiResponse::new(
+                    StatusCode::Unauthorized,
+                    "Invalid User Name.".to_string(),
+                    Some(login_request.into_inner()),
+                ))
             }
-        }
+            _ => {
+                Log::error(e.to_string());
+                HttpResponse::BadRequest().body(e.to_string())
+            }
+        },
     }
 }
 
