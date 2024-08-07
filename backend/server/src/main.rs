@@ -8,7 +8,7 @@ use actix_web::{web, App, HttpServer};
 use env_logger::Env;
 
 use query::establish_pool;
-use server::routes::file::{download, upload};
+use server::routes::file::{download, stream, upload};
 use server::routes::user::user_routes;
 use server::session::log_session::{index, login, logout};
 
@@ -52,6 +52,7 @@ async fn main() -> std::io::Result<()> {
             .route("/api/logout", web::post().to(logout))
             .route("/api/upload", web::post().to(upload))
             .route("/api/download/{id}", web::get().to(download))
+            .route("/api/stream/{id}", web::get().to(stream))
             .configure(user_routes)
     })
     .client_request_timeout(std::time::Duration::from_secs(60)) // 设置请求超时为 60 秒
