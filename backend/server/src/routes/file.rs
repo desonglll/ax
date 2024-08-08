@@ -3,20 +3,48 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use actix_multipart::Multipart;
 use actix_session::Session;
-use actix_web::{HttpResponse, Responder, Result, web};
+use actix_web::{web, HttpRequest, HttpResponse, Responder, Result};
+use actix_ws::Message;
 use futures::StreamExt;
-use percent_encoding::{NON_ALPHANUMERIC, percent_encode};
+use percent_encoding::{percent_encode, NON_ALPHANUMERIC};
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
 // Correct trait import
-use query::{DbPool, entities::file::File};
+use query::{entities::file::File, DbPool};
+use shared::response::api_response::StatusCode;
 use shared::{
     lib::{data::Data, log::Log},
     response::api_response::ApiResponse,
 };
-use shared::response::api_response::StatusCode;
+// =============================================================================
+// =============================================================================
+// =============================================================================
+pub async fn ws(req: HttpRequest, body: web::Payload) -> actix_web::Result<impl Responder> {
+    let (response, mut session, mut msg_stream) = actix_ws::handle(&req, body)?;
 
+    actix_web::rt::spawn(async move {
+        while let Some(Ok(msg)) = msg_stream.next().await {
+            match msg {
+                Message::Ping(bytes) => {
+                    if session.pong(&bytes).await.is_err() {
+                        return;
+                    }
+                }
+                Message::Text(msg) => println!("Got text: {msg}"),
+                _ => break,
+            }
+        }
+
+        let _ = session.close(None).await;
+    });
+
+    Ok(response)
+}
+
+// =============================================================================
+// =============================================================================
+// =============================================================================
 // 追踪上次打印大小的全局变量
 static LAST_LOGGED_SIZE_MB: AtomicUsize = AtomicUsize::new(0);
 
