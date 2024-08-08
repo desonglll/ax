@@ -17,11 +17,13 @@ use shared::{
     lib::{data::Data, log::Log},
     response::api_response::ApiResponse,
 };
+
 // =============================================================================
 // =============================================================================
 // =============================================================================
 pub async fn ws(req: HttpRequest, body: web::Payload) -> actix_web::Result<impl Responder> {
     let (response, mut session, mut msg_stream) = actix_ws::handle(&req, body)?;
+    Log::info("Into ws fn".to_string());
 
     actix_web::rt::spawn(async move {
         while let Some(Ok(msg)) = msg_stream.next().await {

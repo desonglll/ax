@@ -11,5 +11,3 @@ pub mod handlers {
     pub mod file;
     pub mod user;
 }
-#[macro_use]
-extern crate lazy_static;

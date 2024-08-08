@@ -69,6 +69,11 @@ function App() {
       console.error("Error uploading file:", error);
     }
   };
+
+  const requestWebsocket = () => {
+    const socket = new WebSocket("ws://localhost:8000/api/ws");
+  };
+
   useEffect(() => {
     const check_login = async () => {
       await axios
@@ -109,6 +114,9 @@ function App() {
           </button>
         </div>
       </form>
+      <button onClick={requestWebsocket} type="button">
+        WebSocket
+      </button>
 
       {fileResponse && (
         <div className="response">

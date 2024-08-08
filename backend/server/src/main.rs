@@ -32,10 +32,6 @@ async fn main() -> std::io::Result<()> {
             .max_age(3600); // CORS 请求的缓存时间（秒）
         App::new()
             .wrap(Logger::default())
-            // .wrap(SessionMiddleware::new(
-            //     RedisActorSessionStore::new(redis_connection_string),
-            //     secret_key.clone(),
-            // ))
             .wrap(
                 SessionMiddleware::builder(
                     RedisActorSessionStore::new(redis_connection_string),
@@ -53,7 +49,7 @@ async fn main() -> std::io::Result<()> {
             .route("/api/upload", web::post().to(upload))
             .route("/api/download/{id}", web::get().to(download))
             .route("/api/stream/{id}", web::get().to(stream))
-            .route("/ws", web::get().to(ws))
+            .route("/api/ws", web::get().to(ws))
             .configure(user_routes)
     })
     .client_request_timeout(std::time::Duration::from_secs(60)) // 设置请求超时为 60 秒
