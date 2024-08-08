@@ -8,6 +8,7 @@ use actix_ws::Message;
 use futures::StreamExt;
 use percent_encoding::{percent_encode, NON_ALPHANUMERIC};
 use sha2::{Digest, Sha256};
+use tokio::task;
 use uuid::Uuid;
 
 // Correct trait import
@@ -115,6 +116,7 @@ pub async fn upload(
 
                 // Convert size to megabytes (MB)
                 let size_mb = size as f64 / (1024.0 * 1024.0);
+                // Use spawn_blocking to handle synchronous `session.insert`
 
                 // Calculate size in MB and log if it has exceeded the threshold
                 let logged_size_mb = LAST_LOGGED_SIZE_MB.load(Ordering::SeqCst);
