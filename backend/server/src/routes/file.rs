@@ -8,7 +8,6 @@ use actix_ws::Message;
 use futures::StreamExt;
 use percent_encoding::{percent_encode, NON_ALPHANUMERIC};
 use sha2::{Digest, Sha256};
-use tokio::task;
 use uuid::Uuid;
 
 // Correct trait import
