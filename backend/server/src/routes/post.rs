@@ -5,36 +5,21 @@ use actix_web::{
     web::{self, Json},
     HttpResponse, Responder,
 };
+use query::{filter::PostFilter, sort::PostSort, DbPool};
+use shared::{
+    lib::log::Log,
+    request::{pagination::RequestPagination, request::ListRequest},
+};
 
-use query::entities::user::CreateUserRequest;
-use query::{filter::UserFilter, sort::UserSort, DbPool};
-use shared::lib::log::Log;
-use shared::request::pagination::RequestPagination;
-use shared::request::request::ListRequest;
+use crate::handlers::post::PostHandler;
 
-use crate::handlers::user::UserHandler;
-
-pub async fn insert_user(
+pub async fn list_post(
     session: Session,
     pool: web::Data<DbPool>,
-    request_data: Json<CreateUserRequest>,
-) -> impl Responder {
-    if let Some(_is_login) = session.get::<bool>("is_login").unwrap() {
-        let _user_name = session.get::<String>("user_name").unwrap().unwrap();
-        let result = UserHandler::handle_insert_user(&pool, request_data.into_inner());
-        HttpResponse::Ok().json(result)
-    } else {
-        HttpResponse::Unauthorized().body("Please log in.")
-    }
-}
-
-pub async fn list_user(
-    session: Session,
-    pool: web::Data<DbPool>,
-    request_data: Option<Json<ListRequest<UserFilter, UserSort>>>,
+    request_data: Option<Json<ListRequest<PostFilter, PostSort>>>,
     query: Option<web::Query<HashMap<String, String>>>,
 ) -> impl Responder {
-    Log::info("Access list_user".to_string());
+    Log::info("Access list_post".to_string());
     let limit = query
         .clone()
         .unwrap()
@@ -57,10 +42,14 @@ pub async fn list_user(
         // 修改分页为不确定参数集
         request_data.pagination = Some(param_pagination);
 
-        let result = UserHandler::handle_list_user(&pool, request_data.into_inner());
+        let result = PostHandler::handle_list_post(&pool, request_data.into_inner());
         HttpResponse::Ok().json(result)
     } else {
         Log::info("Authentication Failed.".to_string());
         HttpResponse::Unauthorized().body("Please log in.")
     }
+}
+
+pub fn post_routes(cfg: &mut web::ServiceConfig) {
+    cfg.service(web::scope("/api").route("list-post", web::get().to(list_post)));
 }

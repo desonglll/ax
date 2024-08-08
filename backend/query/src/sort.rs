@@ -25,3 +25,16 @@ pub enum UserSortBy {
     IsActive,
     IsAdmin,
 }
+#[derive(Deserialize, Serialize, Debug, Default)]
+pub struct PostSort {
+    pub sort_by: Option<PostSortBy>,
+    pub order: Option<SortOrder>,
+}
+#[derive(Deserialize, Serialize, Debug)]
+pub enum PostSortBy {
+    Id,
+    CreatedAt,
+    UpdatedAt,
+    UserId,
+    ReplyTo,
+}

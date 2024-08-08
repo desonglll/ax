@@ -8,9 +8,7 @@ use actix_web::{web, App, HttpServer};
 use env_logger::Env;
 
 use query::establish_pool;
-use server::routes::file::{download, stream, upload, ws};
-use server::routes::user::user_routes;
-use server::session::log_session::{index, login, logout};
+use server::routes::api::all_routes;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -43,14 +41,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(cors)
             .app_data(web::Data::new(pool.clone()))
             .app_data(PayloadConfig::new(300 * 1024 * 1024).limit(20 * 1024 * 1024)) // 将最大负载大小设置为 300MB
-            .route("/api/login_check", web::get().to(index))
-            .route("/api/login", web::post().to(login))
-            .route("/api/logout", web::post().to(logout))
-            .route("/api/upload", web::post().to(upload))
-            .route("/api/download/{id}", web::get().to(download))
-            .route("/api/stream/{id}", web::get().to(stream))
-            .route("/api/ws", web::get().to(ws))
-            .configure(user_routes)
+            .configure(all_routes)
     })
     .client_request_timeout(std::time::Duration::from_secs(60)) // 设置请求超时为 60 秒
     .keep_alive(std::time::Duration::from_secs(75)) // 设置连接保活时间为 75 秒

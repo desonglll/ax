@@ -1,0 +1,4 @@
+-- Your SQL goes here
+ALTER TABLE "posts"
+ADD FOREIGN KEY("reply_to") REFERENCES "posts"("id")
+ON UPDATE NO ACTION ON DELETE NO ACTION;

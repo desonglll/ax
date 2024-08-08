@@ -19,3 +19,14 @@ pub struct UserFilter {
     pub is_admin: Option<bool>,
     pub profile_picture: Option<Uuid>,
 }
+#[derive(Deserialize, Serialize, Debug, Default)]
+pub struct PostFilter {
+    pub id: Option<i32>,
+    pub content: Option<String>,
+    pub created_at_min: Option<NaiveDateTime>,
+    pub created_at_max: Option<NaiveDateTime>,
+    pub updated_at_min: Option<NaiveDateTime>,
+    pub updated_at_max: Option<NaiveDateTime>,
+    pub user_id: Option<i32>,
+    pub reply_to: Option<i32>,
+}
