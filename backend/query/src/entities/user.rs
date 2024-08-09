@@ -267,7 +267,7 @@ impl User {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct CreateUserRequest {
+pub struct InsertUserRequest {
     // pub id: i32,
     pub user_name: String,
     pub email: String,
@@ -282,7 +282,7 @@ pub struct CreateUserRequest {
     pub profile_picture: Option<Uuid>,
 }
 
-impl CreateUserRequest {
+impl InsertUserRequest {
     pub fn new(
         user_name: String,
         email: String,
@@ -347,8 +347,8 @@ impl InsertUser {
     }
 }
 
-impl From<CreateUserRequest> for InsertUser {
-    fn from(request: CreateUserRequest) -> Self {
+impl From<InsertUserRequest> for InsertUser {
+    fn from(request: InsertUserRequest) -> Self {
         let pw_hash = Hash::create_password_hash(request.password).unwrap();
         InsertUser::new(
             request.user_name,
@@ -377,12 +377,12 @@ mod test {
         schema::users,
         sort::{SortOrder, UserSort},
     };
-    use crate::entities::user::{CreateUserRequest, User};
+    use crate::entities::user::{InsertUserRequest, User};
 
     #[test]
     fn test_insert_user() {
         let pool = establish_pool();
-        let request_user = CreateUserRequest::new(
+        let request_user = InsertUserRequest::new(
             "test_insert_user".to_string(),
             "lindesong666@gmail.com".to_string(),
             "070011".to_string(),
@@ -459,7 +459,7 @@ mod test {
         // 创建一个 ListRequest 示例
         let filters = UserFilter {
             id: None,
-            user_name: Some("frank".to_string()),
+            user_name: Some("mike".to_string()),
             email: None,
             full_name: None,
             phone: None,
@@ -481,6 +481,7 @@ mod test {
 
         let list_request = ListRequest {
             filters: Some(filters),
+            user_id: None,
             sort: Some(sort),
             pagination: Some(RequestPagination {
                 limit: Some(10),
@@ -494,7 +495,7 @@ mod test {
 
         let data = result.unwrap().data;
         assert_eq!(data.len(), 1);
-        assert_eq!(data[0].user_name, "frank");
+        assert_eq!(data[0].user_name, "mike");
     }
 
     #[test]
@@ -503,7 +504,7 @@ mod test {
         let user_name = String::from("test_delete_user");
 
         // Creating a user for testing
-        let new_user = CreateUserRequest {
+        let new_user = InsertUserRequest {
             user_name: user_name.clone(),
             email: "test@example.com".to_string(),
             password: "password".to_string(),

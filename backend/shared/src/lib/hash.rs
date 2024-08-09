@@ -78,6 +78,21 @@ mod test {
     use super::Hash;
 
     #[test]
+    fn create_password_hash() {
+        let password = "root".to_string();
+        let hashed_password = Hash::create_password_hash(password.clone());
+
+        assert!(hashed_password.is_ok(), "Password hashing should succeed");
+        let hashed_password = hashed_password.unwrap();
+
+        println!("Password: {}", password);
+        println!("Hashed Password: {}", hashed_password);
+        // 验证生成的哈希是否与原始密码匹配
+        let is_valid = Hash::verify_password(password, hashed_password);
+        assert!(is_valid.unwrap(), "Password should be valid");
+    }
+
+    #[test]
     fn test_create_password_hash() {
         let password = "super_secure_password".to_string();
         let hashed_password = Hash::create_password_hash(password.clone());

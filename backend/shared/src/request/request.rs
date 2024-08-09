@@ -22,6 +22,7 @@ use super::pagination::RequestPagination;
 /// use shared::request::request::ListRequest;
 /// let request = ListRequest::<String,String>::new(
 ///     None,
+///     Some(1),
 ///     Some(RequestPagination::default()),
 ///     None
 /// );
@@ -29,6 +30,7 @@ use super::pagination::RequestPagination;
 /// ```
 #[derive(Debug, Deserialize, Default)]
 pub struct ListRequest<F, S> {
+    pub user_id: Option<i32>,
     /// 用于筛选数据的过滤条件
     pub filters: Option<F>,
 
@@ -62,14 +64,16 @@ impl<F, S> ListRequest<F, S> {
     /// use shared::request::request::ListRequest;
     /// let request = ListRequest::<String,String>::new(
     ///     None,
+    ///     Some(1),
     ///     Some(RequestPagination::default()),
     ///     None
     /// );
     /// println!("{:?}", request);
     /// ```
-    pub fn new(filters: Option<F>, pagination: Option<RequestPagination>, sort: Option<S>) -> Self {
+    pub fn new(filters: Option<F>, user_id: Option<i32>, pagination: Option<RequestPagination>, sort: Option<S>) -> Self {
         Self {
             filters,
+            user_id,
             pagination,
             sort,
         }

@@ -100,33 +100,40 @@ pub async fn login(
     pool: web::Data<DbPool>,
     login_request: Json<LoginRequest>,
 ) -> impl Responder {
-    // 获取请求体中的 `user_id`
+    // Extract user credentials from the request
     let user_name = login_request.user_name.clone();
     let password = login_request.password.clone();
-    Log::info(format!("Login `{}`", user_name));
+    Log::info(format!("Attempting to log in user `{}`", user_name));
 
-    // 判断用户名和密码是否正确
-    // We can directly use &pool to convert the `web::Data<DbPool>` into `&DbPool`.
-
+    // Check if the provided username and password are correct
     match User::check_password_correct(&pool, user_name.clone(), password) {
         Ok(is_valid) => {
             if is_valid {
-                Log::info(format!("Valid password for `{}`", user_name));
-                // 在 session 中设置 `user_name`
-                session.insert("user_name", user_name.clone()).unwrap();
-                session.insert("is_login", true).unwrap();
-                // add user_id to redis
-                let user = User::get_user(&pool, user_name.clone()).unwrap().data;
-                session.insert("user_id", user.id).unwrap();
-                Log::info(format!("Login `{}` successfully!", user_name));
-                // HttpResponse::Ok().body("Logged in!")
+                Log::info(format!("Password validation succeeded for `{}`", user_name));
+
+                // Set session variables upon successful login
+                if let Err(err) = session.insert("user_name", user_name.clone()) {
+                    Log::error(format!("Failed to set session for `user_name`: {}", err));
+                }
+                if let Err(err) = session.insert("is_login", true) {
+                    Log::error(format!("Failed to set session for `is_login`: {}", err));
+                }
+                if let Ok(user) = User::get_user(&pool, user_name.clone()) {
+                    if let Err(err) = session.insert("user_id", user.data.id) {
+                        Log::error(format!("Failed to set session for `user_id`: {}", err));
+                    }
+                } else {
+                    Log::error("Failed to retrieve user information.".to_string());
+                }
+
+                Log::info(format!("User `{}` logged in successfully", user_name));
                 HttpResponse::Ok().json(ApiResponse::<String>::new(
                     StatusCode::Success,
                     "Logged in!".to_string(),
                     Some(greet(user_name)),
                 ))
             } else {
-                Log::info(format!("Invalid password for `{}`", user_name));
+                Log::info(format!("Password validation failed for `{}`", user_name));
                 HttpResponse::Ok().json(ApiResponse::new(
                     StatusCode::Unauthorized,
                     "Invalid User Password.".to_string(),
@@ -136,7 +143,7 @@ pub async fn login(
         }
         Err(e) => match e {
             diesel::result::Error::NotFound => {
-                Log::info(format!("Invalid User Name: {}", user_name));
+                Log::info(format!("User `{}` not found", user_name));
                 HttpResponse::Ok().json(ApiResponse::new(
                     StatusCode::Unauthorized,
                     "Invalid User Name.".to_string(),
@@ -144,21 +151,33 @@ pub async fn login(
                 ))
             }
             _ => {
-                Log::error(e.to_string());
+                Log::error(format!("An error occurred during login for `{}`: {}", user_name, e));
                 HttpResponse::BadRequest().body(e.to_string())
             }
         },
     }
 }
 
+/// 处理用户登出的处理器函数
+///
+/// 该函数处理用户的登出请求。如果 session 中存在 `user_name`，则清除 session 并返回成功消息；
+/// 否则，返回服务器内部错误的消息。
+///
+/// - `session`：请求的 session 对象，用于访问和管理存储在 session 中的数据。
+///
+/// # Responses
+///
+/// - 如果 session 中存在 `user_name`，返回 `200 OK` 响应，并在响应体中包含 "Logged out!" 消息。
+/// - 如果 session 中不存在 `user_name` 或者清除 session 失败，返回 `500 Internal Server Error` 响应，并在响应体中包含 "Logged out error!" 消息。
 pub async fn logout(session: Session) -> impl Responder {
+    // Attempt to retrieve the `user_name` from the session
     if let Some(user_name) = session.get::<String>("user_name").unwrap() {
-        Log::info(format!("Log out `{}`", user_name));
+        Log::info(format!("Attempting to log out user `{}`", user_name));
         session.clear();
-        Log::info(format!("Log out `{}` successfully!", user_name));
+        Log::info(format!("User `{}` logged out successfully", user_name));
         HttpResponse::Ok().body("Logged out!")
     } else {
-        Log::info("Log out error!".to_string());
+        Log::warning("Attempt to log out failed: no user found in session.".to_string());
         HttpResponse::InternalServerError().body("Logged out error!")
     }
 }

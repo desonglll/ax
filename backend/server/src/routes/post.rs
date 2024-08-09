@@ -2,16 +2,44 @@ use std::collections::HashMap;
 
 use actix_session::Session;
 use actix_web::{
-    web::{self, Json},
-    HttpResponse, Responder,
+    HttpResponse,
+    Responder, web::{self, Json},
 };
-use query::{filter::PostFilter, sort::PostSort, DbPool};
+
+use query::{DbPool, filter::PostFilter, sort::PostSort};
+use query::entities::post::{InsertPost, InsertPostRequest};
 use shared::{
     lib::log::Log,
     request::{pagination::RequestPagination, request::ListRequest},
 };
 
 use crate::handlers::post::PostHandler;
+
+pub async fn insert_post(
+    session: Session,
+    pool: web::Data<DbPool>,
+    request_data: Json<InsertPostRequest>,
+) -> impl Responder {
+    Log::info("Access insert_post".to_string());
+
+    if let Some(_is_login) = session.get::<bool>("is_login").unwrap() {
+        let user_id = session.get::<i32>("user_id").unwrap().unwrap();
+        Log::info(format!("User ID: {} is inserting a post", user_id));
+
+        let insert_post = InsertPost {
+            content: request_data.content.clone(),
+            user_id,
+            reply_to: request_data.reply_to,
+        };
+        let result = PostHandler::handle_insert_post(&pool, insert_post);
+
+        Log::info("Insert Post operation completed.".to_string());
+        HttpResponse::Ok().json(result)
+    } else {
+        Log::info("Unauthorized access attempt to insert_post".to_string());
+        HttpResponse::Unauthorized().body("Please log in.")
+    }
+}
 
 pub async fn list_post(
     session: Session,
@@ -20,6 +48,7 @@ pub async fn list_post(
     query: Option<web::Query<HashMap<String, String>>>,
 ) -> impl Responder {
     Log::info("Access list_post".to_string());
+
     let limit = query
         .clone()
         .unwrap()
@@ -35,21 +64,23 @@ pub async fn list_post(
         .parse::<i32>()
         .unwrap();
     let param_pagination = RequestPagination::new(Some(limit), Some(offset));
+    Log::info(format!("Pagination set - Limit: {}, Offset: {}", limit, offset));
 
     if let Some(_is_login) = session.get::<bool>("is_login").unwrap() {
         Log::info("Authentication Passed.".to_string());
+        let user_id = session.get::<i32>("user_id").unwrap().unwrap();
+
         let mut request_data = request_data.unwrap_or(Json(ListRequest::default()));
-        // 修改分页为不确定参数集
         request_data.pagination = Some(param_pagination);
+        request_data.user_id = Some(user_id);
+
 
         let result = PostHandler::handle_list_post(&pool, request_data.into_inner());
+
+        Log::info("List Post operation completed.".to_string());
         HttpResponse::Ok().json(result)
     } else {
-        Log::info("Authentication Failed.".to_string());
+        Log::info("Unauthorized access attempt to list_post".to_string());
         HttpResponse::Unauthorized().body("Please log in.")
     }
-}
-
-pub fn post_routes(cfg: &mut web::ServiceConfig) {
-    cfg.service(web::scope("/api").route("list-post", web::get().to(list_post)));
 }

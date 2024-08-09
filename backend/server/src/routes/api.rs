@@ -1,5 +1,6 @@
 use actix_web::web;
 
+use crate::routes::post::insert_post;
 use crate::session::log_session::{index, login, logout};
 
 use super::{
@@ -21,6 +22,7 @@ pub fn all_routes(cfg: &mut web::ServiceConfig) {
             .route("/ws", web::get().to(ws))
             .route("/user", web::post().to(insert_user))
             .route("/list-user", web::get().to(list_user))
+            .route("/post", web::post().to(insert_post))
             .route("/list-post", web::get().to(list_post)),
     );
 }

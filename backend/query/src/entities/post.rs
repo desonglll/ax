@@ -7,9 +7,9 @@ use shared::lib::data::Data;
 use shared::request::request::ListRequest;
 use shared::response::pagination::ResponsePagination;
 
+use crate::{DbPool, establish_pg_connection};
 use crate::filter::PostFilter;
 use crate::sort::PostSort;
-use crate::{establish_pg_connection, DbPool};
 
 #[derive(Serialize, Deserialize, Debug, Default, Queryable, Selectable)]
 #[diesel(table_name = crate::schema::posts)]
@@ -20,6 +20,23 @@ pub struct Post {
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
     pub user_id: i32,
+    pub reply_to: Option<i32>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Default, Queryable, Selectable, Insertable)]
+#[diesel(table_name = crate::schema::posts)]
+#[serde(rename_all = "camelCase")]
+pub struct InsertPost {
+    pub content: String,
+    pub user_id: i32,
+    pub reply_to: Option<i32>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Default, Queryable, Selectable, Insertable)]
+#[diesel(table_name = crate::schema::posts)]
+#[serde(rename_all = "camelCase")]
+pub struct InsertPostRequest {
+    pub content: String,
     pub reply_to: Option<i32>,
 }
 
@@ -37,6 +54,8 @@ impl Post {
         let filter = list_request.filters.unwrap_or_default();
         let pagination = list_request.pagination.unwrap_or_default();
         query = query.order_by(id.asc());
+        // 找到对应用户的post
+        query = query.filter(user_id.eq(list_request.user_id.unwrap()));
         // Apply filters
         if let Some(filter_id) = filter.id {
             query = query.filter(id.eq(filter_id));
@@ -62,9 +81,6 @@ impl Post {
             query = query.filter(updated_at.le(filter_updated_at_max));
         }
 
-        if let Some(filter_user_id) = filter.user_id {
-            query = query.filter(user_id.eq(filter_user_id));
-        }
         if let Some(filter_reply_to) = filter.reply_to {
             query = query.filter(reply_to.eq(filter_reply_to));
         }
@@ -134,6 +150,19 @@ impl Post {
         let body = Data::new(data, Some(pagination));
         Ok(body)
     }
+
+    pub fn insert_post(
+        pool: &DbPool,
+        insert_post: InsertPost,
+    ) -> Result<Data<Post>, diesel::result::Error> {
+        use crate::schema::posts::dsl;
+        let mut conn = establish_pg_connection(&pool).unwrap();
+        let data = diesel::insert_into(dsl::posts)
+            .values(insert_post)
+            .returning(Post::as_returning())
+            .get_result(&mut conn)?;
+        Ok(Data::new(data, None))
+    }
 }
 
 #[cfg(test)]
@@ -146,6 +175,32 @@ mod test {
         filter::PostFilter,
         sort::{PostSort, SortOrder},
     };
+
+    #[test]
+    fn test_insert_post() {
+        use crate::entities::post::{InsertPost, Post};
+        let pool = establish_pool(); // 假设你有一个用于获取连接池的函数
+
+        // 创建一个 InsertPost 示例
+        let new_post = InsertPost {
+            content: String::from("This is a test post."),
+            user_id: 1,
+            reply_to: None, // or Some(reply_post_id) if you want to set a reply
+        };
+
+        // 调用 insert_post 函数
+        let result = Post::insert_post(&pool, new_post);
+
+        // 检查插入是否成功
+        assert!(result.is_ok());
+
+        let inserted_post = result.unwrap().data;
+
+        // 验证插入的内容是否与预期一致
+        assert_eq!(inserted_post.content, "This is a test post.");
+        assert_eq!(inserted_post.user_id, 1);
+        assert_eq!(inserted_post.reply_to, None);
+    }
 
     #[test]
     fn test_get_post_list() {
@@ -170,6 +225,7 @@ mod test {
         };
 
         let list_request = ListRequest {
+            user_id: Some(1),
             filters: Some(filters),
             sort: Some(sort),
             pagination: Some(RequestPagination {
