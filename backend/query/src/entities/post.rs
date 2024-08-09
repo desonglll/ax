@@ -55,7 +55,9 @@ impl Post {
         let pagination = list_request.pagination.unwrap_or_default();
         query = query.order_by(id.asc());
         // 找到对应用户的post
-        query = query.filter(user_id.eq(list_request.user_id.unwrap()));
+        if let Some(requested_user_id) = list_request.user_id {
+            query = query.filter(user_id.eq(requested_user_id));
+        }
         // Apply filters
         if let Some(filter_id) = filter.id {
             query = query.filter(id.eq(filter_id));
@@ -79,6 +81,9 @@ impl Post {
 
         if let Some(filter_updated_at_max) = filter.updated_at_max {
             query = query.filter(updated_at.le(filter_updated_at_max));
+        }
+        if let Some(filter_user_id) = filter.user_id {
+            query = query.filter(user_id.eq(filter_user_id));
         }
 
         if let Some(filter_reply_to) = filter.reply_to {
