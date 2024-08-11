@@ -24,6 +24,7 @@ diesel::table! {
         updated_at -> Timestamp,
         user_id -> Int4,
         reply_to -> Nullable<Int4>,
+        user_name -> Varchar,
     }
 }
 

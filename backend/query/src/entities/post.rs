@@ -7,9 +7,9 @@ use shared::lib::data::Data;
 use shared::request::request::ListRequest;
 use shared::response::pagination::ResponsePagination;
 
-use crate::{DbPool, establish_pg_connection};
 use crate::filter::PostFilter;
 use crate::sort::PostSort;
+use crate::{establish_pg_connection, DbPool};
 
 #[derive(Serialize, Deserialize, Debug, Default, Queryable, Selectable)]
 #[diesel(table_name = crate::schema::posts)]
@@ -21,6 +21,7 @@ pub struct Post {
     pub updated_at: NaiveDateTime,
     pub user_id: i32,
     pub reply_to: Option<i32>,
+    pub user_name: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default, Queryable, Selectable, Insertable)]
