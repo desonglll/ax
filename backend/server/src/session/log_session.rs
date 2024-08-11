@@ -1,11 +1,11 @@
 use actix_session::Session;
-use actix_web::{HttpResponse, Responder};
 use actix_web::web::{self, Json};
+use actix_web::{HttpResponse, Responder};
 use chrono::{Local, Timelike};
 use serde::{Deserialize, Serialize};
 
-use query::DbPool;
 use query::entities::user::User;
+use query::DbPool;
 use shared::lib::log::Log;
 use shared::response::api_response::{ApiResponse, StatusCode};
 
@@ -151,7 +151,10 @@ pub async fn login(
                 ))
             }
             _ => {
-                Log::error(format!("An error occurred during login for `{}`: {}", user_name, e));
+                Log::error(format!(
+                    "An error occurred during login for `{}`: {}",
+                    user_name, e
+                ));
                 HttpResponse::BadRequest().body(e.to_string())
             }
         },
@@ -175,9 +178,17 @@ pub async fn logout(session: Session) -> impl Responder {
         Log::info(format!("Attempting to log out user `{}`", user_name));
         session.clear();
         Log::info(format!("User `{}` logged out successfully", user_name));
-        HttpResponse::Ok().body("Logged out!")
+        HttpResponse::Ok().json(ApiResponse::<String>::new(
+            StatusCode::Success,
+            "Logged out!".to_string(),
+            None,
+        ))
     } else {
         Log::warning("Attempt to log out failed: no user found in session.".to_string());
-        HttpResponse::InternalServerError().body("Logged out error!")
+        HttpResponse::Ok().json(ApiResponse::<String>::new(
+            StatusCode::NotFound,
+            "Logged out error!".to_string(),
+            None,
+        ))
     }
 }
