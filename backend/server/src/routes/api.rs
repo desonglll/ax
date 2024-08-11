@@ -13,7 +13,7 @@ pub fn all_routes(cfg: &mut web::ServiceConfig) {
     let route = web::scope("/api");
     cfg.service(
         route
-            .route("/login_check", web::get().to(index))
+            .route("/login-check", web::get().to(index))
             .route("/login", web::post().to(login))
             .route("/logout", web::post().to(logout))
             .route("/upload", web::post().to(upload))

@@ -2,17 +2,17 @@ use std::collections::HashMap;
 
 use actix_session::Session;
 use actix_web::{
-    HttpResponse,
-    Responder, web::{self, Json},
+    web::{self, Json},
+    HttpResponse, Responder,
 };
 
-use query::{DbPool, filter::PostFilter, sort::PostSort};
 use query::entities::post::{InsertPost, InsertPostRequest};
+use query::{filter::PostFilter, sort::PostSort, DbPool};
+use shared::response::api_response::{ApiResponse, StatusCode};
 use shared::{
     lib::log::Log,
     request::{pagination::RequestPagination, request::ListRequest},
 };
-use shared::response::api_response::{ApiResponse, StatusCode};
 
 use crate::handlers::post::PostHandler;
 
@@ -38,7 +38,11 @@ pub async fn insert_post(
         HttpResponse::Ok().json(result)
     } else {
         Log::info("Unauthorized access attempt to insert_post".to_string());
-        HttpResponse::Ok().json(ApiResponse::<String>::new(StatusCode::Unauthorized, "Please Log In.".to_string(), None))
+        HttpResponse::Ok().json(ApiResponse::<String>::new(
+            StatusCode::Unauthorized,
+            "Please Log In.".to_string(),
+            Some(String::new()),
+        ))
     }
 }
 
@@ -65,7 +69,10 @@ pub async fn list_post(
         .parse::<i32>()
         .unwrap();
     let param_pagination = RequestPagination::new(Some(limit), Some(offset));
-    Log::info(format!("Pagination set - Limit: {}, Offset: {}", limit, offset));
+    Log::info(format!(
+        "Pagination set - Limit: {}, Offset: {}",
+        limit, offset
+    ));
 
     if let Some(_is_login) = session.get::<bool>("is_login").unwrap() {
         Log::info("Authentication Passed.".to_string());
@@ -75,14 +82,17 @@ pub async fn list_post(
         request_data.pagination = Some(param_pagination);
         request_data.user_id = Some(user_id);
 
-
         let result = PostHandler::handle_list_post(&pool, request_data.into_inner());
 
         Log::info("List Post operation completed.".to_string());
         HttpResponse::Ok().json(result)
     } else {
         Log::info("Unauthorized access attempt to list_post".to_string());
-        HttpResponse::Ok().json(ApiResponse::<String>::new(StatusCode::Unauthorized, "Please Log In.".to_string(), None))
+        HttpResponse::Ok().json(ApiResponse::<String>::new(
+            StatusCode::Unauthorized,
+            "Please Log In.".to_string(),
+            Some(String::new()),
+        ))
     }
 }
 
@@ -109,7 +119,10 @@ pub async fn list_all_user_post(
         .parse::<i32>()
         .unwrap();
     let param_pagination = RequestPagination::new(Some(limit), Some(offset));
-    Log::info(format!("Pagination set - Limit: {}, Offset: {}", limit, offset));
+    Log::info(format!(
+        "Pagination set - Limit: {}, Offset: {}",
+        limit, offset
+    ));
 
     if let Some(_is_login) = session.get::<bool>("is_login").unwrap() {
         Log::info("Authentication Passed.".to_string());
@@ -119,13 +132,16 @@ pub async fn list_all_user_post(
         request_data.pagination = Some(param_pagination);
         // request_data.user_id = Some(user_id);
 
-
         let result = PostHandler::handle_list_post(&pool, request_data.into_inner());
 
         Log::info("List Post operation completed.".to_string());
         HttpResponse::Ok().json(result)
     } else {
         Log::info("Unauthorized access attempt to list_post".to_string());
-        HttpResponse::Ok().json(ApiResponse::<String>::new(StatusCode::Unauthorized, "Please Log In.".to_string(), None))
+        HttpResponse::Ok().json(ApiResponse::<String>::new(
+            StatusCode::Unauthorized,
+            "Please Log In.".to_string(),
+            Some(String::new()),
+        ))
     }
 }

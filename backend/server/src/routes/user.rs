@@ -2,12 +2,12 @@ use std::collections::HashMap;
 
 use actix_session::Session;
 use actix_web::{
-    HttpResponse,
-    Responder, web::{self, Json},
+    web::{self, Json},
+    HttpResponse, Responder,
 };
 
-use query::{DbPool, filter::UserFilter, sort::UserSort};
 use query::entities::user::InsertUserRequest;
+use query::{filter::UserFilter, sort::UserSort, DbPool};
 use shared::lib::log::Log;
 use shared::request::pagination::RequestPagination;
 use shared::request::request::ListRequest;
@@ -32,7 +32,11 @@ pub async fn insert_user(
         HttpResponse::Ok().json(result)
     } else {
         Log::info("Unauthorized access attempt to insert_user".to_string());
-        HttpResponse::Ok().json(ApiResponse::<String>::new(StatusCode::Unauthorized, "Please Log In.".to_string(), None))
+        HttpResponse::Ok().json(ApiResponse::<String>::new(
+            StatusCode::Unauthorized,
+            "Please Log In.".to_string(),
+            Some(String::new()),
+        ))
     }
 }
 
@@ -59,7 +63,10 @@ pub async fn list_user(
         .parse::<i32>()
         .unwrap();
     let param_pagination = RequestPagination::new(Some(limit), Some(offset));
-    Log::info(format!("Pagination set - Limit: {}, Offset: {}", limit, offset));
+    Log::info(format!(
+        "Pagination set - Limit: {}, Offset: {}",
+        limit, offset
+    ));
 
     if let Some(_is_login) = session.get::<bool>("is_login").unwrap() {
         Log::info("Authentication Passed.".to_string());
@@ -86,6 +93,10 @@ pub async fn list_user(
         // }
     } else {
         Log::info("Unauthorized access attempt to list_user".to_string());
-        HttpResponse::Ok().json(ApiResponse::<String>::new(StatusCode::Unauthorized, "Please Log In.".to_string(), None))
+        HttpResponse::Ok().json(ApiResponse::<String>::new(
+            StatusCode::Unauthorized,
+            "Please Log In.".to_string(),
+            Some(String::new()),
+        ))
     }
 }
