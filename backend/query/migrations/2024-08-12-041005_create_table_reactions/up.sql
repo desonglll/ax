@@ -5,5 +5,6 @@ CREATE TABLE "reactions" (
 	"created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	"reaction_id" INTEGER NOT NULL,
 	"reaction_name" VARCHAR NOT NULL,
-	PRIMARY KEY("id")
+	PRIMARY KEY("id"),
+	UNIQUE ("user_id", "post_id", "reaction_name") -- 添加唯一约束
 );

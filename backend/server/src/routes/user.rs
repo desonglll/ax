@@ -18,7 +18,7 @@ use crate::handlers::user::UserHandler;
 pub async fn insert_user(
     session: Session,
     pool: web::Data<DbPool>,
-    request_data: Json<InsertUserRequest>,
+    request_data: Option<Json<InsertUserRequest>>,
 ) -> impl Responder {
     Log::info("Access insert_user".to_string());
 
@@ -26,10 +26,19 @@ pub async fn insert_user(
         let user_name = session.get::<String>("user_name").unwrap().unwrap();
         Log::info(format!("User '{}' is inserting a new user.", user_name));
 
-        let result = UserHandler::handle_insert_user(&pool, request_data.into_inner());
+        if let Some(request_data) = request_data {
+            let result = UserHandler::handle_insert_user(&pool, request_data.into_inner());
 
-        Log::info("Insert User operation completed.".to_string());
-        HttpResponse::Ok().json(result)
+            Log::info("Insert User operation completed.".to_string());
+            HttpResponse::Ok().json(result)
+        } else {
+            Log::info("Insert User operation error.".to_string());
+            HttpResponse::Ok().json(ApiResponse::<String>::new(
+                StatusCode::BadRequest,
+                "Wrong Request Data Structure.".to_string(),
+                Some(String::new()),
+            ))
+        }
     } else {
         Log::info("Unauthorized access attempt to insert_user".to_string());
         HttpResponse::Ok().json(ApiResponse::<String>::new(
