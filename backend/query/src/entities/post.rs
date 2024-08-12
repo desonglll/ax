@@ -1,8 +1,10 @@
 use chrono::NaiveDateTime;
+use diesel::pg::Pg;
 use diesel::prelude::*;
 use diesel::Queryable;
 use serde::{Deserialize, Serialize};
 
+use serde_json::Value;
 use shared::lib::data::Data;
 use shared::request::request::ListRequest;
 use shared::response::pagination::ResponsePagination;
@@ -14,6 +16,7 @@ use crate::{establish_pg_connection, DbPool};
 #[derive(Serialize, Deserialize, Debug, Default, Queryable, Selectable)]
 #[diesel(table_name = crate::schema::posts)]
 #[serde(rename_all = "camelCase")]
+#[diesel(check_for_backend(Pg))]
 pub struct Post {
     pub id: i32,
     pub content: String,
@@ -22,6 +25,7 @@ pub struct Post {
     pub user_id: i32,
     pub reply_to: Option<i32>,
     pub user_name: String,
+    pub reactions: Option<Value>, // Add serde_json feature.
 }
 
 #[derive(Serialize, Deserialize, Debug, Default, Queryable, Selectable, Insertable)]

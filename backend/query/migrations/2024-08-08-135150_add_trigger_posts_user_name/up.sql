@@ -15,4 +15,9 @@ CREATE TRIGGER set_user_name
 BEFORE INSERT ON public.posts
 FOR EACH ROW
 EXECUTE FUNCTION fill_user_name();
+
+CREATE TRIGGER update_user_name
+BEFORE UPDATE ON public.posts
+FOR EACH ROW
+EXECUTE FUNCTION fill_user_name();
 ------------------------------------------------------------------------------------------------
