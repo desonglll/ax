@@ -1,6 +1,30 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
+    comment_reactions (id) {
+        id -> Int4,
+        user_id -> Int4,
+        comment_id -> Int4,
+        created_at -> Timestamptz,
+        reaction_id -> Int4,
+        reaction_name -> Varchar,
+    }
+}
+
+diesel::table! {
+    comments (id) {
+        id -> Int4,
+        content -> Text,
+        reply_to -> Int4,
+        user_id -> Int4,
+        user_name -> Varchar,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+        reactions -> Nullable<Jsonb>,
+    }
+}
+
+diesel::table! {
     files (id) {
         id -> Uuid,
         name -> Varchar,
@@ -65,11 +89,15 @@ diesel::table! {
     }
 }
 
+diesel::joinable!(comments -> posts (reply_to));
+diesel::joinable!(comments -> users (user_id));
 diesel::joinable!(posts -> users (user_id));
 diesel::joinable!(reactions -> posts (post_id));
 diesel::joinable!(reactions -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
+    comment_reactions,
+    comments,
     files,
     post_actions,
     posts,
