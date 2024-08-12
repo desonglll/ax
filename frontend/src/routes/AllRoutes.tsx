@@ -12,6 +12,7 @@ function AllRoutes() {
         <>
             <BrowserRouter>
                 <Routes>
+                    <Route path={"/"} element={<IndexPage/>}/>
                     <Route path={"/login"} element={<LoginPage/>}/>
                     <Route path={"/index"} element={<IndexPage/>}/>
                     <Route path={"/test"} element={<TestPage/>}/>

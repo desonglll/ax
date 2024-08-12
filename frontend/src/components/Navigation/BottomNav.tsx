@@ -1,4 +1,4 @@
-import {BottomNavigation, BottomNavigationAction, Collapse, Fade} from "@mui/material";
+import {BottomNavigation, BottomNavigationAction, Fade} from "@mui/material";
 import HomeIcon from '@mui/icons-material/Home';
 import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";

@@ -16,7 +16,7 @@ export default function PostListItem({post}: { post: Post }) {
 
     return (
         <>
-            <Card>
+            <Card sx={{width: '90%'}}>
                 <CardContent>
                     <Typography sx={{fontSize: 14}} color="text.secondary" gutterBottom>
                         {post.userName} {bull} {post.createdAt}
@@ -29,8 +29,13 @@ export default function PostListItem({post}: { post: Post }) {
                         {post.content}
                     </Typography>
                 </CardContent>
-                <CardActions>
+                <CardActions sx={{justifyContent: "space-between"}}>
                     <Button size="small">Detail</Button>
+                    <div>
+                        <Button size="small">GOOD</Button>
+                        <Button size="small">BAD</Button>
+                        <Button size="small">REPLY</Button>
+                    </div>
                 </CardActions>
             </Card>
         </>

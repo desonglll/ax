@@ -6,7 +6,9 @@ function App() {
 
     return (
         <>
-            <AllRoutes/>
+            <div>
+                <AllRoutes/>
+            </div>
         </>
     );
 }
