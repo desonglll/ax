@@ -6,5 +6,8 @@ export interface Post {
     userId: number,
     userName: string,
     replyTo: number | null,
-    reactions: never | null
+    reactions: {
+        like: number,
+        dislike: number
+    } | null
 }

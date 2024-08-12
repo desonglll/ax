@@ -26,6 +26,7 @@ export default function PostListItem({post}: { post: Post }) {
     const [like, setLike] = useState<boolean>(false)
     const [dislike, setDislike] = useState<boolean>(false)
     const navigate = useNavigate()
+    const [postItem, setPostItem] = useState<Post>(post);
 
     useEffect(() => {
         getData(`reaction/post/${post.id}`).then((resp) => {
@@ -40,21 +41,31 @@ export default function PostListItem({post}: { post: Post }) {
         })
     }, []);
 
-    const handleReaction = (status: boolean, setStatus: (boolean) => void, reaction_name: string) => {
+
+    const handleReaction = async (status: boolean, setStatus: (boolean) => void, reaction_name: string) => {
         const data = {
             post_id: Number(post.id),
             reaction_name: reaction_name
         }
-        if (status) {
-            axios.post("reaction/delete", data).then(() => {
-                setStatus(false)
-            })
-        } else {
-            axios.post("reaction/insert", data).then(() => {
-                setStatus(true)
-            })
+        try {
+            if (status) {
+                await axios.post("reaction/delete", data);
+                setStatus(false);
+            } else {
+                await axios.post("reaction/insert", data);
+                setStatus(true);
+            }
+
+            const response = await getData(`post/detail/${postItem.id}`);
+            if (response.data.code === "Success") {
+                setPostItem(response.data.body.data);
+                console.log("setPostItem");
+            }
+        } catch (error) {
+            console.error("Error handling reaction", error);
         }
     }
+
 
     const handleLike = () => {
         if (like) {
@@ -85,7 +96,7 @@ export default function PostListItem({post}: { post: Post }) {
             <Card sx={{width: '100%'}}>
                 <CardContent>
                     <Typography sx={{fontSize: 14}} color="text.secondary" gutterBottom>
-                        {post.userName} {bull} {post.createdAt}
+                        {postItem.userName} {bull} {postItem.createdAt}
                     </Typography>
                     <Typography variant="body1" sx={{
                         whiteSpace: 'pre-line', // Preserve whitespace and line breaks
@@ -98,19 +109,27 @@ export default function PostListItem({post}: { post: Post }) {
                         lineClamp: 3 // Number of lines to show before truncating
                     }}
                     >
-                        {post.content}
+                        {postItem.content}
                     </Typography>
                 </CardContent>
                 <CardActions sx={{justifyContent: "space-between"}}>
-                    <Button size="small" onClick={() => handleDetail(post.id)}>Detail</Button>
-                    <div>
-                        <Button size="small" onClick={() => handleLike()}>{like ? (
-                            <ThumbUpAltIcon/>) : (
-                            <ThumbUpOffAltIcon/>)}</Button>
-                        <Button size="small" onClick={() => handleDislike()}>{dislike ? (
-                            <ThumbDownAltIcon/>) : (<ThumbDownOffAltIcon/>)}</Button>
+                    <Button size="small" onClick={() => handleDetail(postItem.id)}>Detail</Button>
+                    <Box sx={{display: 'flex'}}>
+                        <div>
+                            <Button size="small" onClick={() => handleLike()}>{like ? (
+                                <ThumbUpAltIcon/>) : (
+                                <ThumbUpOffAltIcon/>)}
+                                {postItem.reactions?.like}
+                            </Button>
+                        </div>
+                        <div>
+                            <Button size="small" onClick={() => handleDislike()}>{dislike ? (
+                                <ThumbDownAltIcon/>) : (<ThumbDownOffAltIcon/>)}
+                                {postItem.reactions?.dislike}
+                            </Button>
+                        </div>
                         <Button size="small"><CommentIcon/></Button>
-                    </div>
+                    </Box>
                 </CardActions>
             </Card>
         </>

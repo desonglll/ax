@@ -3,6 +3,7 @@ use actix_web::web;
 use crate::routes::post::{insert_post, list_all_user_post};
 use crate::session::log_session::{index, login, logout};
 
+use super::comment::{delete_comment, insert_comment};
 use super::post::get_post;
 use super::reaction::{delete_reaction, get_post_reactions, insert_reaction};
 use super::{
@@ -33,6 +34,8 @@ pub fn all_routes(cfg: &mut web::ServiceConfig) {
             .route(
                 "/reaction/post/{post_id}",
                 web::get().to(get_post_reactions),
-            ),
+            )
+            .route("/comment/insert", web::post().to(insert_comment))
+            .route("/comment/delete", web::post().to(delete_comment)),
     );
 }

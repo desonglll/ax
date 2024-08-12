@@ -8,34 +8,51 @@ import ThumbUpAltIcon from "@mui/icons-material/ThumbUpAlt";
 import ThumbUpOffAltIcon from "@mui/icons-material/ThumbUpOffAlt";
 import ThumbDownAltIcon from "@mui/icons-material/ThumbDown";
 import ThumbDownOffAltIcon from "@mui/icons-material/ThumbDownOffAlt";
-import CommentIcon from "@mui/icons-material/Comment";
 import axios from "axios";
+import {Comment} from "./Comment.tsx";
 
 export function PostDetail() {
     const {id}: { id: number } = useParams(); // 获取路径参数 id
-    const [post, setPost] = useState<Post>()
+    const [post, setPost] = useState<Post>({
+        content: "",
+        createdAt: "",
+        id: 0,
+        reactions: null,
+        replyTo: null,
+        updatedAt: "",
+        userId: 0,
+        userName: ""
+    });
 
     const [like, setLike] = useState<boolean>(false)
     const [dislike, setDislike] = useState<boolean>(false)
     const [loading, setLoading] = useState(true)
-    const handleReaction = (status: boolean, setStatus: (boolean) => void, reaction_name: string) => {
+
+
+    const handleReaction = async (status: boolean, setStatus: (boolean) => void, reaction_name: string) => {
         const data = {
             post_id: Number(id),
             reaction_name: reaction_name
         }
-        if (status) {
-            axios.post("reaction/delete", data).then((r) => {
-                setStatus(false)
-            }).catch(error => console.error("Error updating reaction:", error));
+        try {
+            if (status) {
+                await axios.post("reaction/delete", data);
+                setStatus(false);
+            } else {
+                await axios.post("reaction/insert", data);
+                setStatus(true);
+            }
 
-
-        } else {
-            axios.post("reaction/insert", data).then(() => {
-                setStatus(true)
-            }).catch(error => console.error("Error updating reaction:", error));
-
+            // Fetch updated post details
+            const response = await getData(`post/detail/${id}`);
+            if (response.data.code === "Success") {
+                setPost(response.data.body.data);
+            }
+        } catch (error) {
+            console.error("Error updating reaction:", error);
         }
     }
+
     const handleLike = () => {
         if (like) {
             handleReaction(like, setLike, "like")
@@ -56,6 +73,8 @@ export function PostDetail() {
             handleReaction(dislike, setDislike, "dislike")
         }
     }
+
+
     useEffect(() => {
         getData(`reaction/post/${id}`).then((resp) => {
             const resp_reactions = resp.data.body.data;
@@ -74,12 +93,17 @@ export function PostDetail() {
         }).finally(() => {
             setLoading(false)
         })
-    }, []);
+    }, [id]);
 
     return (
         <>
             <Fade in={!loading}>
-                <Box sx={{marginTop: '50px', margin: '0px', padding: '10px'}}>
+                <Box sx={{
+                    marginTop: '50px',
+                    margin: '0px',
+                    marginBottom: '200px',
+                    padding: '10px',
+                }}>
 
                     <Typography
                         sx={{
@@ -97,13 +121,22 @@ export function PostDetail() {
                         marginBottom: '50px',
                         justifyContent: 'flex-end'
                     }}>
-                        <Button size="small" onClick={() => handleLike()}>{like ? (
-                            <ThumbUpAltIcon/>) : (
-                            <ThumbUpOffAltIcon/>)}</Button>
-                        <Button size="small"
-                                onClick={() => handleDislike()}>{dislike ? (
-                            <ThumbDownAltIcon/>) : (<ThumbDownOffAltIcon/>)}</Button>
-                        <Button size="small"><CommentIcon/></Button>
+                        <div>
+                            <Button size="small" onClick={() => handleLike()}>{like ? (
+                                <ThumbUpAltIcon/>) : (
+                                <ThumbUpOffAltIcon/>)}
+                                {post.reactions?.like}
+                            </Button>
+                        </div>
+                        <div>
+                            <Button size="small" onClick={() => handleDislike()}>{dislike ? (
+                                <ThumbDownAltIcon/>) : (<ThumbDownOffAltIcon/>)}
+                                {post.reactions?.dislike}
+                            </Button>
+                        </div>
+                    </Box>
+                    <Box sx={{display: 'flex', justifyContent: 'center'}}>
+                        <Comment reply_to={id}/>
                     </Box>
                 </Box>
             </Fade>
