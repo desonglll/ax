@@ -4,7 +4,9 @@ use actix_web::{
     HttpResponse, Responder,
 };
 use query::{
-    entities::reaction::{DeleteReactionRequest, InsertReactionRequest},
+    entities::reaction::{
+        DeleteReaction, DeleteReactionRequest, InsertReaction, InsertReactionRequest,
+    },
     DbPool,
 };
 use shared::{
@@ -37,10 +39,14 @@ pub async fn insert_reaction(
         let user_id = session.get::<i32>("user_id").unwrap().unwrap();
 
         if let Some(request_data) = request_data {
-            let mut request_data = request_data.into_inner();
-            request_data.user_id = user_id;
+            let request_data = request_data.into_inner();
+            let insert_data = InsertReaction {
+                user_id,
+                post_id: request_data.post_id,
+                reaction_name: request_data.reaction_name,
+            };
 
-            let result = ReactionHandler::handle_insert_reaction(&pool, request_data);
+            let result = ReactionHandler::handle_insert_reaction(&pool, insert_data);
 
             Log::info("Insert Reaction operation completed.".to_string());
             HttpResponse::Ok().json(result)
@@ -83,10 +89,14 @@ pub async fn delete_reaction(
         let user_id = session.get::<i32>("user_id").unwrap().unwrap();
 
         if let Some(request_data) = request_data {
-            let mut request_data = request_data.into_inner();
-            request_data.user_id = user_id;
+            let request_data = request_data.into_inner();
+            let delete_data = DeleteReaction {
+                user_id,
+                post_id: request_data.post_id,
+                reaction_name: request_data.reaction_name,
+            };
 
-            let result = ReactionHandler::handle_delete_reaction(&pool, request_data);
+            let result = ReactionHandler::handle_delete_reaction(&pool, delete_data);
 
             Log::info("Delete Reaction operation completed.".to_string());
             HttpResponse::Ok().json(result)

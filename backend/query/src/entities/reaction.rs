@@ -24,49 +24,29 @@ pub struct Reaction {
 #[derive(Serialize, Deserialize, Debug, Insertable)]
 #[diesel(table_name = crate::schema::reactions)]
 pub struct InsertReactionRequest {
-    pub user_id: i32,
+    // pub user_id: i32,
     pub post_id: i32,
     pub reaction_name: String,
 }
 #[derive(Serialize, Deserialize, Debug, Insertable)]
 #[diesel(table_name = crate::schema::reactions)]
 pub struct InsertReaction {
-    user_id: i32,
-    post_id: i32,
-    reaction_name: String,
-}
-#[derive(Serialize, Deserialize, Debug, Insertable)]
-#[diesel(table_name = crate::schema::reactions)]
-pub struct DeleteReactionRequest {
     pub user_id: i32,
     pub post_id: i32,
     pub reaction_name: String,
 }
 #[derive(Serialize, Deserialize, Debug, Insertable)]
 #[diesel(table_name = crate::schema::reactions)]
+pub struct DeleteReactionRequest {
+    pub post_id: i32,
+    pub reaction_name: String,
+}
+#[derive(Serialize, Deserialize, Debug, Insertable)]
+#[diesel(table_name = crate::schema::reactions)]
 pub struct DeleteReaction {
-    user_id: i32,
-    post_id: i32,
-    reaction_name: String,
-}
-impl From<InsertReactionRequest> for InsertReaction {
-    fn from(value: InsertReactionRequest) -> Self {
-        InsertReaction {
-            user_id: value.user_id,
-            post_id: value.post_id,
-            reaction_name: value.reaction_name,
-        }
-    }
-}
-
-impl From<DeleteReactionRequest> for DeleteReaction {
-    fn from(value: DeleteReactionRequest) -> Self {
-        DeleteReaction {
-            user_id: value.user_id,
-            post_id: value.post_id,
-            reaction_name: value.reaction_name,
-        }
-    }
+    pub user_id: i32,
+    pub post_id: i32,
+    pub reaction_name: String,
 }
 
 impl Reaction {
