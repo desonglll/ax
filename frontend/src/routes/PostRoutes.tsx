@@ -6,6 +6,7 @@ import {Paper} from "@mui/material";
 import BottomNav from "../components/Navigation/BottomNav.tsx";
 import {useState} from "react";
 import Box from "@mui/material/Box";
+import {PostDetail} from "../components/Post/PostDetail.tsx";
 
 export default function PostRoutes() {
     const [drawerOpen, setDrawerOpen] = useState(false)
@@ -22,12 +23,13 @@ export default function PostRoutes() {
                         flex: 1, // 填充剩余空间
                         overflowY: 'auto', // 添加滚动条
                         paddingBottom: '56px', // 确保内容不被 BottomNav 遮挡
-                        paddingTop: '56px'
+                        paddingTop: '64px'
                     }}
                 >
                     {/* 页面内容 */}
                     <Routes>
                         <Route path={"list-all"} element={<PostData/>}/>
+                        <Route path={"detail/:id"} element={<PostDetail/>}/>
                     </Routes>
                 </Box>
                 {/* BottomNav 固定在底部 */}

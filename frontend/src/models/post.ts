@@ -5,5 +5,6 @@ export interface Post {
     updatedAt: string,
     userId: number,
     userName: string,
-    replyTo: number | null
+    replyTo: number | null,
+    reactions: never | null
 }
