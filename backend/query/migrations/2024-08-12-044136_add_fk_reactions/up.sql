@@ -1,0 +1,13 @@
+-- Your SQL goes here
+ALTER TABLE "reactions"
+ADD FOREIGN KEY("user_id") REFERENCES "users"("id")
+ON UPDATE NO ACTION ON DELETE NO ACTION;
+ALTER TABLE "reactions"
+ADD FOREIGN KEY("post_id") REFERENCES "posts"("id")
+ON UPDATE NO ACTION ON DELETE NO ACTION;
+ALTER TABLE "reactions"
+ADD FOREIGN KEY("reaction_id") REFERENCES "post_actions"("id")
+ON UPDATE NO ACTION ON DELETE NO ACTION;
+ALTER TABLE "reactions"
+ADD FOREIGN KEY("reaction_name") REFERENCES "post_actions"("name")
+ON UPDATE NO ACTION ON DELETE NO ACTION;

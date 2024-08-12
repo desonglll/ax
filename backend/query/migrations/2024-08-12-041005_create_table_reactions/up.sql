@@ -1,0 +1,9 @@
+CREATE TABLE "reactions" (
+	"id" SERIAL NOT NULL UNIQUE,
+	"user_id" INTEGER NOT NULL,
+	"post_id" INTEGER NOT NULL,
+	"created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	"reaction_id" INTEGER NOT NULL,
+	"reaction_name" VARCHAR NOT NULL,
+	PRIMARY KEY("id")
+);

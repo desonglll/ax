@@ -7,12 +7,20 @@ diesel::table! {
         path -> Varchar,
         size -> Int8,
         content_type -> Varchar,
-        created_at -> Nullable<Timestamp>,
-        updated_at -> Nullable<Timestamp>,
+        created_at -> Nullable<Timestamptz>,
+        updated_at -> Nullable<Timestamptz>,
         user_id -> Int4,
         description -> Nullable<Text>,
         checksum -> Varchar,
         is_deleted -> Bool,
+    }
+}
+
+diesel::table! {
+    post_actions (id, name) {
+        id -> Int4,
+        #[max_length = 255]
+        name -> Varchar,
     }
 }
 
@@ -25,6 +33,18 @@ diesel::table! {
         user_id -> Int4,
         reply_to -> Nullable<Int4>,
         user_name -> Varchar,
+        reactions -> Nullable<Jsonb>,
+    }
+}
+
+diesel::table! {
+    reactions (id) {
+        id -> Int4,
+        user_id -> Int4,
+        post_id -> Int4,
+        created_at -> Timestamptz,
+        reaction_id -> Int4,
+        reaction_name -> Varchar,
     }
 }
 
@@ -36,9 +56,9 @@ diesel::table! {
         password_hash -> Varchar,
         full_name -> Nullable<Varchar>,
         phone -> Nullable<Varchar>,
-        created_at -> Nullable<Timestamp>,
-        updated_at -> Nullable<Timestamp>,
-        last_login -> Nullable<Timestamp>,
+        created_at -> Nullable<Timestamptz>,
+        updated_at -> Nullable<Timestamptz>,
+        last_login -> Nullable<Timestamptz>,
         is_active -> Bool,
         is_admin -> Bool,
         profile_picture -> Nullable<Uuid>,
@@ -46,9 +66,13 @@ diesel::table! {
 }
 
 diesel::joinable!(posts -> users (user_id));
+diesel::joinable!(reactions -> posts (post_id));
+diesel::joinable!(reactions -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     files,
+    post_actions,
     posts,
+    reactions,
     users,
 );
