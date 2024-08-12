@@ -43,4 +43,22 @@ impl ReactionHandler {
             }
         }
     }
+
+    pub fn handle_get_post_reactions(
+        pool: &DbPool,
+        user_id: i32,
+        post_id: i32,
+    ) -> ApiResponse<Data<Vec<Reaction>>> {
+        Log::info("Executing handle_get_post_reactions".to_string());
+        match Reaction::get_post_reactions(&pool, user_id, post_id) {
+            Ok(result) => {
+                Log::info("Get Post Reactions Successful".to_string());
+                ApiResponse::success("Get Post Reactions Successful.".to_string(), Some(result))
+            }
+            Err(e) => {
+                Log::info(format!("Get Post Reactions Failed: {}", e));
+                ApiResponse::error(Box::new(e))
+            }
+        }
+    }
 }

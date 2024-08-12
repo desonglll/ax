@@ -6,6 +6,7 @@ import axios from "axios";
 import 'bootstrap/dist/css/bootstrap.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 
+
 const host = window.location.hostname;
 axios.defaults.withCredentials = true;
 console.log(host);

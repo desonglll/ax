@@ -145,3 +145,28 @@ pub async fn list_all_user_post(
         ))
     }
 }
+
+pub async fn get_post(
+    session: Session,
+    pool: web::Data<DbPool>,
+    post_id: web::Path<i32>,
+) -> impl Responder {
+    Log::info("Access insert_post".to_string());
+
+    if let Some(_is_login) = session.get::<bool>("is_login").unwrap() {
+        let user_id = session.get::<i32>("user_id").unwrap().unwrap();
+        Log::info(format!("User ID: {} is getting a post", user_id));
+
+        let result = PostHandler::handle_get_post(&pool, *post_id);
+
+        Log::info("Get Post operation completed.".to_string());
+        HttpResponse::Ok().json(result)
+    } else {
+        Log::info("Unauthorized access attempt to get_post".to_string());
+        HttpResponse::Ok().json(ApiResponse::<String>::new(
+            StatusCode::Unauthorized,
+            "Please Log In.".to_string(),
+            Some(String::new()),
+        ))
+    }
+}

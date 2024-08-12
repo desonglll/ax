@@ -1,15 +1,12 @@
-use query::{DbPool, entities::post::Post, filter::PostFilter, sort::PostSort};
 use query::entities::post::InsertPost;
-use shared::{lib::data::Data, request::request::ListRequest, response::api_response::ApiResponse};
+use query::{entities::post::Post, filter::PostFilter, sort::PostSort, DbPool};
 use shared::lib::log::Log;
+use shared::{lib::data::Data, request::request::ListRequest, response::api_response::ApiResponse};
 
 pub struct PostHandler {}
 
 impl PostHandler {
-    pub fn handle_insert_post(
-        pool: &DbPool,
-        request_data: InsertPost,
-    ) -> ApiResponse<Data<Post>> {
+    pub fn handle_insert_post(pool: &DbPool, request_data: InsertPost) -> ApiResponse<Data<Post>> {
         Log::info("Executing handle_insert_post".to_string());
         match Post::insert_post(&pool, request_data.into()) {
             Ok(result) => {
@@ -35,6 +32,20 @@ impl PostHandler {
             }
             Err(e) => {
                 Log::info(format!("List Post Failed: {}", e));
+                ApiResponse::error(Box::new(e))
+            }
+        }
+    }
+
+    pub fn handle_get_post(pool: &DbPool, post_id: i32) -> ApiResponse<Data<Post>> {
+        Log::info("Executing handle_get_post".to_string());
+        match Post::get_post(pool, post_id) {
+            Ok(result) => {
+                Log::info("Get Post Successful".to_string());
+                ApiResponse::success("Get Post Successful.".to_string(), Some(result))
+            }
+            Err(e) => {
+                Log::info(format!("Get Post Failed: {}", e));
                 ApiResponse::error(Box::new(e))
             }
         }

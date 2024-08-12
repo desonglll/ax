@@ -89,6 +89,23 @@ impl Reaction {
         let body = Data::new(data, None);
         Ok(body)
     }
+
+    /// 查询某个用户对某个Post的所有Reaction.
+    pub fn get_post_reactions(
+        pool: &DbPool,
+        user_id: i32,
+        post_id: i32,
+    ) -> Result<Data<Vec<Reaction>>, diesel::result::Error> {
+        use crate::schema::reactions::dsl;
+        use diesel::prelude::*;
+        let mut conn = establish_pg_connection(&pool).unwrap();
+        let data = dsl::reactions
+            .filter(dsl::user_id.eq(user_id))
+            .filter(dsl::post_id.eq(post_id))
+            .load(&mut conn)?;
+        let body = Data::new(data, None);
+        Ok(body)
+    }
 }
 #[cfg(test)]
 mod tests {

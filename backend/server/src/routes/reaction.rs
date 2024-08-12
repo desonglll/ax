@@ -117,3 +117,28 @@ pub async fn delete_reaction(
         ))
     }
 }
+
+pub async fn get_post_reactions(
+    session: Session,
+    pool: web::Data<DbPool>,
+    post_id: web::Path<i32>,
+) -> impl Responder {
+    Log::info("Access get_post_reactions".to_string());
+
+    if let Some(_is_login) = session.get::<bool>("is_login").unwrap() {
+        let user_name = session.get::<String>("user_name").unwrap().unwrap();
+        Log::info(format!("User '{}' is deleting a new user.", user_name));
+        let user_id = session.get::<i32>("user_id").unwrap().unwrap();
+        let result = ReactionHandler::handle_get_post_reactions(&pool, user_id, *post_id);
+
+        Log::info("Get Post Reactions operation completed.".to_string());
+        HttpResponse::Ok().json(result)
+    } else {
+        Log::info("Unauthorized access attempt to get_post_reactions".to_string());
+        HttpResponse::Ok().json(ApiResponse::<String>::new(
+            StatusCode::Unauthorized,
+            "Please Log In.".to_string(),
+            Some(String::new()),
+        ))
+    }
+}

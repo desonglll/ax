@@ -41,21 +41,39 @@ export default function PostListItem({post}: { post: Post }) {
     }, []);
 
     const handleReaction = (status: boolean, setStatus: (boolean) => void, reaction_name: string) => {
+        const data = {
+            post_id: Number(post.id),
+            reaction_name: reaction_name
+        }
         if (status) {
-            axios.post("reaction/delete", {
-                post_id: post.id,
-                reaction_name: reaction_name
-            }).then(() => {
+            axios.post("reaction/delete", data).then(() => {
                 setStatus(false)
             })
-
         } else {
-            axios.post("reaction/insert", {
-                post_id: post.id,
-                reaction_name: reaction_name
-            }).then(() => {
+            axios.post("reaction/insert", data).then(() => {
                 setStatus(true)
             })
+        }
+    }
+
+    const handleLike = () => {
+        if (like) {
+            handleReaction(like, setLike, "like")
+        } else {
+            if (dislike) {
+                handleReaction(dislike, setDislike, "dislike")
+            }
+            handleReaction(like, setLike, "like")
+        }
+    }
+    const handleDislike = () => {
+        if (dislike) {
+            handleReaction(dislike, setDislike, "dislike")
+        } else {
+            if (like) {
+                handleReaction(like, setLike, "like")
+            }
+            handleReaction(dislike, setDislike, "dislike")
         }
     }
     const handleDetail = (id: number) => {
@@ -69,21 +87,27 @@ export default function PostListItem({post}: { post: Post }) {
                     <Typography sx={{fontSize: 14}} color="text.secondary" gutterBottom>
                         {post.userName} {bull} {post.createdAt}
                     </Typography>
-                    <Typography variant="body1">
-                        {/*<Box component="span" sx={dropCapStyle}>*/}
-                        {/*    {post.content.charAt(0)}*/}
-                        {/*</Box>*/}
-                        {/*{post.content.slice(1)}*/}
+                    <Typography variant="body1" sx={{
+                        whiteSpace: 'pre-line', // Preserve whitespace and line breaks
+                        textAlign: 'left',
+                        overflow: 'hidden', // Hide overflowed content
+                        textOverflow: 'ellipsis', // Display ellipsis for overflowed content
+                        display: '-webkit-box',
+                        WebkitBoxOrient: 'vertical',
+                        WebkitLineClamp: 3, // Number of lines to show before truncating
+                        lineClamp: 3 // Number of lines to show before truncating
+                    }}
+                    >
                         {post.content}
                     </Typography>
                 </CardContent>
                 <CardActions sx={{justifyContent: "space-between"}}>
                     <Button size="small" onClick={() => handleDetail(post.id)}>Detail</Button>
                     <div>
-                        <Button size="small" onClick={() => handleReaction(like, setLike, "like")}>{like ? (
+                        <Button size="small" onClick={() => handleLike()}>{like ? (
                             <ThumbUpAltIcon/>) : (
                             <ThumbUpOffAltIcon/>)}</Button>
-                        <Button size="small" onClick={() => handleReaction(dislike, setDislike, "dislike")}>{dislike ? (
+                        <Button size="small" onClick={() => handleDislike()}>{dislike ? (
                             <ThumbDownAltIcon/>) : (<ThumbDownOffAltIcon/>)}</Button>
                         <Button size="small"><CommentIcon/></Button>
                     </div>

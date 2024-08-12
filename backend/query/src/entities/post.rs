@@ -173,6 +173,14 @@ impl Post {
             .get_result(&mut conn)?;
         Ok(Data::new(data, None))
     }
+
+    pub fn get_post(pool: &DbPool, post_id: i32) -> Result<Data<Post>, diesel::result::Error> {
+        use crate::schema::posts::dsl;
+        let mut conn = establish_pg_connection(&pool).unwrap();
+        let data = dsl::posts.filter(dsl::id.eq(post_id)).first(&mut conn)?;
+        let body = Data::new(data, None);
+        Ok(body)
+    }
 }
 
 #[cfg(test)]

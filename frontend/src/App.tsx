@@ -1,4 +1,4 @@
-import "./App.css";
+import "./App.sass";
 import AllRoutes from "./routes/AllRoutes.tsx";
 
 function App() {
