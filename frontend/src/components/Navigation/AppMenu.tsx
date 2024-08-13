@@ -128,7 +128,13 @@ export default function AppMenu({
                 >
                   {auth ? (
                     <div>
-                      <MenuItem onClick={handleClose}>Profile</MenuItem>
+                      <MenuItem
+                        onClick={() => {
+                          navigate("/user/profile");
+                        }}
+                      >
+                        Profile
+                      </MenuItem>
                       <MenuItem onClick={handleLogout}>Logout</MenuItem>
                     </div>
                   ) : (

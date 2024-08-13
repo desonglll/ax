@@ -9,12 +9,13 @@ use env_logger::Env;
 
 use query::establish_pool;
 use server::routes::api::all_routes;
+use shared::lib::mkdir;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     // Initialize the logger from environment variables, or default to "debug"
     env_logger::init_from_env(Env::default().default_filter_or("debug"));
-
+    mkdir::make_directory("upload");
     // 加载密钥，用于加密 session cookie
     let secret_key = Key::generate();
     let redis_connection_string = "127.0.0.1:6379";
