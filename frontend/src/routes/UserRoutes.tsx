@@ -1,5 +1,4 @@
 import Box from "@mui/material/Box";
-import AppMenu from "../components/Navigation/AppMenu.tsx";
 import { SideDrawer } from "../components/Navigation/SideDrawer.tsx";
 import { Route, Routes } from "react-router-dom";
 import { Paper } from "@mui/material";

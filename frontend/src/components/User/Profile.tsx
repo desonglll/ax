@@ -174,7 +174,9 @@ function Profile() {
                 defaultValue={user?.phone}
                 name="phone"
               />
-              <Button type="submit">Submit</Button>
+              <Button type="submit" sx={{ marginTop: "20px" }}>
+                Submit
+              </Button>
             </Box>
           </Box>
         </Fade>

@@ -25,7 +25,10 @@ pub async fn update_user(
         let user_name = session.get::<String>("user_name").unwrap().unwrap();
         Log::info(format!("User '{}' is inserting a new user.", user_name));
 
-        if let Some(request_data) = request_data {
+        if let Some(mut request_data) = request_data {
+            if request_data.password.is_none() {
+                request_data.password = session.get::<String>("password").unwrap();
+            }
             let result = UserHandler::handle_update_user(&pool, request_data.into_inner());
 
             Log::info("Update User operation completed.".to_string());

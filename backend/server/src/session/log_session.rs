@@ -106,7 +106,7 @@ pub async fn login(
     Log::info(format!("Attempting to log in user `{}`", user_name));
 
     // Check if the provided username and password are correct
-    match User::check_password_correct(&pool, user_name.clone(), password) {
+    match User::check_password_correct(&pool, user_name.clone(), password.clone()) {
         Ok(is_valid) => {
             if is_valid {
                 Log::info(format!("Password validation succeeded for `{}`", user_name));
@@ -114,6 +114,9 @@ pub async fn login(
                 // Set session variables upon successful login
                 if let Err(err) = session.insert("user_name", user_name.clone()) {
                     Log::error(format!("Failed to set session for `user_name`: {}", err));
+                }
+                if let Err(err) = session.insert("password", password.clone()) {
+                    Log::error(format!("Failed to set session for `password`: {}", err));
                 }
                 if let Err(err) = session.insert("is_login", true) {
                     Log::error(format!("Failed to set session for `is_login`: {}", err));

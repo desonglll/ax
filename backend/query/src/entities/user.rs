@@ -420,7 +420,7 @@ pub struct UpdateUserRequest {
     pub id: i32,
     pub user_name: String,
     pub email: String,
-    pub password: String,
+    pub password: Option<String>,
     pub full_name: Option<String>,
     pub phone: Option<String>,
     pub is_active: bool,
@@ -433,7 +433,7 @@ impl UpdateUserRequest {
         id: i32,
         user_name: String,
         email: String,
-        password: String,
+        password: Option<String>,
         full_name: Option<String>,
         phone: Option<String>,
         is_active: bool,
@@ -497,7 +497,7 @@ impl UpdateUser {
 
 impl From<UpdateUserRequest> for UpdateUser {
     fn from(value: UpdateUserRequest) -> Self {
-        let pw_hash = Hash::create_password_hash(value.password).unwrap();
+        let pw_hash = Hash::create_password_hash(value.password.unwrap()).unwrap();
         UpdateUser::new(
             value.id,
             value.user_name,
