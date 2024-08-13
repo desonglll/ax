@@ -35,8 +35,8 @@ export function PostDetail() {
     reaction_name: string
   ) => {
     const data = {
-      post_id: Number(id),
-      reaction_name: reaction_name,
+      postId: Number(id),
+      reactionName: reaction_name,
     };
     try {
       if (status) {

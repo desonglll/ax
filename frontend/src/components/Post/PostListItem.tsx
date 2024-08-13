@@ -96,7 +96,7 @@ export default function PostListItem({ post }: { post: Post }) {
     }
   };
   const handleDetail = (id: number) => {
-    navigate(`/post/detail/${id}`);
+    navigate(`/common/post/detail/${id}`);
   };
 
   return (

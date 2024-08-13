@@ -33,17 +33,17 @@ export default function BottomNav() {
             }}
           >
             <BottomNavigationAction
-              value={"/index"}
+              value={"/common/index"}
               label="Index"
               icon={<HomeIcon />}
             />
             <BottomNavigationAction
-              value={"/post/list-all"}
+              value={"/common/post/list-all"}
               label="Post"
               icon={<ListIcon />}
             />
             <BottomNavigationAction
-              value={"/user/profile"}
+              value={"/common/user/profile"}
               label={"My"}
               icon={<AccountCircleIcon />}
             />

@@ -130,7 +130,7 @@ export default function AppMenu({
                     <div>
                       <MenuItem
                         onClick={() => {
-                          navigate("/user/profile");
+                          navigate("/common/user/profile");
                         }}
                       >
                         Profile

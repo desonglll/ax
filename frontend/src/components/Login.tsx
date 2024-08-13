@@ -36,7 +36,7 @@ function Login() {
         if (resp.data.code === "Success") {
           setIsLogin(true);
           setLoginInfo(resp.data.body);
-          navigate("/index");
+          navigate("/common/index");
         } else {
           setLoginInfo(`Login failed! ${resp.data.message}`);
         }
@@ -74,7 +74,7 @@ function Login() {
     };
     check_login().then((r: boolean) => {
       if (r) {
-        navigate("/index");
+        navigate("/common/index");
       }
       setIsLogin(r);
     });
