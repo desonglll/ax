@@ -21,7 +21,7 @@ export default function PostData() {
   const [isLoading, setIsLoading] = useState(true);
   const [posts, setPosts] = useState<Post[]>([]);
   const navigate = useNavigate();
-  const [response, setResponse] = useState<ApiResponse<Post>>();
+  const [response, setResponse] = useState<Partial<ApiResponse<Post>>>();
 
   useEffect(() => {
     const endpoint = "post/list-all";
@@ -31,7 +31,9 @@ export default function PostData() {
         navigate("/login");
       } else {
         setResponse(response.data);
-        setPosts(response.data.body.data);
+        if (response.data.body) {
+          setPosts(response.data.body.data);
+        }
         setIsLoading(false);
       }
     });
@@ -100,7 +102,7 @@ export default function PostData() {
               </List>
 
               <Pagination
-                total={response?.body.pagination.count}
+                total={response?.body?.pagination?.count}
                 showSizeChanger
                 showQuickJumper
                 showTotal={(total) => `Total ${total} items`}

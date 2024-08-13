@@ -1,7 +1,7 @@
 export interface ApiResponse<T> {
   code: string;
   message: string;
-  body?: Data<T>;
+  body: Data<T>;
 }
 
 interface Data<T> {

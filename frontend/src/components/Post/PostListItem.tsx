@@ -51,9 +51,11 @@ export default function PostListItem({ post }: { post: Post }) {
     reaction_name: string
   ) => {
     const data = {
-      post_id: Number(post.id),
-      reaction_name: reaction_name,
+      postId: Number(post.id),
+      reactionName: reaction_name,
     };
+    console.log(data);
+
     try {
       if (status) {
         await axios.post("reaction/delete", data);

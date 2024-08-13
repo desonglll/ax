@@ -12,7 +12,7 @@ import { useEffect, useState } from "react";
 import loginCheck from "../../utils/login_check.ts";
 import { useNavigate } from "react-router-dom";
 import { Avatar, Fade } from "@mui/material";
-import { User } from "../../models/user.ts";
+import type { User } from "../../models/user.ts";
 import getData from "../../utils/data_fetch.ts";
 
 export default function AppMenu({
