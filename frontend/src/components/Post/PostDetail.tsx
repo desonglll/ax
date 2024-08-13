@@ -1,4 +1,4 @@
-import {useParams} from "react-router-dom";
+import {useNavigate, useParams} from "react-router-dom";
 import {Button, Fade, Typography} from "@mui/material";
 import {useEffect, useState} from "react";
 import getData from "../../utils/data_fetch.ts";
@@ -27,6 +27,7 @@ export function PostDetail() {
     const [like, setLike] = useState<boolean>(false)
     const [dislike, setDislike] = useState<boolean>(false)
     const [loading, setLoading] = useState(true)
+    const navigate = useNavigate()
 
 
     const handleReaction = async (status: boolean, setStatus: (boolean) => void, reaction_name: string) => {
@@ -77,14 +78,18 @@ export function PostDetail() {
 
     useEffect(() => {
         getData(`reaction/post/${id}`).then((resp) => {
-            const resp_reactions = resp.data.body.data;
-            resp_reactions.map((reaction_item) => {
-                if (reaction_item.reaction_name === "like") {
-                    setLike(true)
-                } else if (reaction_item.reaction_name === "dislike") {
-                    setDislike(true)
-                }
-            })
+            if (resp.data.code !== "Success") {
+                navigate("/login")
+            } else {
+                const resp_reactions = resp.data.body.data;
+                resp_reactions.map((reaction_item) => {
+                    if (reaction_item.reaction_name === "like") {
+                        setLike(true)
+                    } else if (reaction_item.reaction_name === "dislike") {
+                        setDislike(true)
+                    }
+                })
+            }
         })
         getData(`post/detail/${id}`).then((resp) => {
             if (resp.data.code === "Success") {

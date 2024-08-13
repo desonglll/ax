@@ -1,18 +1,21 @@
 import Box from '@mui/material/Box';
-import {Collapse, Fade, List, ListItem} from "@mui/material";
+import {Fab, Fade, List, ListItem} from "@mui/material";
 import PostListItem from "./PostListItem.tsx";
 import {Post} from "../../models/post.ts";
 import {useEffect, useState} from "react";
 import getData from "../../utils/data_fetch.ts";
-import {AxiosResponse} from "axios";
+import axios, {AxiosResponse} from "axios";
 import {ApiResponse} from "../../models/api_response.ts";
 import {useNavigate} from "react-router-dom";
+import AddIcon from "@mui/icons-material/Add";
+import {Pagination} from "antd";
 
 export default function PostData() {
 
     const [isLoading, setIsLoading] = useState(true)
     const [posts, setPosts] = useState<Post[]>([])
     const navigate = useNavigate()
+    const [response, setResponse] = useState<ApiResponse<Post>>()
 
 
     useEffect(() => {
@@ -23,12 +26,31 @@ export default function PostData() {
                 console.log("Please Login!")
                 navigate("/login")
             } else {
+                setResponse(response.data)
                 setPosts(response.data.body.data)
                 setIsLoading(false)
             }
         })
 
     }, []);
+
+    const handleChangePagination = (page: number, pageSize: number) => {
+        console.log(page, pageSize)
+        const pagination = {
+            offset: pageSize * (page - 1),
+            limit: pageSize
+        }
+
+        try {
+            axios.get(`post/list-all?limit=${pagination.limit}&offset=${pagination.offset}`).then((resp) => {
+                if (resp.data.code === "Success") {
+                    setPosts(resp.data.body.data)
+                }
+            })
+        } catch (e) {
+            console.log(e)
+        }
+    }
 
     return (
         <>
@@ -37,14 +59,33 @@ export default function PostData() {
             ) : (
                 <Box>
                     <Fade in={!isLoading}>
-                        <List>
-                            {posts.map((post) => (
-                                <ListItem key={post.id} sx={{justifyContent: "center"}}>
-                                    <PostListItem post={post}/>
-                                </ListItem>
-                            ))}
-                        </List>
+                        <Box sx={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
+                            <List sx={{width: '100%'}}>
+                                {posts.map((post) => (
+                                    <ListItem key={post.id} sx={{justifyContent: "center"}}>
+                                        <PostListItem post={post}/>
+                                    </ListItem>
+                                ))}
+                            </List>
+                            <Pagination
+                                total={response?.body.pagination.count}
+                                showSizeChanger
+                                showQuickJumper
+                                showTotal={(total) => `Total ${total} items`}
+                                style={{marginTop: '40px', marginBottom: '40px'}}
+                                onChange={handleChangePagination}
+
+                            />
+                        </Box>
                     </Fade>
+                    <Fab
+                        color="primary" aria-label="add" sx={{position: 'fixed', bottom: 70, right: 16}}
+                        onClick={() => {
+                            navigate("/post/new")
+                        }}
+                    >
+                        <AddIcon/>
+                    </Fab>
                 </Box>
             )}
         </>

@@ -4,6 +4,7 @@ import TestPage from "../pages/TestPage.tsx";
 import PostRoutes from "./PostRoutes.tsx";
 import IndexPage from "../pages/IndexPage.tsx";
 import {BrowserRouter} from "react-router-dom";
+import {UserRoutes} from "./UserRoutes.tsx";
 
 function AllRoutes() {
 
@@ -17,6 +18,7 @@ function AllRoutes() {
                     <Route path={"/index"} element={<IndexPage/>}/>
                     <Route path={"/test"} element={<TestPage/>}/>
                     <Route path={"/post/*"} element={<PostRoutes/>}/>
+                    <Route path={"/user/*"} element={<UserRoutes/>}/>
                 </Routes>
             </BrowserRouter>
         </>

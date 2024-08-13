@@ -98,22 +98,24 @@ export default function PostListItem({post}: { post: Post }) {
                     <Typography sx={{fontSize: 14}} color="text.secondary" gutterBottom>
                         {postItem.userName} {bull} {postItem.createdAt}
                     </Typography>
-                    <Typography variant="body1" sx={{
-                        whiteSpace: 'pre-line', // Preserve whitespace and line breaks
-                        textAlign: 'left',
-                        overflow: 'hidden', // Hide overflowed content
-                        textOverflow: 'ellipsis', // Display ellipsis for overflowed content
-                        display: '-webkit-box',
-                        WebkitBoxOrient: 'vertical',
-                        WebkitLineClamp: 3, // Number of lines to show before truncating
-                        lineClamp: 3 // Number of lines to show before truncating
-                    }}
-                    >
-                        {postItem.content}
-                    </Typography>
+                    <Button onClick={() => handleDetail(postItem.id)} sx={{color: 'black'}}>
+                        <Typography variant="body1" sx={{
+                            whiteSpace: 'pre-line', // Preserve whitespace and line breaks
+                            textAlign: 'left',
+                            overflow: 'hidden', // Hide overflowed content
+                            textOverflow: 'ellipsis', // Display ellipsis for overflowed content
+                            display: '-webkit-box',
+                            WebkitBoxOrient: 'vertical',
+                            WebkitLineClamp: 3, // Number of lines to show before truncating
+                            lineClamp: 3 // Number of lines to show before truncating
+                        }}
+                        >
+                            {postItem.content}
+                        </Typography>
+                    </Button>
                 </CardContent>
                 <CardActions sx={{justifyContent: "space-between"}}>
-                    <Button size="small" onClick={() => handleDetail(postItem.id)}>Detail</Button>
+                    {/*<Button size="small" onClick={() => handleDetail(postItem.id)}>Detail</Button>*/}
                     <Box sx={{display: 'flex'}}>
                         <div>
                             <Button size="small" onClick={() => handleLike()}>{like ? (

@@ -28,6 +28,7 @@ export function Comment({reply_to}: { reply_to: number }) {
                         variant="outlined"
                         placeholder={"Leave your comment!"}
                         name={"content"}
+                        required
                     />
                     <Box sx={{display: 'flex', marginTop: '10px', justifyContent: 'flex-end'}}>
                         <Button type={"submit"}>Submit</Button>

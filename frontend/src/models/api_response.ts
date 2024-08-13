@@ -7,7 +7,7 @@ export interface ApiResponse<T> {
 
 interface Data<T> {
     data: T[],
-    pagination: Pagination | null
+    pagination: Pagination
 
 }
 

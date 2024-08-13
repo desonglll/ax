@@ -3,6 +3,7 @@ import React, {useEffect, useState} from "react";
 import "./Login.sass"
 import {Button, TextField} from "@mui/material";
 import {useNavigate} from "react-router-dom";
+import Card from '@mui/joy/Card';
 
 function Login() {
 
@@ -94,34 +95,42 @@ function Login() {
                     </div>
                 </div>
                 <form onSubmit={login}>
-                    <div className={"endpoint"}>
-                        <div className={"endpoint-label"}>
-                            <h5>Requested URL:</h5>
+                    {/*<div className={"endpoint"}>*/}
+                    {/*    <div className={"endpoint-label"}>*/}
+                    {/*        <h5>Requested URL:</h5>*/}
+                    {/*    </div>*/}
+                    {/*    <div className={"endpoint-url"}>*/}
+                    {/*        {axios.defaults.baseURL}*/}
+                    {/*    </div>*/}
+                    {/*</div>*/}
+                    {/*<div className={"login-info"}>*/}
+                    {/*    <h5>{loginInfo}</h5>*/}
+                    {/*</div>*/}
+                    <Card sx={{
+                        margin: '50px',
+                        padding: '40px',
+                        paddingTop: '80px',
+                        paddingLeft: '60px',
+                        paddingRight: '60px'
+                    }}>
+                        <div className={"log"}>
+                            <div className={"login-inputs"}>
+                                <TextField name="user_name" label={"user_name"} type={"text"} variant="standard"/>
+                                <TextField name="password" label={"password"} type={"password"} variant="standard"/>
+                            </div>
+                            <div className={"d-flex"}>
+                                <Button variant="contained" className={"btn btn-primary w-50"} type={"submit"}>
+                                    SignIn
+                                </Button>
+                                <Button type={"button"} className={"btn btn-primary w-50"} onClick={handleLogout}>
+                                    SignUp
+                                </Button>
+                                <Button type={"button"} className={"btn btn-secondary w-50"} onClick={handleLogout}>
+                                    LogOut
+                                </Button>
+                            </div>
                         </div>
-                        <div className={"endpoint-url"}>
-                            {axios.defaults.baseURL}
-                        </div>
-                    </div>
-                    <div className={"login-info"}>
-                        <h5>{loginInfo}</h5>
-                    </div>
-                    <div className={"log"}>
-                        <div className={"login-inputs"}>
-                            <TextField name="user_name" label={"user_name"} type={"text"} variant="standard"/>
-                            <TextField name="password" label={"password"} type={"password"} variant="standard"/>
-                        </div>
-                        <div className={"d-flex"}>
-                            <Button variant="contained" className={"btn btn-primary w-50"} type={"submit"}>
-                                SignIn
-                            </Button>
-                            <Button type={"button"} className={"btn btn-primary w-50"} onClick={handleLogout}>
-                                SignUp
-                            </Button>
-                            <Button type={"button"} className={"btn btn-secondary w-50"} onClick={handleLogout}>
-                                LogOut
-                            </Button>
-                        </div>
-                    </div>
+                    </Card>
                 </form>
 
             </div>

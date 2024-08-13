@@ -36,6 +36,8 @@ export default function AppMenu({drawerOpen, setDrawerOpen}: {
                 setAuth(false)
                 setAnchorEl(null);
             }
+        }).finally(() => {
+            navigate("/login")
         })
     }
     const handleLogin = () => {
@@ -73,7 +75,7 @@ export default function AppMenu({drawerOpen, setDrawerOpen}: {
                                     <MenuIcon/>
                                 </IconButton>
                                 <Typography variant="h6" component="div" sx={{flexGrow: 1}}>
-                                    Photos
+                                    Posts
                                 </Typography>
 
                                 <div>
