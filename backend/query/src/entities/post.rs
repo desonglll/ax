@@ -244,7 +244,7 @@ mod test {
         };
 
         let list_request = ListRequest {
-            user_id: Some(1),
+            user_id: None,
             filters: Some(filters),
             sort: Some(sort),
             pagination: Some(RequestPagination {
