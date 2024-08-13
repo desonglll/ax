@@ -1,4 +1,4 @@
-use bcrypt::{DEFAULT_COST, hash, verify};
+use bcrypt::{hash, verify, DEFAULT_COST};
 
 /// 密码哈希处理
 ///
@@ -79,7 +79,7 @@ mod test {
 
     #[test]
     fn create_password_hash() {
-        let password = "root".to_string();
+        let password = "otis".to_string();
         let hashed_password = Hash::create_password_hash(password.clone());
 
         assert!(hashed_password.is_ok(), "Password hashing should succeed");
