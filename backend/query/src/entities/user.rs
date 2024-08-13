@@ -1,6 +1,6 @@
 use chrono::NaiveDateTime;
-use diesel::{Queryable, Selectable};
 use diesel::prelude::*;
+use diesel::{Queryable, Selectable};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -9,10 +9,10 @@ use shared::lib::hash::Hash;
 use shared::request::request::ListRequest;
 use shared::response::pagination::ResponsePagination;
 
-use crate::{establish_pg_connection, schema::users};
-use crate::DbPool;
 use crate::filter::UserFilter;
 use crate::sort::UserSort;
+use crate::DbPool;
+use crate::{establish_pg_connection, schema::users};
 
 #[derive(Deserialize, Serialize, Debug, Queryable, Selectable, Default)]
 #[diesel(table_name = crate::schema::users)]
@@ -264,9 +264,61 @@ impl User {
         let body = Data::new(data, None);
         Ok(body)
     }
+    pub fn update_user(
+        pool: &DbPool,
+        updated_user: UpdateUser,
+    ) -> Result<Data<User>, diesel::result::Error> {
+        use crate::schema::users::dsl;
+        use diesel::prelude::*;
+        let mut conn = establish_pg_connection(pool).expect("msg");
+        let data: User = diesel::update(dsl::users.filter(dsl::id.eq(updated_user.id)))
+            .set((
+                users::user_name.eq(updated_user.user_name),
+                users::password_hash.eq(updated_user.password_hash),
+                users::email.eq(updated_user.email),
+                users::full_name.eq(updated_user.full_name),
+                users::is_active.eq(updated_user.is_active),
+                users::is_admin.eq(updated_user.is_admin),
+                users::updated_at.eq(Some(chrono::Utc::now().naive_utc())),
+                users::phone.eq(updated_user.phone),
+                users::profile_picture.eq(updated_user.profile_picture),
+            ))
+            .get_result(&mut conn)?;
+        Ok(Data::new(data, None))
+    }
+    // pub fn update_user(
+    //     pool: &DbPool,
+    //     updated_user: UpdateUser,
+    // ) -> Result<Data<User>, diesel::result::Error> {
+    //     use crate::schema::users::dsl;
+    //     use diesel::prelude::*;
+
+    //     let mut conn = establish_pg_connection(pool).expect("Failed to connect to the database");
+
+    //     // Start building the update query
+    //     let target = dsl::users.filter(dsl::id.eq(updated_user.id));
+    //     let _ = diesel::update(target).set((
+    //         users::user_name.eq(updated_user.user_name),
+    //         users::email.eq(updated_user.email),
+    //         users::full_name.eq(updated_user.full_name),
+    //         users::updated_at.eq(Some(chrono::Utc::now().naive_utc())),
+    //         users::phone.eq(updated_user.phone),
+    //     ));
+
+    //     // Conditionally update password_hash if provided
+    //     if let Some(password_hash) = updated_user.password_hash {
+    //         let _ = diesel::update(target).set(users::password_hash.eq(password_hash));
+    //     }
+
+    //     let data = dsl::users
+    //         .filter(dsl::id.eq(updated_user.id))
+    //         .first(&mut conn)?;
+    //     Ok(Data::new(data, None))
+    // }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct InsertUserRequest {
     // pub id: i32,
     pub user_name: String,
@@ -362,6 +414,103 @@ impl From<InsertUserRequest> for InsertUser {
         )
     }
 }
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateUserRequest {
+    pub id: i32,
+    pub user_name: String,
+    pub email: String,
+    pub password: String,
+    pub full_name: Option<String>,
+    pub phone: Option<String>,
+    pub is_active: bool,
+    pub is_admin: bool,
+    pub profile_picture: Option<Uuid>,
+}
+
+impl UpdateUserRequest {
+    pub fn new(
+        id: i32,
+        user_name: String,
+        email: String,
+        password: String,
+        full_name: Option<String>,
+        phone: Option<String>,
+        is_active: bool,
+        is_admin: bool,
+        profile_picture: Option<Uuid>,
+    ) -> Self {
+        Self {
+            id,
+            user_name,
+            email,
+            password,
+            full_name,
+            phone,
+            is_active,
+            is_admin,
+            profile_picture,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Insertable, Queryable, Selectable, Debug)]
+#[diesel(table_name = crate::schema::users)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct UpdateUser {
+    pub id: i32,
+    pub user_name: String,
+    pub email: String,
+    pub password_hash: String,
+    pub full_name: Option<String>,
+    pub phone: Option<String>,
+    pub is_active: bool,
+    pub is_admin: bool,
+    pub profile_picture: Option<Uuid>,
+}
+
+impl UpdateUser {
+    pub fn new(
+        id: i32,
+        user_name: String,
+        email: String,
+        password_hash: String,
+        full_name: Option<String>,
+        phone: Option<String>,
+        is_active: bool,
+        is_admin: bool,
+        profile_picture: Option<Uuid>,
+    ) -> Self {
+        Self {
+            id,
+            user_name,
+            email,
+            password_hash,
+            full_name,
+            phone,
+            is_active,
+            is_admin,
+            profile_picture,
+        }
+    }
+}
+
+impl From<UpdateUserRequest> for UpdateUser {
+    fn from(value: UpdateUserRequest) -> Self {
+        let pw_hash = Hash::create_password_hash(value.password).unwrap();
+        UpdateUser::new(
+            value.id,
+            value.user_name,
+            value.email,
+            pw_hash,
+            value.full_name,
+            value.phone,
+            value.is_active,
+            value.is_admin,
+            value.profile_picture,
+        )
+    }
+}
 
 #[cfg(test)]
 mod test {
@@ -371,13 +520,13 @@ mod test {
     use shared::lib::hash::Hash;
     use shared::request::{pagination::RequestPagination, request::ListRequest};
 
+    use crate::entities::user::{InsertUserRequest, User};
     use crate::{
         establish_pool,
         filter::UserFilter,
         schema::users,
         sort::{SortOrder, UserSort},
     };
-    use crate::entities::user::{InsertUserRequest, User};
 
     #[test]
     fn test_insert_user() {

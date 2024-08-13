@@ -6,7 +6,7 @@ use actix_web::{
     HttpResponse, Responder,
 };
 
-use query::entities::user::InsertUserRequest;
+use query::entities::user::{InsertUserRequest, UpdateUserRequest};
 use query::{filter::UserFilter, sort::UserSort, DbPool};
 use shared::lib::log::Log;
 use shared::request::pagination::RequestPagination;
@@ -15,6 +15,58 @@ use shared::response::api_response::{ApiResponse, StatusCode};
 
 use crate::handlers::user::UserHandler;
 
+pub async fn update_user(
+    session: Session,
+    pool: web::Data<DbPool>,
+    request_data: Option<Json<UpdateUserRequest>>,
+) -> impl Responder {
+    Log::info("Access update_user".to_string());
+    if let Some(_is_login) = session.get::<bool>("is_login").unwrap() {
+        let user_name = session.get::<String>("user_name").unwrap().unwrap();
+        Log::info(format!("User '{}' is inserting a new user.", user_name));
+
+        if let Some(request_data) = request_data {
+            let result = UserHandler::handle_update_user(&pool, request_data.into_inner());
+
+            Log::info("Update User operation completed.".to_string());
+            HttpResponse::Ok().json(result)
+        } else {
+            Log::info("Update User operation error.".to_string());
+            HttpResponse::Ok().json(ApiResponse::<String>::new(
+                StatusCode::BadRequest,
+                "Wrong Request Data Structure.".to_string(),
+                Some(String::new()),
+            ))
+        }
+    } else {
+        Log::info("Unauthorized access attempt to update_user".to_string());
+        HttpResponse::Ok().json(ApiResponse::<String>::new(
+            StatusCode::Unauthorized,
+            "Please Log In.".to_string(),
+            Some(String::new()),
+        ))
+    }
+}
+pub async fn user_profile(session: Session, pool: web::Data<DbPool>) -> impl Responder {
+    Log::info("Access user_profile".to_string());
+
+    if let Some(_is_login) = session.get::<bool>("is_login").unwrap() {
+        let user_name = session.get::<String>("user_name").unwrap().unwrap();
+        Log::info(format!("User '{}' is getting profile.", user_name));
+
+        let result = UserHandler::handle_get_user(&pool, user_name);
+
+        Log::info("Get User operation completed.".to_string());
+        HttpResponse::Ok().json(result)
+    } else {
+        Log::info("Unauthorized access attempt to user_profile".to_string());
+        HttpResponse::Ok().json(ApiResponse::<String>::new(
+            StatusCode::Unauthorized,
+            "Please Log In.".to_string(),
+            Some(String::new()),
+        ))
+    }
+}
 pub async fn insert_user(
     session: Session,
     pool: web::Data<DbPool>,

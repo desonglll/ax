@@ -23,6 +23,7 @@ pub struct Reaction {
 
 #[derive(Serialize, Deserialize, Debug, Insertable)]
 #[diesel(table_name = crate::schema::reactions)]
+#[serde(rename_all = "camelCase")]
 pub struct InsertReactionRequest {
     // pub user_id: i32,
     pub post_id: i32,
@@ -37,6 +38,7 @@ pub struct InsertReaction {
 }
 #[derive(Serialize, Deserialize, Debug, Insertable)]
 #[diesel(table_name = crate::schema::reactions)]
+#[serde(rename_all = "camelCase")]
 pub struct DeleteReactionRequest {
     pub post_id: i32,
     pub reaction_name: String,

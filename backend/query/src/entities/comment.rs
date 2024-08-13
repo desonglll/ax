@@ -28,6 +28,7 @@ pub struct InsertComment {
     pub user_id: i32,
 }
 #[derive(Serialize, Deserialize, Debug, Default)]
+#[serde(rename_all = "camelCase")]
 pub struct InsertCommentRequest {
     pub content: String,
     pub reply_to: i32,
