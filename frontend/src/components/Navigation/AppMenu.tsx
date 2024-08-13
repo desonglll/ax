@@ -11,7 +11,9 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import loginCheck from "../../utils/login_check.ts";
 import { useNavigate } from "react-router-dom";
-import { Fade } from "@mui/material";
+import { Avatar, Fade } from "@mui/material";
+import { User } from "../../models/user.ts";
+import getData from "../../utils/data_fetch.ts";
 
 export default function AppMenu({
   drawerOpen,
@@ -23,6 +25,7 @@ export default function AppMenu({
   const [auth, setAuth] = useState(true);
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<Partial<User>>();
   const navigate = useNavigate();
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
@@ -54,6 +57,13 @@ export default function AppMenu({
         if (response.data.code === "Unauthorized") {
           setAuth(false);
         }
+      })
+      .then(() => {
+        getData("user/profile").then((resp) => {
+          if (resp.data.code === "Success") {
+            setProfile(resp.data.body.data);
+          }
+        });
       })
       .finally(() => {
         setLoading(false);
@@ -93,7 +103,13 @@ export default function AppMenu({
                   onClick={handleMenu}
                   color="inherit"
                 >
-                  <AccountCircle />
+                  {profile?.profilePicture ? (
+                    <Avatar
+                      src={`${axios.defaults.baseURL}/stream/${profile.profilePicture}`}
+                    />
+                  ) : (
+                    <AccountCircle />
+                  )}
                 </IconButton>
                 <Menu
                   id="menu-appbar"

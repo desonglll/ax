@@ -43,7 +43,7 @@ export default function BottomNav() {
               icon={<ListIcon />}
             />
             <BottomNavigationAction
-              value={"/user"}
+              value={"/user/profile"}
               label={"My"}
               icon={<AccountCircleIcon />}
             />

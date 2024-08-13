@@ -2,10 +2,10 @@ import Box from "@mui/material/Box";
 import AppMenu from "../components/Navigation/AppMenu.tsx";
 import { SideDrawer } from "../components/Navigation/SideDrawer.tsx";
 import { Route, Routes } from "react-router-dom";
-import PostData from "../components/Post/PostData.tsx";
 import { Paper } from "@mui/material";
 import BottomNav from "../components/Navigation/BottomNav.tsx";
 import { useState } from "react";
+import Profile from "../components/User/Profile.tsx";
 
 export function UserRoutes() {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -17,7 +17,7 @@ export function UserRoutes() {
           flexDirection: "column",
         }}
       >
-        <AppMenu drawerOpen={drawerOpen} setDrawerOpen={setDrawerOpen} />
+        {/* <AppMenu drawerOpen={drawerOpen} setDrawerOpen={setDrawerOpen} /> */}
         <SideDrawer open={drawerOpen} setOpen={setDrawerOpen} />
         <Box
           sx={{
@@ -29,7 +29,7 @@ export function UserRoutes() {
         >
           {/* 页面内容 */}
           <Routes>
-            <Route path={""} element={<PostData />} />
+            <Route path={"profile"} element={<Profile />} />
           </Routes>
         </Box>
         {/* BottomNav 固定在底部 */}

@@ -1,5 +1,12 @@
 import Box from "@mui/material/Box";
-import { Fab, Fade, List, ListItem } from "@mui/material";
+import {
+  CircularProgress,
+  Fab,
+  Fade,
+  Grow,
+  List,
+  ListItem,
+} from "@mui/material";
 import PostListItem from "./PostListItem.tsx";
 import type { Post } from "../../models/post.ts";
 import { useEffect, useState } from "react";
@@ -55,7 +62,18 @@ export default function PostData() {
   return (
     <>
       {isLoading ? (
-        <p>Loading</p>
+        <div>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              marginTop: "10px",
+            }}
+          >
+            <CircularProgress />
+          </Box>
+        </div>
       ) : (
         <Box>
           <Fade in={!isLoading}>
@@ -67,12 +85,20 @@ export default function PostData() {
               }}
             >
               <List sx={{ width: "100%" }}>
-                {posts.map((post) => (
-                  <ListItem key={post.id} sx={{ justifyContent: "center" }}>
-                    <PostListItem post={post} />
-                  </ListItem>
+                {posts.map((post, index) => (
+                  <Grow
+                    key={post.id}
+                    in={!isLoading}
+                    style={{ transformOrigin: "0 0 0" }}
+                    timeout={(index + 1) * 500} // 每个组件的延迟时间增加1000ms
+                  >
+                    <ListItem key={post.id} sx={{ justifyContent: "center" }}>
+                      <PostListItem post={post} />
+                    </ListItem>
+                  </Grow>
                 ))}
               </List>
+
               <Pagination
                 total={response?.body.pagination.count}
                 showSizeChanger
