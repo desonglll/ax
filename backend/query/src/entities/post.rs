@@ -1,4 +1,5 @@
 use chrono::NaiveDateTime;
+use diesel::dsl::count_star;
 use diesel::pg::Pg;
 use diesel::prelude::*;
 use diesel::Queryable;
@@ -58,7 +59,7 @@ impl Post {
 
         let filter = list_request.filters.unwrap_or_default();
         let pagination = list_request.pagination.unwrap_or_default();
-        query = query.order_by(id.asc());
+        query = query.order_by(id.desc());
         // 找到对应用户的post
         if let Some(requested_user_id) = list_request.user_id {
             query = query.filter(user_id.eq(requested_user_id));
@@ -134,7 +135,7 @@ impl Post {
         let per_page = pagination.limit.unwrap();
         // 获取总记录数
         // let total_count = users.count().get_result::<i64>(&mut conn)? as i32;
-        let total_count: i32 = data.len() as i32;
+        let total_count = posts.select(count_star()).first::<i64>(&mut conn).unwrap() as i32;
         // println!("total_count: {total_count}");
         // if total_count < pagination.offset.unwrap() {
         //     return Err(diesel::NotFound);
