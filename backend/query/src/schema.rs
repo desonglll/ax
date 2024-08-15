@@ -21,6 +21,7 @@ diesel::table! {
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
         reactions -> Nullable<Jsonb>,
+        reply_to_type -> Varchar,
     }
 }
 
@@ -89,7 +90,6 @@ diesel::table! {
     }
 }
 
-diesel::joinable!(comments -> posts (reply_to));
 diesel::joinable!(comments -> users (user_id));
 diesel::joinable!(posts -> users (user_id));
 diesel::joinable!(reactions -> posts (post_id));

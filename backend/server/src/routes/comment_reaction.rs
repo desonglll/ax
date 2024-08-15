@@ -4,7 +4,10 @@ use actix_web::{
     HttpResponse, Responder,
 };
 use query::{
-    entities::comment::{DeleteCommentRequest, InsertComment, InsertCommentRequest},
+    entities::comment_reaction::{
+        DeleteCommentReaction, DeleteCommentReactionRequest, InsertCommentReaction,
+        InsertCommentReactionRequest,
+    },
     DbPool,
 };
 use shared::{
@@ -12,23 +15,24 @@ use shared::{
     response::api_response::{ApiResponse, StatusCode},
 };
 
-use crate::handlers::comment::CommentHandler;
+use crate::handlers::comment_reaction::CommentReactionHandler;
 
 ///
 ///
 /// ## Example Request Data
 /// ```json
 /// {
-///     "content": "hello",
-///     "reply_to": 1
+///     "user_id": 2,
+///     "post_id": 4,
+///     "reaction_name": "like"
 /// }
 /// ```
-pub async fn insert_comment(
+pub async fn insert_comment_reaction(
     session: Session,
     pool: web::Data<DbPool>,
-    request_data: Option<Json<InsertCommentRequest>>,
+    request_data: Option<Json<InsertCommentReactionRequest>>,
 ) -> impl Responder {
-    Log::info("Access insert_comment".to_string());
+    Log::info("Access insert_comment_reaction".to_string());
 
     if let Some(_is_login) = session.get::<bool>("is_login").unwrap() {
         let user_name = session.get::<String>("user_name").unwrap().unwrap();
@@ -37,19 +41,18 @@ pub async fn insert_comment(
 
         if let Some(request_data) = request_data {
             let request_data = request_data.into_inner();
-            let insert_data = InsertComment {
+            let insert_data = InsertCommentReaction {
                 user_id,
-                content: request_data.content,
-                reply_to: request_data.reply_to,
-                reply_to_type: request_data.reply_to_type,
+                comment_id: request_data.comment_id,
+                reaction_name: request_data.reaction_name,
             };
 
-            let result = CommentHandler::handle_insert_comment(&pool, insert_data);
+            let result = CommentReactionHandler::handle_insert_comment_reaction(&pool, insert_data);
 
-            Log::info("Insert Comment operation completed.".to_string());
+            Log::info("Insert Reaction operation completed.".to_string());
             HttpResponse::Ok().json(result)
         } else {
-            Log::info("Insert Comment operation error.".to_string());
+            Log::info("Insert Reaction operation error.".to_string());
             HttpResponse::Ok().json(ApiResponse::<String>::new(
                 StatusCode::BadRequest,
                 "Wrong Request Data Structure.".to_string(),
@@ -69,28 +72,37 @@ pub async fn insert_comment(
 /// ## Example Request Data
 /// ```json
 /// {
-///     "id": 2,
+///     "user_id": 2,
+///     "post_id": 4,
+///     "reaction_name": "like"
 /// }
 /// ```
-pub async fn delete_comment(
+pub async fn delete_comment_reaction(
     session: Session,
     pool: web::Data<DbPool>,
-    request_data: Option<Json<DeleteCommentRequest>>,
+    request_data: Option<Json<DeleteCommentReactionRequest>>,
 ) -> impl Responder {
-    Log::info("Access delete_comment".to_string());
+    Log::info("Access delete_comment_reaction".to_string());
 
     if let Some(_is_login) = session.get::<bool>("is_login").unwrap() {
         let user_name = session.get::<String>("user_name").unwrap().unwrap();
-        Log::info(format!("User '{}' is inserting a new user.", user_name));
+        Log::info(format!("User '{}' is deleting a new user.", user_name));
+        let user_id = session.get::<i32>("user_id").unwrap().unwrap();
 
         if let Some(request_data) = request_data {
             let request_data = request_data.into_inner();
-            let result = CommentHandler::handle_delete_comment(&pool, request_data.id);
+            let delete_data = DeleteCommentReaction {
+                user_id,
+                comment_id: request_data.comment_id,
+                reaction_name: request_data.reaction_name,
+            };
 
-            Log::info("Delete Comment operation completed.".to_string());
+            let result = CommentReactionHandler::handle_delete_comment_reaction(&pool, delete_data);
+
+            Log::info("Delete Reaction operation completed.".to_string());
             HttpResponse::Ok().json(result)
         } else {
-            Log::info("Delete Comment operation error.".to_string());
+            Log::info("Delete Reaction operation error.".to_string());
             HttpResponse::Ok().json(ApiResponse::<String>::new(
                 StatusCode::BadRequest,
                 "Wrong Request Data Structure.".to_string(),
@@ -107,25 +119,27 @@ pub async fn delete_comment(
     }
 }
 
-pub async fn get_comments_by_post_id(
+pub async fn get_comment_comment_reactions(
     session: Session,
     pool: web::Data<DbPool>,
-    p_id: web::Path<i32>,
+    comment_id: web::Path<i32>,
 ) -> impl Responder {
-    // add code here
-
-    Log::info("Access get_comments_by_post_id".to_string());
+    Log::info("Access get_post_comment_reactions".to_string());
 
     if let Some(_is_login) = session.get::<bool>("is_login").unwrap() {
         let user_name = session.get::<String>("user_name").unwrap().unwrap();
-        Log::info(format!("User '{}' is inserting a new user.", user_name));
+        Log::info(format!("User '{}' is deleting a new user.", user_name));
+        let user_id = session.get::<i32>("user_id").unwrap().unwrap();
+        let result = CommentReactionHandler::handle_get_comment_comment_reactions(
+            &pool,
+            user_id,
+            *comment_id,
+        );
 
-        let result = CommentHandler::handle_get_comments_by_post_id(&pool, *p_id);
-
-        Log::info("Get Comment By Post ID operation completed.".to_string());
+        Log::info("Get Post Reactions operation completed.".to_string());
         HttpResponse::Ok().json(result)
     } else {
-        Log::info("Unauthorized access attempt to delete_user".to_string());
+        Log::info("Unauthorized access attempt to get_post_comment_reactions".to_string());
         HttpResponse::Ok().json(ApiResponse::<String>::new(
             StatusCode::Unauthorized,
             "Please Log In.".to_string(),

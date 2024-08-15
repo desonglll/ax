@@ -40,4 +40,42 @@ impl CommentHandler {
             }
         }
     }
+    pub fn handle_get_comments_by_post_id(
+        pool: &DbPool,
+        p_id: i32,
+    ) -> ApiResponse<Data<Vec<Comment>>> {
+        Log::info("Executing handle_get_comments_by_post_id".to_string());
+        match Comment::get_comments_by_reply_to_id(&pool, p_id, "post".to_string()) {
+            Ok(result) => {
+                Log::info("Get Comment By Post ID Successful".to_string());
+                ApiResponse::success(
+                    "Get Comment By Post ID Successful.".to_string(),
+                    Some(result),
+                )
+            }
+            Err(e) => {
+                Log::info(format!("Get Comment By Post ID Failed: {}", e));
+                ApiResponse::error(Box::new(e))
+            }
+        }
+    }
+    pub fn handle_get_comments_by_comment_id(
+        pool: &DbPool,
+        p_id: i32,
+    ) -> ApiResponse<Data<Vec<Comment>>> {
+        Log::info("Executing handle_get_comments_by_comment_id".to_string());
+        match Comment::get_comments_by_reply_to_id(&pool, p_id, "comment".to_string()) {
+            Ok(result) => {
+                Log::info("Get Comment By Comment ID Successful".to_string());
+                ApiResponse::success(
+                    "Get Comment By Comment ID Successful.".to_string(),
+                    Some(result),
+                )
+            }
+            Err(e) => {
+                Log::info(format!("Get Comment By Comment ID Failed: {}", e));
+                ApiResponse::error(Box::new(e))
+            }
+        }
+    }
 }

@@ -18,6 +18,7 @@ pub struct Comment {
     created_at: NaiveDateTime,
     updated_at: NaiveDateTime,
     reactions: Option<Value>,
+    reply_to_type: String,
 }
 #[derive(Serialize, Deserialize, Debug, Default, Insertable)]
 #[diesel(table_name = crate::schema::comments)]
@@ -26,12 +27,14 @@ pub struct InsertComment {
     pub content: String,
     pub reply_to: i32,
     pub user_id: i32,
+    pub reply_to_type: String,
 }
 #[derive(Serialize, Deserialize, Debug, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct InsertCommentRequest {
     pub content: String,
     pub reply_to: i32,
+    pub reply_to_type: String,
 }
 #[derive(Serialize, Deserialize)]
 pub struct DeleteCommentRequest {
@@ -65,6 +68,22 @@ impl Comment {
         let body = Data::new(data, None);
         Ok(body)
     }
+
+    pub fn get_comments_by_reply_to_id(
+        pool: &DbPool,
+        post_id: i32,
+        reply_to_type: String,
+    ) -> Result<Data<Vec<Comment>>, diesel::result::Error> {
+        use crate::schema::comments::dsl;
+        use diesel::prelude::*;
+        let mut conn = establish_pg_connection(&pool).unwrap();
+        let data = dsl::comments
+            .filter(dsl::reply_to_type.eq(reply_to_type))
+            .filter(dsl::reply_to.eq(post_id))
+            .load::<Comment>(&mut conn)?;
+        let body = Data::new(data, None);
+        Ok(body)
+    }
 }
 #[cfg(test)]
 mod test {
@@ -82,6 +101,7 @@ mod test {
             content: "Test comment".to_string(),
             reply_to: 1, // 需要确保这个帖子 ID 在数据库中存在
             user_id: 1,  // 需要确保这个用户 ID 在数据库中存在
+            reply_to_type: "post".to_string(),
         };
 
         let result = Comment::insert_comment(&pool, insert_comment);
@@ -105,6 +125,7 @@ mod test {
             content: "Comment to be deleted".to_string(),
             reply_to: 1,
             user_id: 1,
+            reply_to_type: "post".to_string(),
         };
 
         let inserted = Comment::insert_comment(&pool, insert_comment).unwrap();

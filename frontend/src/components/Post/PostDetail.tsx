@@ -9,7 +9,7 @@ import ThumbUpOffAltIcon from "@mui/icons-material/ThumbUpOffAlt";
 import ThumbDownAltIcon from "@mui/icons-material/ThumbDown";
 import ThumbDownOffAltIcon from "@mui/icons-material/ThumbDownOffAlt";
 import axios from "axios";
-import { Comment } from "./Comment.tsx";
+import { PostComment } from "./PostComment.tsx";
 
 export function PostDetail() {
   const { id } = useParams(); // 获取路径参数 id
@@ -147,7 +147,7 @@ export function PostDetail() {
             </div>
           </Box>
           <Box sx={{ display: "flex", justifyContent: "center" }}>
-            <Comment reply_to={Number(id)} />
+            <PostComment reply_to={Number(id)} />
           </Box>
         </Box>
       </Fade>
