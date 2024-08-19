@@ -13,6 +13,7 @@ The previous project was [Crab Rocket](https://github.com/desonglll/crab_rocket)
 
 - [Apps](#apps)
 - [🧩 Project Dependencies](#-project-dependencies)
+- [Demo](#demo)
 - [⚙️ Requirements](#️-requirements)
   - [Rust](#rust)
   - [Postgres](#postgres)
@@ -36,6 +37,10 @@ The previous project was [Crab Rocket](https://github.com/desonglll/crab_rocket)
 - Postgresql16
 - Redis
 - Actix-Web
+
+## Demo
+
+![Post Page](./design/Demo.png) 
 
 ## ⚙️ Requirements
 ### Rust
