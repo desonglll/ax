@@ -12,6 +12,8 @@ import axios from "axios";
 import { PostComment } from "./PostComment.tsx";
 import Vditor from "vditor";
 import BackButton from "../Navigation/BackButton.tsx";
+import type { ApiResponse } from "../../models/api_response.ts";
+import type { File } from "../../models/file.ts";
 
 export function PostDetail() {
   const { id } = useParams(); // 获取路径参数 id
@@ -116,6 +118,45 @@ export function PostDetail() {
                   console.log(resp.data);
                 }
               });
+            },
+            upload: {
+              accept: "image/*,.mp3, .wav, .rar",
+              url: `${axios.defaults.baseURL}/upload`,
+              filename(name) {
+                return name
+                  .replace(/[^(a-zA-Z0-9\u4e00-\u9fa5\.)]/g, "")
+                  .replace(/[\?\\/:|<>\*\[\]\(\)\$%\{\}@~]/g, "")
+                  .replace("/\\s/g", "");
+              },
+              withCredentials: true,
+              format(files, responseText) {
+                const response: ApiResponse<File> = JSON.parse(responseText);
+                console.log(response);
+                console.log(files);
+
+                const result = {
+                  msg: "",
+                  code: 0,
+                  data: {
+                    errFiles: [] as string[],
+                    succMap: {} as { [key: string]: string }, // 这里定义键为字符串，值也为字符串的对象
+                  },
+                };
+
+                if (response.code === "Success") {
+                  const data = response.body.data;
+                  data.map((file) => {
+                    result.data.succMap[
+                      file.name
+                    ] = `${axios.defaults.baseURL}/stream/${file.id}`;
+                  });
+                } else {
+                  // 如果上传不成功，可以在 msg 中返回服务器的错误信息
+                  result.msg = response.message || "Upload failed!";
+                }
+
+                return JSON.stringify(result);
+              },
             },
           });
           Vditor.preview(
