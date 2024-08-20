@@ -7,7 +7,7 @@ use super::comment::{delete_comment, get_comments_by_post_id, insert_comment};
 use super::comment_reaction::{
     delete_comment_reaction, get_comment_comment_reactions, insert_comment_reaction,
 };
-use super::post::get_post;
+use super::post::{get_post, update_post};
 use super::reaction::{delete_reaction, get_post_reactions, insert_reaction};
 use super::user::{update_user, user_profile};
 use super::{
@@ -32,6 +32,7 @@ pub fn all_routes(cfg: &mut web::ServiceConfig) {
             .route("/user/list", web::get().to(list_user))
             .route("/user/profile", web::get().to(user_profile))
             .route("/post/insert", web::post().to(insert_post))
+            .route("/post/update", web::post().to(update_post))
             .route("/post/list", web::get().to(list_post))
             .route("/post/list-all", web::get().to(list_all_user_post))
             .route("/post/detail/{post_id}", web::get().to(get_post))

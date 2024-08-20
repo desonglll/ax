@@ -1,4 +1,4 @@
-use query::entities::post::InsertPost;
+use query::entities::post::{InsertPost, UpdatePost};
 use query::{entities::post::Post, filter::PostFilter, sort::PostSort, DbPool};
 use shared::lib::log::Log;
 use shared::{lib::data::Data, request::request::ListRequest, response::api_response::ApiResponse};
@@ -46,6 +46,23 @@ impl PostHandler {
             }
             Err(e) => {
                 Log::info(format!("Get Post Failed: {}", e));
+                ApiResponse::error(Box::new(e))
+            }
+        }
+    }
+    pub fn handle_update_post(
+        pool: &DbPool,
+        post_id: i32,
+        request_data: UpdatePost,
+    ) -> ApiResponse<Data<Post>> {
+        Log::info("Executing handle_update_post".to_string());
+        match Post::update_post(&pool, post_id, request_data.into()) {
+            Ok(result) => {
+                Log::info("Update Post Successful".to_string());
+                ApiResponse::success("Update Post Successful.".to_string(), Some(result))
+            }
+            Err(e) => {
+                Log::info(format!("Update Post Failed: {}", e));
                 ApiResponse::error(Box::new(e))
             }
         }

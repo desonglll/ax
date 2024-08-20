@@ -1,23 +1,32 @@
-import { Textarea } from "@mui/joy";
 import Box from "@mui/material/Box";
-import type React from "react";
-import Button from "@mui/joy/Button";
 import axios from "axios";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import Vditor from "vditor";
+import "vditor/dist/index.css";
 
 export function ReleasePost() {
-  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const content = formData.get("content");
-    const data = {
-      content: content,
-    };
-    axios.post("post/insert", data).then((resp) => {
-      if (resp.data.code === "Success") {
-        console.log("Success");
-      }
+  const navigate = useNavigate();
+  useEffect(() => {
+    const vditor = new Vditor("vditor", {
+      typewriterMode: true,
+      after: () => {
+        console.log(vditor.getValue());
+      },
+      ctrlEnter: (value) => {
+        console.log("hello", value);
+        const data = {
+          content: value,
+        };
+        axios.post("post/insert", data).then((resp) => {
+          if (resp.data.code === "Success") {
+            console.log("Success");
+            navigate(-1);
+          }
+        });
+      },
     });
-  };
+  }, [navigate]);
 
   return (
     <>
@@ -30,25 +39,7 @@ export function ReleasePost() {
         }}
       >
         <Box sx={{ width: "80%", marginTop: "60px" }}>
-          <form onSubmit={onSubmit}>
-            <Textarea
-              minRows={6}
-              size="md"
-              variant="outlined"
-              placeholder={"Say something!"}
-              name={"content"}
-              required
-            />
-            <Box
-              sx={{
-                display: "flex",
-                marginTop: "10px",
-                justifyContent: "flex-end",
-              }}
-            >
-              <Button type={"submit"}>Submit</Button>
-            </Box>
-          </form>
+          <div id="vditor" className="vditor" />
         </Box>
       </Box>
     </>

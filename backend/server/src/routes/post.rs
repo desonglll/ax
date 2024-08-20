@@ -6,7 +6,7 @@ use actix_web::{
     HttpResponse, Responder,
 };
 
-use query::entities::post::{InsertPost, InsertPostRequest};
+use query::entities::post::{InsertPost, InsertPostRequest, UpdatePost, UpdatePostRequest};
 use query::{filter::PostFilter, sort::PostSort, DbPool};
 use shared::response::api_response::{ApiResponse, StatusCode};
 use shared::{
@@ -15,7 +15,33 @@ use shared::{
 };
 
 use crate::handlers::post::PostHandler;
+pub async fn update_post(
+    session: Session,
+    pool: web::Data<DbPool>,
+    request_data: Json<UpdatePostRequest>,
+) -> impl Responder {
+    Log::info("Access update_post".to_string());
 
+    if let Some(_is_login) = session.get::<bool>("is_login").unwrap() {
+        let user_id = session.get::<i32>("user_id").unwrap().unwrap();
+        Log::info(format!("User ID: {} is updating a post", user_id));
+
+        let updated_post = UpdatePost {
+            content: request_data.content.clone(),
+        };
+        let result = PostHandler::handle_update_post(&pool, request_data.id, updated_post);
+
+        Log::info("Update Post operation completed.".to_string());
+        HttpResponse::Ok().json(result)
+    } else {
+        Log::info("Unauthorized access attempt to update_post".to_string());
+        HttpResponse::Ok().json(ApiResponse::<String>::new(
+            StatusCode::Unauthorized,
+            "Please Log In.".to_string(),
+            Some(String::new()),
+        ))
+    }
+}
 pub async fn insert_post(
     session: Session,
     pool: web::Data<DbPool>,

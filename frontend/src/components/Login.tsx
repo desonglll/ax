@@ -34,6 +34,7 @@ function Login() {
       )
       .then((resp) => {
         if (resp.data.code === "Success") {
+          localStorage.setItem("user_name", userName as string);
           setIsLogin(true);
           setLoginInfo(resp.data.body);
           navigate("/common/index");

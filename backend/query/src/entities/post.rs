@@ -45,6 +45,19 @@ pub struct InsertPostRequest {
     pub content: String,
     pub reply_to: Option<i32>,
 }
+#[derive(Serialize, Deserialize, Debug, Default, Queryable, Selectable, Insertable)]
+#[diesel(table_name = crate::schema::posts)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdatePost {
+    pub content: String,
+}
+#[derive(Serialize, Deserialize, Debug, Default, Queryable, Selectable, Insertable)]
+#[diesel(table_name = crate::schema::posts)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdatePostRequest {
+    pub id: i32,
+    pub content: String,
+}
 
 impl Post {
     pub fn list_post(
@@ -182,6 +195,22 @@ impl Post {
         let body = Data::new(data, None);
         Ok(body)
     }
+
+    pub fn update_post(
+        pool: &DbPool,
+        post_id: i32,
+        updated_post: UpdatePost,
+    ) -> Result<Data<Post>, diesel::result::Error> {
+        use crate::schema::posts::dsl;
+        let mut conn = establish_pg_connection(pool).expect("msg");
+        let data = diesel::update(dsl::posts.filter(dsl::id.eq(post_id)))
+            .set((
+                dsl::content.eq(updated_post.content),
+                dsl::updated_at.eq(chrono::Local::now().naive_utc()),
+            ))
+            .get_result(&mut conn)?;
+        Ok(Data::new(data, None))
+    }
 }
 
 #[cfg(test)]
@@ -189,7 +218,7 @@ mod test {
     use shared::request::{pagination::RequestPagination, request::ListRequest};
 
     use crate::{
-        entities::post::Post,
+        entities::post::{InsertPost, Post},
         establish_pool,
         filter::PostFilter,
         sort::{PostSort, SortOrder},
@@ -260,5 +289,44 @@ mod test {
         let data = result.unwrap().data;
         assert_eq!(data.len(), 1);
         assert_eq!(data[0].content, "Content of post 1");
+    }
+    #[test]
+    fn test_update_post() {
+        use crate::entities::post::{Post, UpdatePost};
+        let pool = establish_pool(); // 假设你有一个用于获取连接池的函数
+
+        // Insert a new post to update later
+        let new_post = Post::insert_post(
+            &pool,
+            InsertPost {
+                content: String::from("Original content."),
+                user_id: 1,
+                reply_to: None,
+            },
+        )
+        .expect("Failed to insert post");
+
+        let inserted_post = new_post.data;
+
+        // Create an UpdatePost struct with new content
+        let updated_content = String::from("Updated content.");
+        let updated_post = UpdatePost {
+            content: updated_content.clone(),
+        };
+
+        // Call update_post function
+        let result = Post::update_post(&pool, inserted_post.id, updated_post);
+
+        // Check if update was successful
+        assert!(result.is_ok());
+
+        let updated_post = result.unwrap().data;
+
+        // Validate the updated content
+        assert_eq!(updated_post.content, updated_content);
+
+        // Ensure other fields remain unchanged
+        assert_eq!(updated_post.user_id, inserted_post.user_id);
+        assert_eq!(updated_post.reply_to, inserted_post.reply_to);
     }
 }

@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from "react-router-dom";
-import { Button, Fade, Typography } from "@mui/material";
+import { Button, Fade } from "@mui/material";
 import { useEffect, useState } from "react";
 import getData from "../../utils/data_fetch.ts";
 import type { Post } from "../../models/post.ts";
@@ -10,6 +10,8 @@ import ThumbDownAltIcon from "@mui/icons-material/ThumbDown";
 import ThumbDownOffAltIcon from "@mui/icons-material/ThumbDownOffAlt";
 import axios from "axios";
 import { PostComment } from "./PostComment.tsx";
+import Vditor from "vditor";
+import BackButton from "../Navigation/BackButton.tsx";
 
 export function PostDetail() {
   const { id } = useParams(); // 获取路径参数 id
@@ -27,6 +29,7 @@ export function PostDetail() {
   const [like, setLike] = useState<boolean>(false);
   const [dislike, setDislike] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
   const navigate = useNavigate();
 
   const handleReaction = async (
@@ -97,60 +100,102 @@ export function PostDetail() {
       .then((resp) => {
         if (resp.data.code === "Success") {
           setPost(resp.data.body.data);
+          const vditor = new Vditor("vditor", {
+            typewriterMode: true,
+            after: () => {
+              vditor.setValue(resp.data.body.data.content);
+            },
+            ctrlEnter: (value) => {
+              console.log("hello", value);
+              const updated_request = {
+                id: Number(id),
+                content: value,
+              };
+              axios.post("post/update", updated_request).then((resp) => {
+                if (resp.data.code === "Success") {
+                  console.log(resp.data);
+                }
+              });
+            },
+          });
+          Vditor.preview(
+            document.getElementById("pre") as HTMLDivElement,
+            resp.data.body.data.content,
+            {
+              cdn: "https://unpkg.com/vditor@3.10.5",
+              mode: "light",
+            }
+          );
         }
       })
+      .then(() => {})
       .finally(() => {
         setLoading(false);
       });
   }, [id, navigate]);
+  // Vditor.preview(
+  //   document.getElementById("pre") as HTMLDivElement,
+  //   post.content,
+  //   {
+  //     cdn: "https://unpkg.com/vditor@3.10.5",
+  //     mode: "light",
+  //   }
+  // );
 
   return (
     <>
-      <Fade in={!loading}>
-        <Box
-          sx={{
-            marginTop: "50px",
-            margin: "0px",
-            marginBottom: "200px",
-            padding: "10px",
-          }}
-        >
-          <Typography
-            sx={{
-              whiteSpace: "pre-line",
-              textAlign: "left",
-              fontFamily: "Noto Sans SC, Noto Sans TC",
-              marginTop: "20px",
-              marginBottom: "80px",
-            }}
-          >
-            {post?.content}
-          </Typography>
+      {true && (
+        <Fade in={!loading}>
           <Box
             sx={{
-              display: "flex",
-              marginBottom: "50px",
-              justifyContent: "flex-end",
+              marginTop: "50px",
+              margin: "0px",
+              marginBottom: "200px",
+              padding: "10px",
             }}
           >
-            <div>
-              <Button size="small" onClick={() => handleLike()}>
-                {like ? <ThumbUpAltIcon /> : <ThumbUpOffAltIcon />}
-                {post.reactions?.like}
+            <BackButton />
+            <div hidden={localStorage.getItem("user_name") !== post.userName}>
+              <Button
+                onClick={() => {
+                  setEditing(!editing);
+                }}
+              >
+                Edit
               </Button>
             </div>
-            <div>
-              <Button size="small" onClick={() => handleDislike()}>
-                {dislike ? <ThumbDownAltIcon /> : <ThumbDownOffAltIcon />}
-                {post.reactions?.dislike}
-              </Button>
+            <div id="vditor" hidden={!editing} />
+
+            <div hidden={editing}>
+              <div id="pre" />
             </div>
+
+            <Box
+              sx={{
+                display: "flex",
+                marginBottom: "50px",
+                justifyContent: "flex-end",
+              }}
+            >
+              <div>
+                <Button size="small" onClick={() => handleLike()}>
+                  {like ? <ThumbUpAltIcon /> : <ThumbUpOffAltIcon />}
+                  {post.reactions?.like}
+                </Button>
+              </div>
+              <div>
+                <Button size="small" onClick={() => handleDislike()}>
+                  {dislike ? <ThumbDownAltIcon /> : <ThumbDownOffAltIcon />}
+                  {post.reactions?.dislike}
+                </Button>
+              </div>
+            </Box>
+            <Box sx={{ display: "flex", justifyContent: "center" }}>
+              <PostComment reply_to={Number(id)} />
+            </Box>
           </Box>
-          <Box sx={{ display: "flex", justifyContent: "center" }}>
-            <PostComment reply_to={Number(id)} />
-          </Box>
-        </Box>
-      </Fade>
+        </Fade>
+      )}
     </>
   );
 }
