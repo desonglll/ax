@@ -1,3 +1,8 @@
 [workspace]
-members = ["backend/query", "backend/server", "backend/shared"]
+members = [
+    "backend/query",
+    "backend/server",
+    "backend/shared",
+    "ax-tauri/src-tauri",
+]
 resolver = "2"
