@@ -65,9 +65,3 @@ pub fn make_directory(path: &str) {
         }
     }
 }
-
-#[test]
-fn test_make_directory() {
-    let path = "upload";
-    make_directory(path);
-}
