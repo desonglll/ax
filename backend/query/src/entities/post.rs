@@ -4,15 +4,15 @@ use diesel::pg::Pg;
 use diesel::prelude::*;
 use diesel::Queryable;
 use serde::{Deserialize, Serialize};
-
 use serde_json::Value;
+
 use shared::lib::data::Data;
 use shared::request::request::ListRequest;
 use shared::response::pagination::ResponsePagination;
 
+use crate::{DbPool, establish_pg_connection};
 use crate::filter::PostFilter;
 use crate::sort::PostSort;
-use crate::{establish_pg_connection, DbPool};
 
 #[derive(Serialize, Deserialize, Debug, Default, Queryable, Selectable)]
 #[diesel(table_name = crate::schema::posts)]
@@ -45,12 +45,14 @@ pub struct InsertPostRequest {
     pub content: String,
     pub reply_to: Option<i32>,
 }
+
 #[derive(Serialize, Deserialize, Debug, Default, Queryable, Selectable, Insertable)]
 #[diesel(table_name = crate::schema::posts)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdatePost {
     pub content: String,
 }
+
 #[derive(Serialize, Deserialize, Debug, Default, Queryable, Selectable, Insertable)]
 #[diesel(table_name = crate::schema::posts)]
 #[serde(rename_all = "camelCase")]
@@ -211,6 +213,13 @@ impl Post {
             .get_result(&mut conn)?;
         Ok(Data::new(data, None))
     }
+
+    pub fn delete_post_by_id(pool: &DbPool, post_id: i32) -> Result<Data<Post>, diesel::result::Error> {
+        use crate::schema::posts::dsl;
+        let mut conn = establish_pg_connection(pool).expect("msg");
+        let data = diesel::delete(dsl::posts.filter(dsl::id.eq(post_id))).get_result(&mut conn)?;
+        Ok(Data::new(data, None))
+    }
 }
 
 #[cfg(test)]
@@ -290,6 +299,7 @@ mod test {
         assert_eq!(data.len(), 1);
         assert_eq!(data[0].content, "Content of post 1");
     }
+
     #[test]
     fn test_update_post() {
         use crate::entities::post::{Post, UpdatePost};
@@ -304,7 +314,7 @@ mod test {
                 reply_to: None,
             },
         )
-        .expect("Failed to insert post");
+            .expect("Failed to insert post");
 
         let inserted_post = new_post.data;
 
@@ -328,5 +338,6 @@ mod test {
         // Ensure other fields remain unchanged
         assert_eq!(updated_post.user_id, inserted_post.user_id);
         assert_eq!(updated_post.reply_to, inserted_post.reply_to);
+        let _ = Post::delete_post_by_id(&pool, inserted_post.id);
     }
 }
