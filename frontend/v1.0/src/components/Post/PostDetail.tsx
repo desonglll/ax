@@ -120,6 +120,18 @@ export function PostDetail() {
                                 }
                             });
                         },
+                        blur(value: string) {
+                            console.log("hello", value);
+                            const updated_request = {
+                                id: Number(id),
+                                content: value,
+                            };
+                            axios.post("post/update", updated_request).then((resp) => {
+                                if (resp.data.code === "Success") {
+                                    console.log(resp.data);
+                                }
+                            });
+                        },
                         upload: {
                             accept: "image/*,.mp3, .wav, .rar",
                             url: `${axios.defaults.baseURL}/upload`,

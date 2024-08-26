@@ -1,0 +1,87 @@
+CREATE TABLE "files" (
+	"id" UUID NOT NULL UNIQUE,
+	"name" VARCHAR NOT NULL,
+	"path" VARCHAR NOT NULL,
+	"size" BIGINT NOT NULL,
+	"content_type" VARCHAR NOT NULL,
+	"created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	"updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	"user_id" INTEGER NOT NULL,
+	"description" TEXT,
+	"checksum" VARCHAR NOT NULL,
+	"is_deleted" BOOLEAN NOT NULL DEFAULT false,
+	PRIMARY KEY("id")
+);
+
+
+CREATE TABLE "users" (
+	"id" SERIAL NOT NULL UNIQUE,
+	"user_name" VARCHAR NOT NULL UNIQUE,
+	"email" VARCHAR NOT NULL UNIQUE,
+	"password_hash" VARCHAR NOT NULL,
+	"full_name" VARCHAR,
+	"phone" VARCHAR,
+	"created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	"updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	"last_login" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	"is_active" BOOLEAN NOT NULL DEFAULT true,
+	"is_admin" BOOLEAN NOT NULL DEFAULT false,
+	"profile_picture" UUID,
+	PRIMARY KEY("id")
+);
+
+
+CREATE TABLE "posts" (
+	"id" SERIAL NOT NULL UNIQUE,
+	"content" TEXT NOT NULL,
+	"created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	"updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	"user_id" INTEGER NOT NULL,
+	"reply_to" INTEGER,
+	"user_name" VARCHAR NOT NULL,
+	"reactions" JSONB,
+	PRIMARY KEY("id")
+);
+
+
+CREATE TABLE "post_actions" (
+	"id" SERIAL NOT NULL UNIQUE,
+	"name" VARCHAR NOT NULL,
+	PRIMARY KEY("id", "name")
+);
+
+
+CREATE TABLE "reactions" (
+	"id" SERIAL NOT NULL UNIQUE,
+	"user_id" INTEGER NOT NULL,
+	"post_id" INTEGER NOT NULL,
+	"created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	"reaction_id" INTEGER NOT NULL,
+	"reaction_name" VARCHAR NOT NULL,
+	PRIMARY KEY("id")
+);
+
+
+CREATE TABLE "comments" (
+	"id" SERIAL NOT NULL UNIQUE,
+	"content" TEXT NOT NULL,
+	"reply_to" INTEGER NOT NULL,
+	"user_id" INTEGER NOT NULL,
+	"user_name" VARCHAR NOT NULL,
+	"created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	"updated_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	"reactions" JSONB,
+	"reply_to_type" VARCHAR NOT NULL,
+	PRIMARY KEY("id")
+);
+
+
+CREATE TABLE "comment_reaction" (
+	"id" SERIAL NOT NULL UNIQUE,
+	"user_id" INTEGER NOT NULL,
+	"comment_id" INTEGER NOT NULL,
+	"created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	"reaction_id" INTEGER NOT NULL,
+	"reaction_name" VARCHAR NOT NULL,
+	PRIMARY KEY("id")
+);
