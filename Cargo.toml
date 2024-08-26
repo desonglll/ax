@@ -1,8 +1,9 @@
 [workspace]
 members = [
     "backend/query",
-    "backend/server",
+    # "backend/server",
     "backend/shared",
     "ax-tauri/src-tauri",
+    "tweet_server",
 ]
 resolver = "2"
