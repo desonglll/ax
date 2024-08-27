@@ -11,6 +11,7 @@ CREATE TABLE public.files (
 	"description" TEXT,
 	"checksum" VARCHAR NOT NULL,
 	"is_deleted" BOOLEAN NOT NULL DEFAULT false,
+	"is_pub" BOOLEAN NOT NULL DEFAULT false,
 	PRIMARY KEY("id")
 );
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
