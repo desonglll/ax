@@ -2,6 +2,7 @@ use actix_web::web;
 
 use crate::handlers::{
     auth::{index, login, logout},
+    file::{download, stream, upload_private, upload_public},
     user::{delete_user, get_user_detail, post_new_user, update_user_details},
 };
 
@@ -21,5 +22,15 @@ pub fn auth_routes(cfg: &mut web::ServiceConfig) {
             .route("/login-check", web::get().to(index))
             .route("/login", web::post().to(login))
             .route("/logout", web::post().to(logout)),
+    );
+}
+
+pub fn file_routes(cfg: &mut web::ServiceConfig) {
+    cfg.service(
+        web::scope("/file")
+            .route("/upload-public", web::post().to(upload_public))
+            .route("/upload-private", web::post().to(upload_private))
+            .route("/download/{file_id}", web::get().to(download))
+            .route("/stream/{file_id}", web::get().to(stream)),
     );
 }

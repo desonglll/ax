@@ -17,6 +17,7 @@ pub struct File {
     pub description: Option<String>,
     pub checksum: String,
     pub is_deleted: bool,
+    pub is_pub: bool,
 }
 
 impl File {
@@ -27,6 +28,7 @@ impl File {
         content_type: String,
         description: Option<String>,
         checksum: String,
+        is_pub: bool,
     ) -> Self {
         let user_id = session.get::<i32>("user_id").unwrap().unwrap_or(-1);
         let base_url: String = std::env::current_dir()
@@ -47,6 +49,7 @@ impl File {
             description,
             checksum,
             is_deleted: false,
+            is_pub,
         }
     }
 }
