@@ -48,6 +48,12 @@ pub async fn get_user_detail_by_name_db(pool: &PgPool, user_name: String) -> Res
         .await?;
     Ok(user_row)
 }
+pub async fn get_user_list_db(pool: &PgPool) -> Result<Vec<User>, AxError> {
+    let users = sqlx::query_as!(User, "select * from users")
+        .fetch_all(pool)
+        .await?;
+    Ok(users)
+}
 // Update
 pub async fn update_user_db(
     pool: &PgPool,

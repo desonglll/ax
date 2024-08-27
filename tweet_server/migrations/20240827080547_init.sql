@@ -1,3 +1,5 @@
+-- Add migration script here
+DROP TABLE IF EXISTS "files";
 CREATE TABLE "files" (
 	"id" UUID NOT NULL UNIQUE,
 	"name" VARCHAR NOT NULL,
@@ -15,6 +17,7 @@ CREATE TABLE "files" (
 );
 
 
+DROP TABLE IF EXISTS "users";
 CREATE TABLE "users" (
 	"id" SERIAL NOT NULL UNIQUE,
 	"user_name" VARCHAR NOT NULL UNIQUE,
@@ -32,6 +35,7 @@ CREATE TABLE "users" (
 );
 
 
+DROP TABLE IF EXISTS "posts";
 CREATE TABLE "posts" (
 	"id" SERIAL NOT NULL UNIQUE,
 	"content" TEXT NOT NULL,
@@ -45,6 +49,7 @@ CREATE TABLE "posts" (
 );
 
 
+DROP TABLE IF EXISTS "post_actions";
 CREATE TABLE "post_actions" (
 	"id" SERIAL NOT NULL UNIQUE,
 	"name" VARCHAR NOT NULL,
@@ -52,6 +57,7 @@ CREATE TABLE "post_actions" (
 );
 
 
+DROP TABLE IF EXISTS "reactions";
 CREATE TABLE "reactions" (
 	"id" SERIAL NOT NULL UNIQUE,
 	"user_id" INTEGER NOT NULL,
@@ -63,6 +69,7 @@ CREATE TABLE "reactions" (
 );
 
 
+DROP TABLE IF EXISTS "comments";
 CREATE TABLE "comments" (
 	"id" SERIAL NOT NULL UNIQUE,
 	"content" TEXT NOT NULL,
@@ -77,7 +84,8 @@ CREATE TABLE "comments" (
 );
 
 
-CREATE TABLE "comment_reaction" (
+DROP TABLE IF EXISTS "comment_reactions";
+CREATE TABLE "comment_reactions" (
 	"id" SERIAL NOT NULL UNIQUE,
 	"user_id" INTEGER NOT NULL,
 	"comment_id" INTEGER NOT NULL,

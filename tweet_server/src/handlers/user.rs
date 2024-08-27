@@ -1,7 +1,9 @@
 use actix_web::{web, HttpResponse};
 
 use crate::{
-    dbaccess::user::{delete_user_db, get_user_detail_db, insert_user_db, update_user_db},
+    dbaccess::user::{
+        delete_user_db, get_user_detail_db, get_user_list_db, insert_user_db, update_user_db,
+    },
     errors::AxError,
     models::user::{CreateUser, UpdateUser},
     state::AppState,
@@ -41,6 +43,14 @@ pub async fn get_user_detail(
 ) -> Result<HttpResponse, AxError> {
     let (user_id,) = path.into_inner();
     get_user_detail_db(&app_state.db, user_id)
+        .await
+        .map(|resp| HttpResponse::Ok().json(resp))
+}
+/*
+curl -X GET http://localhost:8000/users
+*/
+pub async fn get_user_list(app_state: web::Data<AppState>) -> Result<HttpResponse, AxError> {
+    get_user_list_db(&app_state.db)
         .await
         .map(|resp| HttpResponse::Ok().json(resp))
 }

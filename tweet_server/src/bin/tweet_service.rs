@@ -1,5 +1,3 @@
-use std::env;
-
 use actix_cors::Cors;
 use actix_session::storage::RedisActorSessionStore;
 use actix_session::SessionMiddleware;
@@ -9,22 +7,24 @@ use actix_web::web::{self, PayloadConfig};
 use actix_web::{App, HttpServer};
 use dotenv::dotenv;
 use env_logger::Env;
-use sqlx::PgPool;
-use tweet_server::libraries::mkdir;
+use tweet_server::libraries::dbop::get_db_pool;
+use tweet_server::preload;
 use tweet_server::routes::general::{auth_routes, file_routes, user_routes};
 use tweet_server::state::AppState;
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    dotenv().ok();
     // Initialize the logger from environment variables, or default to "debug"
     env_logger::init_from_env(Env::default().default_filter_or("debug"));
-    mkdir::make_directory("upload");
+    preload().await;
+
     // 加载密钥，用于加密 session cookie
     let secret_key = Key::generate();
     let redis_connection_string = "127.0.0.1:6379";
     // Construct App State
     dotenv().ok();
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL is not set in .env file");
-    let db_pool = PgPool::connect(&database_url).await.unwrap();
+
+    let db_pool = get_db_pool().await;
     let shared_data = web::Data::new(AppState { db: db_pool });
     HttpServer::new(move || {
         let cors = Cors::default()
