@@ -42,7 +42,12 @@ pub async fn get_user_detail_db(pool: &PgPool, user_id: i32) -> Result<User, AxE
         .await?;
     Ok(user_row)
 }
-
+pub async fn get_user_detail_by_name_db(pool: &PgPool, user_name: String) -> Result<User, AxError> {
+    let user_row = sqlx::query_as!(User, "select * from users where user_name = $1", user_name)
+        .fetch_one(pool)
+        .await?;
+    Ok(user_row)
+}
 // Update
 pub async fn update_user_db(
     pool: &PgPool,
