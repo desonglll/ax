@@ -1,7 +1,7 @@
 
 
 ## Migrations
-
+<!-- https://crates.io/crates/sqlx-cli -->
 ### Create a .env file
 
 ```shell
@@ -15,6 +15,7 @@ brew install sqlx-cli
 source .env
 
 sqlx database create
+sqlx database drop
 
 # Creates a new file in `migrations/<timestamp>-<name>.sql`.
 # Add your database schema changes to this new file.
@@ -22,4 +23,7 @@ sqlx migrate add -r <name>
 
 sqlx migrate run
 
+sqlx migrate info --source ../relative/migrations
+
+sqlx migrate revert
 ```

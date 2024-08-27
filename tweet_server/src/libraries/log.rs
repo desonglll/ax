@@ -117,7 +117,7 @@ impl Log {
     /// Log::log(LogLevel::Info, "This is an info message.".to_string());
     /// ```
     pub fn log(level: LogLevel, message: String) {
-        let timestamp = Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
+        let timestamp = Local::now().format("%Y-%m-%dT%H:%M:%S").to_string();
         let colored_message = level.colorize_message(&message);
         println!("[{}] {}: {}", timestamp, level.prefix(), colored_message);
     }

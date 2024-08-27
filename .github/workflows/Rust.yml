@@ -23,12 +23,16 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+      - name: Install SQLX CLI
+        run: cargo install sqlx-cli
+      - name: Database initialization
+        run: cd ./tweet_server && sqlx database create && sqlx migrate run
       - name: Check
-        run: cargo check --bin server
+        run: cargo check --bin tweet_server
       - name: Build
-        run: cargo build --bin server --release
+        run: cargo build --bin tweet_server --release
       - name: Check status of release binaries
-        run: stat ./target/release/server
+        run: stat ./target/release/tweet_server
 
   test:
     runs-on: ubuntu-latest
@@ -64,11 +68,13 @@ jobs:
             echo "Waiting for postgres..."
             sleep 1
           done
-      - name: Install Diesel CLI
-        run: curl --proto '=https' --tlsv1.2 -LsSf https://github.com/diesel-rs/diesel/releases/download/v2.2.1/diesel_cli-installer.sh | sh
+      # - name: Install Diesel CLI
+      #   run: curl --proto '=https' --tlsv1.2 -LsSf https://github.com/diesel-rs/diesel/releases/download/v2.2.1/diesel_cli-installer.sh | sh
+      - name: Install SQLX CLI
+        run: cargo install sqlx-cli
 
       - name: Database initialization
-        run: cd ./backend/query && diesel setup && diesel database reset
+        run: cd ./tweet_server && sqlx database create && sqlx migrate run
 
       - name: Run tests
-        run: cargo test --bin server
+        run: cargo test --bin tweet_server
