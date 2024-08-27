@@ -22,6 +22,24 @@ pub async fn get_file_details_db(pool: &PgPool, file_id: Uuid) -> Result<File, A
         .await?;
     Ok(file_row)
 }
+pub async fn get_file_public_list_db(pool: &PgPool) -> Result<Vec<File>, AxError> {
+    let files = sqlx::query_as!(File, "select * from files where is_pub = $1", true)
+        .fetch_all(pool)
+        .await?;
+    Ok(files)
+}
+pub async fn get_file_private_list_db(pool: &PgPool, user_id: i32) -> Result<Vec<File>, AxError> {
+    let files = sqlx::query_as!(File, "select * from files where user_id = $1", user_id)
+        .fetch_all(pool)
+        .await?;
+    Ok(files)
+}
+pub async fn get_file_list_db(pool: &PgPool) -> Result<Vec<File>, AxError> {
+    let files = sqlx::query_as!(File, "select * from files")
+        .fetch_all(pool)
+        .await?;
+    Ok(files)
+}
 // Delete
 pub async fn set_file_deleted_by_checksum_db(
     pool: &PgPool,

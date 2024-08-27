@@ -97,6 +97,47 @@ pub async fn login(
                     if let Err(err) = session.insert("user_id", user.id) {
                         Log::error(format!("Failed to set session for `user_id`: {}", err));
                     }
+                    if let Err(err) = session.insert("user_name", &user.user_name) {
+                        Log::error(format!("Failed to set session for `user_name`: {}", err));
+                    }
+                    if let Err(err) = session.insert("email", &user.email) {
+                        Log::error(format!("Failed to set session for `email`: {}", err));
+                    }
+                    if let Err(err) = session.insert("password_hash", &user.password_hash) {
+                        Log::error(format!(
+                            "Failed to set session for `password_hash`: {}",
+                            err
+                        ));
+                    }
+                    if let Err(err) =
+                        session.insert("full_name", user.full_name.as_deref().unwrap_or(""))
+                    {
+                        Log::error(format!("Failed to set session for `full_name`: {}", err));
+                    }
+                    if let Err(err) = session.insert("phone", user.phone) {
+                        Log::error(format!("Failed to set session for `phone`: {}", err));
+                    }
+                    if let Err(err) = session.insert("created_at", user.created_at) {
+                        Log::error(format!("Failed to set session for `created_at`: {}", err));
+                    }
+                    if let Err(err) = session.insert("updated_at", user.updated_at) {
+                        Log::error(format!("Failed to set session for `updated_at`: {}", err));
+                    }
+                    if let Err(err) = session.insert("last_login", user.last_login) {
+                        Log::error(format!("Failed to set session for `last_login`: {}", err));
+                    }
+                    if let Err(err) = session.insert("is_active", user.is_active) {
+                        Log::error(format!("Failed to set session for `is_active`: {}", err));
+                    }
+                    if let Err(err) = session.insert("is_admin", user.is_admin) {
+                        Log::error(format!("Failed to set session for `is_admin`: {}", err));
+                    }
+                    if let Err(err) = session.insert("profile_picture", user.profile_picture) {
+                        Log::error(format!(
+                            "Failed to set session for `profile_picture`: {}",
+                            err
+                        ));
+                    }
                 } else {
                     Log::error("Failed to retrieve user information.".to_string());
                 }
@@ -136,5 +177,12 @@ pub async fn logout(session: Session) -> Result<impl Responder, AxError> {
         Ok(HttpResponse::Ok().json(format!(
             "Attempt to log out failed: no user found in session."
         )))
+    }
+}
+
+pub async fn check_login(session: &Session) -> Result<bool, AxError> {
+    match session.get::<String>("user_name") {
+        Ok(_user_name) => Ok(true),
+        _ => Ok(false),
     }
 }

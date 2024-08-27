@@ -53,3 +53,11 @@ impl File {
         }
     }
 }
+#[derive(Deserialize)]
+pub struct FileFilter {
+    pub name: Option<String>,
+    pub path: Option<String>,
+    pub user_id: Option<i32>,
+    pub is_deleted: Option<bool>,
+    pub is_pub: Option<bool>,
+}
