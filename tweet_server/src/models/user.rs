@@ -1,12 +1,7 @@
-use std::collections::HashMap;
-
-use actix_session::Session;
 use actix_web::web;
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-
-use crate::libraries::log::Log;
 
 #[derive(Deserialize, Serialize, Debug, Default, Clone)]
 #[serde(rename_all = "camelCase")]
