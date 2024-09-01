@@ -37,18 +37,16 @@ impl From<web::Json<CreatePost>> for CreatePost {
         }
     }
 }
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdatePost {
+    pub content: Option<String>,
+}
 
-/*
--- Your SQL goes here
-CREATE TABLE public.posts (
-    "id" SERIAL NOT NULL UNIQUE,
-    "content" TEXT NOT NULL,
-    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "user_id" INTEGER NOT NULL,
-    "reply_to" INTEGER,
-    "user_name" VARCHAR NOT NULL,
-    "reactions" JSONB,
-    PRIMARY KEY("id")
-);
- */
+impl From<web::Json<UpdatePost>> for UpdatePost {
+    fn from(value: web::Json<UpdatePost>) -> Self {
+        UpdatePost {
+            content: value.content.clone(),
+        }
+    }
+}

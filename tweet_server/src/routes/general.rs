@@ -6,7 +6,7 @@ use crate::handlers::{
         download, get_file_list, get_pub_file_list, get_user_file, stream, upload_private,
         upload_public,
     },
-    post::{delete_post, post_new_post},
+    post::{delete_post, post_new_post, update_post_details},
     user::{delete_user, get_user_detail, get_user_list, post_new_user, update_user_details},
 };
 
@@ -55,6 +55,7 @@ pub fn post_routes(cfg: &mut web::ServiceConfig) {
         web::scope("/posts")
             // 新增推文
             .route("", web::post().to(post_new_post))
-            .route("/{post_id}", web::delete().to(delete_post)),
+            .route("/{post_id}", web::delete().to(delete_post))
+            .route("/{post_id}", web::put().to(update_post_details)),
     );
 }

@@ -2,9 +2,10 @@ use sqlx::PgPool;
 
 use crate::{
     errors::AxError,
-    models::post::{CreatePost, Post},
+    models::post::{CreatePost, Post, UpdatePost},
 };
 
+// Create
 pub async fn insert_post_db(pool: &PgPool, create_post: CreatePost) -> Result<Post, AxError> {
     let post_row = sqlx::query_as!(
         Post,
@@ -14,6 +15,7 @@ pub async fn insert_post_db(pool: &PgPool, create_post: CreatePost) -> Result<Po
     Ok(post_row)
 }
 
+// Delete
 pub async fn delete_post_db(pool: &PgPool, post_id: i32) -> Result<Post, AxError> {
     let post_row = sqlx::query_as!(
         Post,
@@ -21,4 +23,35 @@ pub async fn delete_post_db(pool: &PgPool, post_id: i32) -> Result<Post, AxError
         post_id
     ).fetch_one(pool).await?;
     Ok(post_row)
+}
+
+// Update
+pub async fn update_post_db(
+    pool: &PgPool,
+    post_id: i32,
+    update_post: UpdatePost,
+) -> Result<Post, AxError> {
+    // Retrieve current record.
+    let current_post_row = sqlx::query_as!(Post, "select * from posts where id = $1", post_id)
+        .fetch_one(pool)
+        .await
+        .map_err(|_err| AxError::NotFound("Post id not found".into()))?;
+    // Construct the parameters for update.
+    let content: String = if let Some(content) = update_post.content {
+        content
+    } else {
+        current_post_row.content
+    };
+
+    // Prepare SQL statement
+    let post_row = sqlx::query_as!(
+        Post,
+        "update posts set content = $1 where id = $2 returning id, content, created_at, updated_at, user_id, reply_to, user_name, reactions",
+        content, post_id
+    ).fetch_one(pool).await;
+    if let Ok(post) = post_row {
+        Ok(post)
+    } else {
+        Err(AxError::NotFound("Post id not found".into()))
+    }
 }

@@ -2,7 +2,7 @@ use actix_web::{web, HttpResponse};
 
 use crate::dbaccess::post::*;
 use crate::errors::AxError;
-use crate::models::post::CreatePost;
+use crate::models::post::{CreatePost, UpdatePost};
 use crate::state::AppState;
 
 // Create
@@ -25,7 +25,24 @@ pub async fn post_new_post(
         .await
         .map(|post| HttpResponse::Ok().json(post))
 }
-
+// Update
+/*
+curl -X PUT localhost:8000/posts/1 \
+   -H "Content-Type: application/json" \
+   -d '{
+       "content": "Modified content."
+   }'
+*/
+pub async fn update_post_details(
+    app_state: web::Data<AppState>,
+    path: web::Path<(i32,)>,
+    update_post: web::Json<UpdatePost>,
+) -> Result<HttpResponse, AxError> {
+    let (post_id,) = path.into_inner();
+    update_post_db(&app_state.db, post_id, update_post.into())
+        .await
+        .map(|post| HttpResponse::Ok().json(post))
+}
 // Delete
 /*
 curl -X DELETE http://localhost:8000/posts/1
@@ -45,8 +62,8 @@ mod tests {
     use std::env;
 
     use crate::{
-        handlers::post::{delete_post, insert_post_db, post_new_post},
-        models::post::CreatePost,
+        handlers::post::{delete_post, insert_post_db, post_new_post, update_post_details},
+        models::post::{CreatePost, UpdatePost},
         state::AppState,
     };
     use actix_web::{http::StatusCode, web};
@@ -107,5 +124,37 @@ mod tests {
         let delete_params: web::Path<(i32,)> = web::Path::from((insert_result.id,));
         let resp = delete_post(app_state.clone(), delete_params).await.unwrap();
         assert_eq!(resp.status(), StatusCode::OK);
+    }
+
+    #[actix_rt::test]
+    async fn test_update_post() {
+        dotenv().ok();
+        let database_url = env::var("DATABASE_URL").expect("DATABASE_URL is not set in .env file");
+        let pool: PgPool = PgPool::connect(&database_url).await.unwrap();
+        let app_state: web::Data<AppState> = web::Data::new(AppState { db: pool });
+        let post = CreatePost {
+            content: String::from("test_update_post_before"),
+            user_id: 1,
+            reply_to: None,
+            user_name: String::from("mike"),
+            reactions: Some(serde_json::json!({})),
+        };
+        let insert_result = insert_post_db(&app_state.db, post.clone()).await.unwrap();
+        assert_eq!(&post.content, &insert_result.content);
+        // Update test user.
+        let update_post_msg = UpdatePost {
+            content: Some(String::from("test_update_post_after")),
+        };
+        let parameters: web::Path<(i32,)> = web::Path::from((insert_result.id,));
+        let update_param = web::Json(update_post_msg);
+        let resp = update_post_details(app_state.clone(), parameters, update_param)
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
+        // Delete test user.
+        sqlx::query!("delete from posts where id = $1", insert_result.id)
+            .execute(&app_state.db)
+            .await
+            .unwrap();
     }
 }
