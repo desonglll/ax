@@ -2,6 +2,9 @@
 title: ax system
 ---
 
+## !!! This README is not updated for sqlx.
+## !!! This README is not updated for distribute system.
+
 ## Apps
 
 An Chat And Post System based on Rust and Postgres.
@@ -11,6 +14,8 @@ An Chat And Post System based on Rust and Postgres.
 The previous project was [Crab Rocket](https://github.com/desonglll/crab_rocket)
 
 
+- [!!! This README is not updated for sqlx.](#-this-readme-is-not-updated-for-sqlx)
+- [!!! This README is not updated for distribute system.](#-this-readme-is-not-updated-for-distribute-system)
 - [Apps](#apps)
 - [🧩 Project Dependencies](#-project-dependencies)
 - [Demo](#demo)
@@ -20,8 +25,10 @@ The previous project was [Crab Rocket](https://github.com/desonglll/crab_rocket)
   - [Redis](#redis)
   - [diesel](#diesel)
 - [🎃 Quick Start](#-quick-start)
-- [🥰 Development](#-development)
-  - [Database Migration](#database-migration)
+- [Migrations](#migrations)
+  - [Create a .env file](#create-a-env-file)
+  - [Run sqlx-cli](#run-sqlx-cli)
+  - [Run server](#run-server)
 - [🔧 Compile Release Version](#-compile-release-version)
   - [Installation](#installation)
   - [🚀 Running the Binary](#-running-the-binary)
@@ -78,9 +85,45 @@ diesel setup && diesel database reset
 cd ../..
 cargo run
 ```
-## 🥰 Development
+<!-- ## 🥰 Development -->
+## Migrations
+<!-- https://crates.io/crates/sqlx-cli -->
+### Create a .env file
 
-### Database Migration
+```shell
+export DATABASE_URL=postgres://localhost:5432/hello_rocket
+```
+
+### Run sqlx-cli
+
+```shell
+brew install sqlx-cli
+source .env
+
+cd tweet_server
+
+sqlx database create
+sqlx database drop
+
+# Creates a new file in `migrations/<timestamp>-<name>.sql`.
+# Add your database schema changes to this new file.
+sqlx migrate add -r <name>
+
+sqlx migrate run
+
+sqlx migrate info --source ../relative/migrations
+
+sqlx migrate revert
+```
+
+### Run server
+```shell
+# Run the server
+cd ax
+cargo run --bin tweet_service
+```
+
+<!-- ### Database Migration
 
 ```shell
 # Install Diesel CLI
@@ -99,7 +142,7 @@ diesel migration run
 cargo run
 ```
 
-!!! Run `diesel database reset` before run `cargo test` .
+!!! Run `diesel database reset` before run `cargo test` . -->
 
 ## 🔧 Compile Release Version
 
