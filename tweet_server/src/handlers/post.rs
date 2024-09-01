@@ -11,9 +11,9 @@ curl -X POST localhost:8000/posts \
    -H "Content-Type: application/json" \
    -d '{
        "content": "Never Settle",
-       "user_id": 1,
-       "reply_to": null,
-       "user_name": "John Doe",
+       "userId": 1,
+       "replyTo": null,
+       "userName": "John Doe",
        "reactions": null
    }'
 */
@@ -23,14 +23,32 @@ pub async fn post_new_post(
 ) -> Result<HttpResponse, AxError> {
     insert_post_db(&app_state.db, new_post.into())
         .await
-        .map(|user| HttpResponse::Ok().json(user))
+        .map(|post| HttpResponse::Ok().json(post))
+}
+
+// Delete
+/*
+curl -X DELETE http://localhost:8000/posts/1
+*/
+pub async fn delete_post(
+    app_state: web::Data<AppState>,
+    path: web::Path<(i32,)>,
+) -> Result<HttpResponse, AxError> {
+    let (post_id,) = path.into_inner();
+    delete_post_db(&app_state.db, post_id)
+        .await
+        .map(|post| HttpResponse::Ok().json(post))
 }
 
 #[cfg(test)]
 mod tests {
     use std::env;
 
-    use crate::{handlers::post::post_new_post, models::post::CreatePost, state::AppState};
+    use crate::{
+        handlers::post::{delete_post, insert_post_db, post_new_post},
+        models::post::CreatePost,
+        state::AppState,
+    };
     use actix_web::{http::StatusCode, web};
     use dotenv::dotenv;
     use serde_json::Value;
@@ -68,5 +86,26 @@ mod tests {
             .execute(&app_state.db)
             .await
             .unwrap();
+    }
+
+    #[actix_rt::test]
+    async fn test_delete_post() {
+        dotenv().ok();
+        let database_url = env::var("DATABASE_URL").expect("DATABASE_URL is not set in .env file");
+        let pool: PgPool = PgPool::connect(&database_url).await.unwrap();
+        let app_state: web::Data<AppState> = web::Data::new(AppState { db: pool });
+        let post = CreatePost {
+            content: String::from("new post"),
+            user_id: 1,
+            reply_to: None,
+            user_name: String::from("mike"),
+            reactions: Some(serde_json::json!({})),
+        };
+        let insert_result = insert_post_db(&app_state.db, post.clone()).await.unwrap();
+        assert_eq!("new post", &insert_result.content);
+        // Delete test post.
+        let delete_params: web::Path<(i32,)> = web::Path::from((insert_result.id,));
+        let resp = delete_post(app_state.clone(), delete_params).await.unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
     }
 }

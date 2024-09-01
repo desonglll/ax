@@ -9,7 +9,7 @@ use dotenv::dotenv;
 use env_logger::Env;
 use tweet_server::libraries::dbop::get_db_pool;
 use tweet_server::preload;
-use tweet_server::routes::general::{auth_routes, file_routes, user_routes};
+use tweet_server::routes::general::{auth_routes, file_routes, post_routes, user_routes};
 use tweet_server::state::AppState;
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -49,6 +49,7 @@ async fn main() -> std::io::Result<()> {
             .configure(user_routes)
             .configure(auth_routes)
             .configure(file_routes)
+            .configure(post_routes)
         // 将最大负载大小设置为 300MB
     })
     .client_request_timeout(std::time::Duration::from_secs(60)) // 设置请求超时为 60 秒

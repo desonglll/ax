@@ -13,3 +13,12 @@ pub async fn insert_post_db(pool: &PgPool, create_post: CreatePost) -> Result<Po
     ).fetch_one(pool).await?;
     Ok(post_row)
 }
+
+pub async fn delete_post_db(pool: &PgPool, post_id: i32) -> Result<Post, AxError> {
+    let post_row = sqlx::query_as!(
+        Post,
+        "delete from posts where id = $1 returning id, content, created_at, updated_at, user_id, reply_to, user_name, reactions",
+        post_id
+    ).fetch_one(pool).await?;
+    Ok(post_row)
+}
