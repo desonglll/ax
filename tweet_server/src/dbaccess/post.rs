@@ -15,6 +15,19 @@ pub async fn insert_post_db(pool: &PgPool, create_post: CreatePost) -> Result<Po
     Ok(post_row)
 }
 
+// Read
+pub async fn get_post_detail_db(pool: &PgPool, post_id: i32) -> Result<Post, AxError> {
+    let post_row = sqlx::query_as!(Post, "select * from posts where id = $1", post_id)
+        .fetch_one(pool)
+        .await?;
+    Ok(post_row)
+}
+pub async fn get_post_list_db(pool: &PgPool) -> Result<Vec<Post>, AxError> {
+    let posts = sqlx::query_as!(Post, "select * from posts")
+        .fetch_all(pool)
+        .await?;
+    Ok(posts)
+}
 // Delete
 pub async fn delete_post_db(pool: &PgPool, post_id: i32) -> Result<Post, AxError> {
     let post_row = sqlx::query_as!(

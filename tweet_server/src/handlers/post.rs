@@ -25,6 +25,27 @@ pub async fn post_new_post(
         .await
         .map(|post| HttpResponse::Ok().json(post))
 }
+// Read
+/*
+curl -X GET http://localhost:8000/posts/1
+*/
+pub async fn get_post_detail(
+    app_state: web::Data<AppState>,
+    path: web::Path<(i32,)>,
+) -> Result<HttpResponse, AxError> {
+    let (post_id,) = path.into_inner();
+    get_post_detail_db(&app_state.db, post_id)
+        .await
+        .map(|resp| HttpResponse::Ok().json(resp))
+}
+/*
+curl -X GET http://localhost:8000/posts
+*/
+pub async fn get_post_list(app_state: web::Data<AppState>) -> Result<HttpResponse, AxError> {
+    get_post_list_db(&app_state.db)
+        .await
+        .map(|resp| HttpResponse::Ok().json(resp))
+}
 // Update
 /*
 curl -X PUT localhost:8000/posts/1 \
@@ -62,11 +83,13 @@ mod tests {
     use std::env;
 
     use crate::{
-        handlers::post::{delete_post, insert_post_db, post_new_post, update_post_details},
+        handlers::post::{
+            delete_post, get_post_detail, insert_post_db, post_new_post, update_post_details,
+        },
         models::post::{CreatePost, UpdatePost},
         state::AppState,
     };
-    use actix_web::{http::StatusCode, web};
+    use actix_web::{http::StatusCode, web, ResponseError};
     use dotenv::dotenv;
     use serde_json::Value;
     use sqlx::PgPool;
@@ -153,6 +176,36 @@ mod tests {
         assert_eq!(resp.status(), StatusCode::OK);
         // Delete test user.
         sqlx::query!("delete from posts where id = $1", insert_result.id)
+            .execute(&app_state.db)
+            .await
+            .unwrap();
+    }
+    #[actix_rt::test]
+    async fn test_get_post_detail() {
+        dotenv().ok();
+        let database_url = env::var("DATABASE_URL").expect("DATABASE_URL is not set in .env file");
+        let pool: PgPool = PgPool::connect(&database_url).await.unwrap();
+        let app_state: web::Data<AppState> = web::Data::new(AppState { db: pool });
+        let new_post_msg = CreatePost {
+            content: "测试内容".to_string(),
+            user_id: 1,                             // 假设 1 是一个有效的用户ID
+            reply_to: None,                         // 如果没有回复目标则为 None
+            reactions: Some(serde_json::json!({})), // 空的 JSON 对象表示没有反应
+            user_name: "测试用户".to_string(),
+        };
+        let result = insert_post_db(&app_state.db, new_post_msg.clone())
+            .await
+            .unwrap();
+        assert_eq!(&new_post_msg.content, &result.content);
+        let parameters: web::Path<(i32,)> = web::Path::from((result.id,));
+        let resp = get_post_detail(app_state.clone(), parameters).await;
+        match resp {
+            Ok(_) => println!("Something wrong"),
+            Err(err) => assert_eq!(err.status_code(), StatusCode::NOT_FOUND),
+        }
+
+        // Delete test user.
+        sqlx::query!("delete from posts where id = $1", result.id)
             .execute(&app_state.db)
             .await
             .unwrap();
