@@ -26,7 +26,7 @@ pub async fn get_file_list(
     app_state: web::Data<AppState>,
 ) -> Result<HttpResponse, AxError> {
     if check_login(&session).await.unwrap() {
-        if is_admin(session).unwrap() {
+        if is_admin(session).await.unwrap() {
             get_file_list_db(&app_state.db)
                 .await
                 .map(|resp| HttpResponse::Ok().json(resp))

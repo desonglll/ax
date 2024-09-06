@@ -61,3 +61,13 @@ pub fn post_routes(cfg: &mut web::ServiceConfig) {
             .route("/{post_id}", web::get().to(get_post_detail)),
     );
 }
+// 添加共同的 /api scope
+pub fn api_routes(cfg: &mut web::ServiceConfig) {
+    cfg.service(
+        web::scope("/api")
+            .configure(user_routes) // 配置用户路由
+            .configure(auth_routes) // 配置认证路由
+            .configure(file_routes) // 配置文件路由
+            .configure(post_routes), // 配置推文路由
+    );
+}

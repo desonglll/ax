@@ -1,3 +1,4 @@
+use actix_session::Session;
 use actix_web::{web, HttpResponse};
 
 use crate::{
@@ -5,6 +6,7 @@ use crate::{
         delete_user_db, get_user_detail_db, get_user_list_db, insert_user_db, update_user_db,
     },
     errors::AxError,
+    libraries::response::response::ErrorMsg,
     models::user::{CreateUser, UpdateUser},
     state::AppState,
 };
@@ -64,14 +66,24 @@ curl -X PUT localhost:8000/users/1 \
    }'
 */
 pub async fn update_user_details(
+    session: Session,
     app_state: web::Data<AppState>,
     path: web::Path<(i32,)>,
     update_user: web::Json<UpdateUser>,
 ) -> Result<HttpResponse, AxError> {
     let (user_id,) = path.into_inner();
-    update_user_db(&app_state.db, user_id, update_user.into())
-        .await
-        .map(|user| HttpResponse::Ok().json(user))
+    match session.get::<i32>("id") {
+        Ok(session_user_id) => {
+            if session_user_id.unwrap() == user_id {
+                update_user_db(&app_state.db, user_id, update_user.into())
+                    .await
+                    .map(|user| HttpResponse::Ok().json(user))
+            } else {
+                Ok(HttpResponse::Unauthorized().json(ErrorMsg("Invalid user".to_owned())))
+            }
+        }
+        Err(e) => Err(e.into()),
+    }
 }
 
 // Delete
@@ -92,7 +104,11 @@ pub async fn delete_user(
 mod user_dbaccess_tests {
     use std::env;
 
-    use actix_web::{http::StatusCode, web, ResponseError};
+    use actix_web::{
+        http::StatusCode,
+        web::{self},
+        ResponseError,
+    };
     use dotenv::dotenv;
     use sqlx::PgPool;
     use uuid::Uuid;
@@ -100,6 +116,7 @@ mod user_dbaccess_tests {
     use crate::{
         dbaccess::user::{check_password_correct_db, insert_user_db},
         handlers::user::{delete_user, get_user_detail, post_new_user, update_user_details},
+        libraries::session::get_test_session,
         models::user::{CreateUser, UpdateUser},
         state::AppState,
     };
@@ -157,6 +174,7 @@ mod user_dbaccess_tests {
             profile_picture: Some(Uuid::new_v4()),
         };
         let user_param = web::Json(new_user_msg.clone());
+
         let resp = post_new_user(app_state.clone(), user_param).await.unwrap();
         assert_eq!(resp.status(), StatusCode::OK);
         // Delete test user.
@@ -253,7 +271,8 @@ mod user_dbaccess_tests {
         };
         let parameters: web::Path<(i32,)> = web::Path::from((insert_result.id,));
         let update_param = web::Json(update_user_msg);
-        let resp = update_user_details(app_state.clone(), parameters, update_param)
+        let session = get_test_session(&insert_result).await;
+        let resp = update_user_details(session, app_state.clone(), parameters, update_param)
             .await
             .unwrap();
         assert_eq!(resp.status(), StatusCode::OK);

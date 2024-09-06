@@ -1,3 +1,4 @@
+use actix_session::SessionGetError;
 use actix_web::{error, http::StatusCode, HttpResponse, Result};
 use serde::Serialize;
 use sqlx::error::Error as SQLxError;
@@ -10,6 +11,8 @@ pub enum AxError {
     NotFound(String),
     InvalidInput(String),
     AuthenticationError(String),
+
+    SessionGetError(String),
 }
 #[derive(Debug, Serialize)]
 pub struct MyErrorResponse {
@@ -40,6 +43,10 @@ impl AxError {
                 println!("Authentication error occurred: {:?}", msg);
                 msg.into()
             }
+            AxError::SessionGetError(msg) => {
+                println!("Session get error occurred: {:?}", msg);
+                msg.into()
+            }
         }
     }
 }
@@ -51,6 +58,7 @@ impl error::ResponseError for AxError {
             AxError::InvalidInput(_msg) => StatusCode::BAD_REQUEST,
             AxError::NotFound(_msg) => StatusCode::NOT_FOUND,
             AxError::AuthenticationError(_msg) => StatusCode::BAD_REQUEST,
+            AxError::SessionGetError(_msg) => StatusCode::BAD_REQUEST,
         }
     }
     fn error_response(&self) -> HttpResponse {
@@ -75,5 +83,11 @@ impl From<actix_web::error::Error> for AxError {
 impl From<SQLxError> for AxError {
     fn from(err: SQLxError) -> Self {
         AxError::DBError(err.to_string())
+    }
+}
+
+impl From<SessionGetError> for AxError {
+    fn from(value: SessionGetError) -> Self {
+        AxError::SessionGetError(value.to_string())
     }
 }

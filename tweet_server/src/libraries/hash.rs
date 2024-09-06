@@ -19,7 +19,7 @@ use bcrypt::{hash, verify, DEFAULT_COST};
 /// let is_valid = Hash::verify_password(password, hashed).expect("Failed to verify password");
 /// println!("Password is valid: {}", is_valid);
 /// ```
-pub struct Hash {}
+pub struct Hash;
 
 impl Hash {
     /// 创建密码哈希

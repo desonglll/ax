@@ -1,7 +1,9 @@
 use actix_web::web;
-use chrono::NaiveDateTime;
+use chrono::{NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+
+use crate::libraries::hash::Hash;
 
 #[derive(Deserialize, Serialize, Debug, Default, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -71,6 +73,25 @@ impl From<web::Json<UpdateUser>> for UpdateUser {
             is_active: value.is_active,
             is_admin: value.is_admin,
             profile_picture: value.profile_picture,
+        }
+    }
+}
+
+impl User {
+    pub fn test_super_user() -> Self {
+        User {
+            id: 999,
+            user_name: "test_super_user".to_owned(),
+            email: "test_super_user@gmail.com".to_owned(),
+            password_hash: Hash::create_password_hash("070011".to_string()).unwrap(),
+            full_name: Some("test_full_name".to_owned()),
+            phone: Some("12345678900".to_owned()),
+            is_active: Some(true).is_some(),
+            is_admin: Some(true).is_some(),
+            profile_picture: Some(Uuid::new_v4()),
+            created_at: Some(Utc::now().naive_local()),
+            updated_at: Some(Utc::now().naive_local()),
+            last_login: Some(Utc::now().naive_local()),
         }
     }
 }

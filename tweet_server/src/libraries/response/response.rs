@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::libraries::data::Data;
 
@@ -35,3 +35,6 @@ pub struct ListResponse<T> {
     /// 可选的分页信息
     pub pagination: Option<ResponsePagination>,
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct ErrorMsg(pub String);
