@@ -60,10 +60,12 @@ pub fn greet(user_name: String) -> String {
 /// # 请求示例数据
 /*
 ```json
-{
-    "user_name": "alice",
-    "password": "070011"
-}
+curl -X POST localhost:8000/api/login \
+   -H "Content-Type: application/json" \
+   -d '{
+        "userName": "root",
+        "password": "070011"
+    }'
 ```
 */
 pub async fn login(

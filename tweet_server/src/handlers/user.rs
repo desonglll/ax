@@ -72,9 +72,9 @@ pub async fn update_user_details(
     update_user: web::Json<UpdateUser>,
 ) -> Result<HttpResponse, AxError> {
     let (user_id,) = path.into_inner();
-    match session.get::<i32>("id") {
+    match session.get::<i32>("user_id") {
         Ok(session_user_id) => {
-            if session_user_id.unwrap() == user_id {
+            if session_user_id.unwrap_or(-1) == user_id {
                 update_user_db(&app_state.db, user_id, update_user.into())
                     .await
                     .map(|user| HttpResponse::Ok().json(user))

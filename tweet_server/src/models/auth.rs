@@ -19,6 +19,7 @@ use serde::{Deserialize, Serialize};
 /// println!("Password: {}", login_request.password);
 /// ```
 #[derive(Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
 pub struct LoginRequest {
     pub user_name: String,
     pub password: String,
