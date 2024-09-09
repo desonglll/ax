@@ -1,12 +1,17 @@
 use actix_session::Session;
 use actix_web::{web, HttpResponse, Responder};
 use chrono::{Local, Timelike};
+use serde_json::{json, Value};
 
 use crate::{
     dbaccess::user::{check_password_correct_db, get_user_detail_by_name_db},
     errors::AxError,
-    libraries::log::Log,
-    models::auth::LoginRequest,
+    libraries::{
+        log::Log,
+        resp::{api_response::ApiResponse, data::Data},
+        session::insert_user_to_redis,
+    },
+    models::{auth::LoginRequest, user::User},
     state::AppState,
 };
 
@@ -24,9 +29,18 @@ use crate::{
 pub async fn index(session: Session) -> impl Responder {
     // 尝试获取 session 中的 `user_name`
     if let Some(user_name) = session.get::<String>("user_name").unwrap() {
-        HttpResponse::Ok().json(format!("Welcome back! {}", user_name))
+        // HttpResponse::Ok().json(format!("Welcome back! {}", user_name))
+        HttpResponse::Ok().json(ApiResponse::<()>::new(
+            200,
+            format!("Welcome back! {}", user_name),
+            None,
+        ))
     } else {
-        HttpResponse::Ok().json(String::from("Please Log in!"))
+        HttpResponse::Ok().json(ApiResponse::<()>::new(
+            401,
+            String::from("Please Log in."),
+            None,
+        ))
     }
 }
 
@@ -71,88 +85,66 @@ curl -X POST localhost:8000/api/login \
 pub async fn login(
     session: Session,
     app_state: web::Data<AppState>,
-    login_params: web::Json<LoginRequest>,
+    login_params: Option<web::Json<LoginRequest>>,
 ) -> Result<impl Responder, AxError> {
-    // Extract user credentials from the request
-    let user_name = login_params.user_name.clone();
-    let password = login_params.password.clone();
-    Log::info(format!("Attempting to log in user `{}`", user_name));
+    match login_params {
+        Some(login_params) => {
+            // Extract user credentials from the request
+            let user_name = login_params.user_name.clone();
+            let password = login_params.password.clone();
+            Log::info(format!("Attempting to log in user `{}`", user_name));
 
-    // Check if the provided username and password are correct
-    match check_password_correct_db(&app_state.db, user_name.clone(), password.clone()).await {
-        Ok(is_valid) => {
-            if is_valid {
-                Log::info(format!("Password validation succeeded for `{}`", user_name));
+            // Check if the provided username and password are correct
+            match check_password_correct_db(&app_state.db, user_name.clone(), password.clone())
+                .await
+            {
+                Ok(is_valid) => {
+                    if is_valid {
+                        Log::info(format!("Password validation succeeded for `{}`", user_name));
 
-                // Set session variables upon successful login
-                if let Err(err) = session.insert("user_name", user_name.clone()) {
-                    Log::error(format!("Failed to set session for `user_name`: {}", err));
+                        // Set session variables upon successful login
+                        // if let Err(err) = session.insert("user_name", user_name.clone()) {
+                        //     Log::error(format!("Failed to set session for `user_name`: {}", err));
+                        // }
+                        // if let Err(err) = session.insert("password", password.clone()) {
+                        //     Log::error(format!("Failed to set session for `password`: {}", err));
+                        // }
+                        // if let Err(err) = session.insert("is_login", true) {
+                        //     Log::error(format!("Failed to set session for `is_login`: {}", err));
+                        // }
+                        let user =
+                            get_user_detail_by_name_db(&app_state.db, user_name.clone()).await?;
+                        insert_user_to_redis(session, &user);
+                        Log::info(format!("User `{}` logged in successfully", user_name));
+                        Ok(HttpResponse::Ok().json(ApiResponse::<Data<User>>::new(
+                            200,
+                            format!("Logged in {}.", user_name),
+                            Some(Data { data: Some(user) }),
+                        )))
+                    } else {
+                        Log::info(format!("Password validation failed for `{}`", user_name));
+                        Ok(HttpResponse::Ok().json(ApiResponse::<String>::new(
+                            401,
+                            format!("Password validation failed for `{}`", user_name),
+                            None,
+                        )))
+                    }
                 }
-                if let Err(err) = session.insert("password", password.clone()) {
-                    Log::error(format!("Failed to set session for `password`: {}", err));
-                }
-                if let Err(err) = session.insert("is_login", true) {
-                    Log::error(format!("Failed to set session for `is_login`: {}", err));
-                }
-                if let Ok(user) = get_user_detail_by_name_db(&app_state.db, user_name.clone()).await
-                {
-                    if let Err(err) = session.insert("user_id", user.id) {
-                        Log::error(format!("Failed to set session for `user_id`: {}", err));
-                    }
-                    if let Err(err) = session.insert("user_name", &user.user_name) {
-                        Log::error(format!("Failed to set session for `user_name`: {}", err));
-                    }
-                    if let Err(err) = session.insert("email", &user.email) {
-                        Log::error(format!("Failed to set session for `email`: {}", err));
-                    }
-                    if let Err(err) = session.insert("password_hash", &user.password_hash) {
-                        Log::error(format!(
-                            "Failed to set session for `password_hash`: {}",
-                            err
-                        ));
-                    }
-                    if let Err(err) =
-                        session.insert("full_name", user.full_name.as_deref().unwrap_or(""))
-                    {
-                        Log::error(format!("Failed to set session for `full_name`: {}", err));
-                    }
-                    if let Err(err) = session.insert("phone", user.phone) {
-                        Log::error(format!("Failed to set session for `phone`: {}", err));
-                    }
-                    if let Err(err) = session.insert("created_at", user.created_at) {
-                        Log::error(format!("Failed to set session for `created_at`: {}", err));
-                    }
-                    if let Err(err) = session.insert("updated_at", user.updated_at) {
-                        Log::error(format!("Failed to set session for `updated_at`: {}", err));
-                    }
-                    if let Err(err) = session.insert("last_login", user.last_login) {
-                        Log::error(format!("Failed to set session for `last_login`: {}", err));
-                    }
-                    if let Err(err) = session.insert("is_active", user.is_active) {
-                        Log::error(format!("Failed to set session for `is_active`: {}", err));
-                    }
-                    if let Err(err) = session.insert("is_admin", user.is_admin) {
-                        Log::error(format!("Failed to set session for `is_admin`: {}", err));
-                    }
-                    if let Err(err) = session.insert("profile_picture", user.profile_picture) {
-                        Log::error(format!(
-                            "Failed to set session for `profile_picture`: {}",
-                            err
-                        ));
-                    }
-                } else {
-                    Log::error("Failed to retrieve user information.".to_string());
-                }
-
-                Log::info(format!("User `{}` logged in successfully", user_name));
-                Ok(HttpResponse::Ok().json(format!("Logged in {}.", user_name)))
-            } else {
-                Log::info(format!("Password validation failed for `{}`", user_name));
-                Ok(HttpResponse::Ok()
-                    .json(format!("Password validation failed for `{}`", user_name)))
+                Err(e) => Err(e),
             }
         }
-        Err(e) => Err(e),
+        None => Ok(HttpResponse::Ok().json(ApiResponse::<Value>::new(
+            401,
+            String::from("Please pass userName and password, example:"),
+            Some(json!(
+                {
+                    "example":{
+                        "userName": "root",
+                        "password": "070011"
+                    }
+                }
+            )),
+        ))),
     }
 }
 

@@ -7,22 +7,26 @@ use crate::handlers::{
         upload_public,
     },
     post::{delete_post, get_post_detail, get_post_list, post_new_post, update_post_details},
-    user::{delete_user, get_user_detail, get_user_list, post_new_user, update_user_details},
+    user::{
+        delete_user, get_user_detail, get_user_list, get_user_profile, post_new_user,
+        update_user_details,
+    },
 };
 
 pub fn user_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/users")
             // 新增用户
-            .route("", web::post().to(post_new_user))
+            .route("/post", web::post().to(post_new_user))
             // 获取用户列表
-            .route("", web::get().to(get_user_list))
-            // 根据用户id删除用户
-            .route("/{user_id}", web::delete().to(delete_user))
-            // 更新用户
-            .route("/{user_id}", web::put().to(update_user_details))
+            .route("/get", web::get().to(get_user_list))
             // 获取用户详情
-            .route("/{user_id}", web::get().to(get_user_detail)),
+            .route("/get/{user_id}", web::get().to(get_user_detail))
+            // 根据用户id删除用户
+            .route("/delete/{user_id}", web::delete().to(delete_user))
+            // 更新用户
+            .route("/put/{user_id}", web::put().to(update_user_details))
+            .route("/profile", web::get().to(get_user_profile)),
     );
 }
 

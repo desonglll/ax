@@ -6,7 +6,7 @@ use crate::{
         delete_user_db, get_user_detail_db, get_user_list_db, insert_user_db, update_user_db,
     },
     errors::AxError,
-    libraries::resp::response::ErrorMsg,
+    libraries::resp::{api_response::ApiResponse, data::Data, response::ErrorMsg},
     models::user::{CreateUser, UpdateUser},
     state::AppState,
 };
@@ -47,6 +47,29 @@ pub async fn get_user_detail(
     get_user_detail_db(&app_state.db, user_id)
         .await
         .map(|resp| HttpResponse::Ok().json(resp))
+}
+pub async fn get_user_profile(
+    app_state: web::Data<AppState>,
+    session: Session,
+) -> Result<HttpResponse, AxError> {
+    if let Ok(Some(user_id)) = session.get::<i32>("user_id") {
+        println!("{}", user_id);
+        get_user_detail_db(&app_state.db, user_id)
+            .await
+            .map(|user| {
+                HttpResponse::Ok().json(ApiResponse::new(
+                    201,
+                    format!("Get `{}` profile successfully.", user_id),
+                    Some(Data { data: Some(user) }),
+                ))
+            })
+    } else {
+        Ok(HttpResponse::Ok().json(ApiResponse::<()>::new(
+            401,
+            String::from("Please Login to store session into redis."),
+            None,
+        )))
+    }
 }
 /*
 curl -X GET http://localhost:8000/users

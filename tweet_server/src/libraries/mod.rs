@@ -1,4 +1,3 @@
-pub mod data;
 pub mod dbop;
 pub mod fileop;
 pub mod hash;
