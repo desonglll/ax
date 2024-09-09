@@ -6,9 +6,9 @@ use std::{
 
 use actix_multipart::{Field, Multipart};
 use actix_session::Session;
-use actix_web::{HttpResponse, Responder, web};
+use actix_web::{web, HttpResponse, Responder};
 use futures::StreamExt;
-use percent_encoding::{NON_ALPHANUMERIC, percent_encode};
+use percent_encoding::{percent_encode, NON_ALPHANUMERIC};
 use sha2::{Digest, Sha256};
 
 use crate::{
@@ -95,9 +95,8 @@ async fn process_file_field(
         is_pub,
     );
 
-    match set_file_deleted_by_checksum_db(&app_state.db, new_file.checksum.clone()).await {
-        Ok(_) => Log::info("Deleted existing record.".to_string()),
-        Err(_) => {}
+    if (set_file_deleted_by_checksum_db(&app_state.db, new_file.checksum.clone()).await).is_ok() {
+        Log::info("Deleted existing record.".to_string())
     }
 
     Log::info("Inserting into File table.".to_string());

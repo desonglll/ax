@@ -6,7 +6,7 @@ use crate::{
         delete_user_db, get_user_detail_db, get_user_list_db, insert_user_db, update_user_db,
     },
     errors::AxError,
-    libraries::response::response::ErrorMsg,
+    libraries::resp::response::ErrorMsg,
     models::user::{CreateUser, UpdateUser},
     state::AppState,
 };

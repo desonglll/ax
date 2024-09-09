@@ -196,11 +196,7 @@ pub async fn stream(
     // 解析Range头
     let range = req.headers().get("Range").and_then(|header| {
         let range_str = header.to_str().ok()?;
-        if range_str.starts_with("bytes=") {
-            Some(range_str[6..].to_string())
-        } else {
-            None
-        }
+        range_str.strip_prefix("bytes=").map(|r| r.to_string())
     });
 
     let (start, end) = if let Some(range) = range {

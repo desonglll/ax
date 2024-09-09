@@ -164,9 +164,8 @@ pub async fn upload(
                 hash_hex,
             );
             // 如果数据库中存在path相同的记录，则删掉
-            match File::delete_file_by_path(&pool, full_path.clone()) {
-                Ok(_deleted_record) => Log::info("Delete existed record".to_string()),
-                Err(_) => {}
+            if let Ok(_deleted_record) = File::delete_file_by_path(&pool, full_path.clone()) {
+                Log::info("Delete existed record".to_string())
             }
             // 插入数据库完成
             Log::info("Insert Into File Table.".to_string());
@@ -334,11 +333,7 @@ pub async fn stream(
     // 解析Range头
     let range = req.headers().get("Range").and_then(|header| {
         let range_str = header.to_str().ok()?;
-        if range_str.starts_with("bytes=") {
-            Some(range_str[6..].to_string())
-        } else {
-            None
-        }
+        range_str.strip_prefix("bytes=").map(|r| r.to_string())
     });
 
     let (start, end) = if let Some(range) = range {

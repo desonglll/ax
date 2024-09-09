@@ -37,6 +37,7 @@ impl From<web::Json<CreatePost>> for CreatePost {
         }
     }
 }
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdatePost {

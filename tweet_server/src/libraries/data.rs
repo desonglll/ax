@@ -1,32 +1,11 @@
 use serde::Serialize;
 
-use super::response::pagination::ResponsePagination;
+use super::resp::pagination::ResponsePagination;
 
-/// 包装数据和分页信息的响应结构
-///
-/// 该结构体用于表示响应中的数据和分页信息。它可以携带任何类型的数据，并且可选地包含分页信息，用于处理分页的响应。
-///
-/// - `data`：响应中的数据，类型为 `T`，可以是任意类型。
-/// - `pagination`：可选的分页信息，用于提供分页相关的信息。
-///
-/// # Examples
-///
-/// ```
-///
-/// use tweet_server::libraries::data::Data;
-/// use tweet_server::libraries::response::pagination::ResponsePagination;
-/// use super::data::Data;
-/// use super::response::pagination::ResponsePagination;
-/// let data = vec![1, 2, 3];
-/// let pagination = ResponsePagination::new(1, 10, 5, 30, Some("http://example.com?page=2".to_string()), None);
-/// let response = Data::new(data, Some(pagination));
-/// println!("{}", response);
-/// ```
 #[derive(Serialize, Default, Debug)]
 pub struct Data<T> {
     /// 响应中的数据
     pub data: T,
-
     /// 可选的分页信息
     pub pagination: Option<ResponsePagination>,
 }

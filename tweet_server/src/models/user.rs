@@ -62,6 +62,7 @@ impl From<web::Json<CreateUser>> for CreateUser {
         }
     }
 }
+
 impl From<web::Json<UpdateUser>> for UpdateUser {
     fn from(value: web::Json<UpdateUser>) -> Self {
         UpdateUser {

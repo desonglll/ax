@@ -13,7 +13,97 @@ use crate::filter::UserFilter;
 use crate::sort::UserSort;
 use crate::DbPool;
 use crate::{establish_pg_connection, schema::users};
+pub struct UserBuilder {
+    id: i32,
+    user_name: String,
+    email: String,
+    password: String,
+    full_name: Option<String>,
+    phone: Option<String>,
+    created_at: Option<NaiveDateTime>,
+    updated_at: Option<NaiveDateTime>,
+    last_login: Option<NaiveDateTime>,
+    is_active: bool,
+    is_admin: bool,
+    profile_picture: Option<Uuid>,
+}
 
+impl UserBuilder {
+    pub fn new(id: i32, user_name: String, email: String, password: String) -> Self {
+        Self {
+            id,
+            user_name,
+            email,
+            password,
+            full_name: None,
+            phone: None,
+            created_at: None,
+            updated_at: None,
+            last_login: None,
+            is_active: false,
+            is_admin: false,
+            profile_picture: None,
+        }
+    }
+
+    pub fn full_name(mut self, full_name: Option<String>) -> Self {
+        self.full_name = full_name;
+        self
+    }
+
+    pub fn phone(mut self, phone: Option<String>) -> Self {
+        self.phone = phone;
+        self
+    }
+
+    pub fn created_at(mut self, created_at: Option<NaiveDateTime>) -> Self {
+        self.created_at = created_at;
+        self
+    }
+
+    pub fn updated_at(mut self, updated_at: Option<NaiveDateTime>) -> Self {
+        self.updated_at = updated_at;
+        self
+    }
+
+    pub fn last_login(mut self, last_login: Option<NaiveDateTime>) -> Self {
+        self.last_login = last_login;
+        self
+    }
+
+    pub fn is_active(mut self, is_active: bool) -> Self {
+        self.is_active = is_active;
+        self
+    }
+
+    pub fn is_admin(mut self, is_admin: bool) -> Self {
+        self.is_admin = is_admin;
+        self
+    }
+
+    pub fn profile_picture(mut self, profile_picture: Option<Uuid>) -> Self {
+        self.profile_picture = profile_picture;
+        self
+    }
+
+    pub fn build(self) -> User {
+        let pw_hash = Hash::create_password_hash(self.password).unwrap();
+        User {
+            id: self.id,
+            user_name: self.user_name,
+            email: self.email,
+            password_hash: pw_hash,
+            full_name: self.full_name,
+            phone: self.phone,
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+            last_login: self.last_login,
+            is_active: self.is_active,
+            is_admin: self.is_admin,
+            profile_picture: self.profile_picture,
+        }
+    }
+}
 #[derive(Deserialize, Serialize, Debug, Queryable, Selectable, Default)]
 #[diesel(table_name = crate::schema::users)]
 #[serde(rename_all = "camelCase")]
@@ -33,37 +123,6 @@ pub struct User {
 }
 
 impl User {
-    pub fn new(
-        id: i32,
-        user_name: String,
-        email: String,
-        password: String,
-        full_name: Option<String>,
-        phone: Option<String>,
-        created_at: Option<NaiveDateTime>,
-        updated_at: Option<NaiveDateTime>,
-        last_login: Option<NaiveDateTime>,
-        is_active: bool,
-        is_admin: bool,
-        profile_picture: Option<Uuid>,
-    ) -> Self {
-        let pw_hash = Hash::create_password_hash(password).unwrap();
-        Self {
-            id,
-            user_name,
-            email,
-            password_hash: pw_hash,
-            full_name,
-            phone,
-            created_at,
-            updated_at,
-            last_login,
-            is_active,
-            is_admin,
-            profile_picture,
-        }
-    }
-
     pub fn check_password_correct(
         pool: &DbPool,
         user_name: String,
@@ -317,6 +376,72 @@ impl User {
     // }
 }
 
+pub struct InsertUserBuilder {
+    // pub id: i32,
+    pub user_name: String,
+    pub email: String,
+    pub password: String,
+    pub full_name: Option<String>,
+    pub phone: Option<String>,
+    // pub created_at: Option<NaiveDateTime>,
+    // pub updated_at: Option<NaiveDateTime>,
+    // pub last_login: Option<NaiveDateTime>,
+    pub is_active: bool,
+    pub is_admin: bool,
+    pub profile_picture: Option<Uuid>,
+}
+impl InsertUserBuilder {
+    pub fn new(user_name: String, email: String, password: String) -> Self {
+        Self {
+            user_name,
+            email,
+            password,
+            full_name: None,
+            phone: None,
+            is_active: true,
+            is_admin: true,
+            profile_picture: None,
+        }
+    }
+
+    pub fn full_name(mut self, full_name: Option<String>) -> Self {
+        self.full_name = full_name;
+        self
+    }
+
+    pub fn phone(mut self, phone: Option<String>) -> Self {
+        self.phone = phone;
+        self
+    }
+
+    pub fn is_active(mut self, is_active: bool) -> Self {
+        self.is_active = is_active;
+        self
+    }
+
+    pub fn is_admin(mut self, is_admin: bool) -> Self {
+        self.is_admin = is_admin;
+        self
+    }
+
+    pub fn profile_picture(mut self, profile_picture: Option<Uuid>) -> Self {
+        self.profile_picture = profile_picture;
+        self
+    }
+    pub fn build(self) -> InsertUser {
+        let pw_hash = Hash::create_password_hash(self.password).unwrap();
+        InsertUser {
+            user_name: self.user_name,
+            email: self.email,
+            password_hash: pw_hash,
+            full_name: self.full_name,
+            phone: self.phone,
+            is_active: self.is_active,
+            is_admin: self.is_admin,
+            profile_picture: self.profile_picture,
+        }
+    }
+}
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct InsertUserRequest {
@@ -332,30 +457,6 @@ pub struct InsertUserRequest {
     pub is_active: bool,
     pub is_admin: bool,
     pub profile_picture: Option<Uuid>,
-}
-
-impl InsertUserRequest {
-    pub fn new(
-        user_name: String,
-        email: String,
-        password: String,
-        full_name: Option<String>,
-        phone: Option<String>,
-        is_active: bool,
-        is_admin: bool,
-        profile_picture: Option<Uuid>,
-    ) -> Self {
-        Self {
-            user_name,
-            email,
-            password,
-            full_name,
-            phone,
-            is_active,
-            is_admin,
-            profile_picture,
-        }
-    }
 }
 
 #[derive(Serialize, Deserialize, Insertable, Debug)]
@@ -375,43 +476,15 @@ pub struct InsertUser {
     pub profile_picture: Option<Uuid>,
 }
 
-impl InsertUser {
-    pub fn new(
-        user_name: String,
-        email: String,
-        password_hash: String,
-        full_name: Option<String>,
-        phone: Option<String>,
-        is_active: bool,
-        is_admin: bool,
-        profile_picture: Option<Uuid>,
-    ) -> Self {
-        Self {
-            user_name,
-            email,
-            password_hash,
-            full_name,
-            phone,
-            is_active,
-            is_admin,
-            profile_picture,
-        }
-    }
-}
-
 impl From<InsertUserRequest> for InsertUser {
     fn from(request: InsertUserRequest) -> Self {
-        let pw_hash = Hash::create_password_hash(request.password).unwrap();
-        InsertUser::new(
-            request.user_name,
-            request.email,
-            pw_hash,
-            request.full_name,
-            request.phone,
-            request.is_active,
-            request.is_admin,
-            request.profile_picture,
-        )
+        InsertUserBuilder::new(request.user_name, request.email, request.password)
+            .full_name(request.full_name)
+            .phone(request.phone)
+            .is_active(request.is_active)
+            .is_admin(request.is_admin)
+            .profile_picture(request.profile_picture)
+            .build()
     }
 }
 #[derive(Serialize, Deserialize, Debug)]
@@ -426,32 +499,6 @@ pub struct UpdateUserRequest {
     pub is_active: bool,
     pub is_admin: bool,
     pub profile_picture: Option<Uuid>,
-}
-
-impl UpdateUserRequest {
-    pub fn new(
-        id: i32,
-        user_name: String,
-        email: String,
-        password: Option<String>,
-        full_name: Option<String>,
-        phone: Option<String>,
-        is_active: bool,
-        is_admin: bool,
-        profile_picture: Option<Uuid>,
-    ) -> Self {
-        Self {
-            id,
-            user_name,
-            email,
-            password,
-            full_name,
-            phone,
-            is_active,
-            is_admin,
-            profile_picture,
-        }
-    }
 }
 
 #[derive(Serialize, Deserialize, Insertable, Queryable, Selectable, Debug)]
@@ -469,28 +516,67 @@ pub struct UpdateUser {
     pub profile_picture: Option<Uuid>,
 }
 
-impl UpdateUser {
-    pub fn new(
-        id: i32,
-        user_name: String,
-        email: String,
-        password_hash: String,
-        full_name: Option<String>,
-        phone: Option<String>,
-        is_active: bool,
-        is_admin: bool,
-        profile_picture: Option<Uuid>,
-    ) -> Self {
+pub struct UpdateUserBuilder {
+    pub id: i32,
+    pub user_name: String,
+    pub email: String,
+    pub password_hash: String,
+    pub full_name: Option<String>,
+    pub phone: Option<String>,
+    pub is_active: bool,
+    pub is_admin: bool,
+    pub profile_picture: Option<Uuid>,
+}
+impl UpdateUserBuilder {
+    pub fn new(id: i32, user_name: String, email: String, password_hash: String) -> Self {
         Self {
             id,
             user_name,
             email,
             password_hash,
-            full_name,
-            phone,
-            is_active,
-            is_admin,
-            profile_picture,
+            full_name: None,
+            phone: None,
+            is_active: true,
+            is_admin: true,
+            profile_picture: None,
+        }
+    }
+
+    pub fn full_name(mut self, full_name: Option<String>) -> Self {
+        self.full_name = full_name;
+        self
+    }
+
+    pub fn phone(mut self, phone: Option<String>) -> Self {
+        self.phone = phone;
+        self
+    }
+
+    pub fn is_active(mut self, is_active: bool) -> Self {
+        self.is_active = is_active;
+        self
+    }
+
+    pub fn is_admin(mut self, is_admin: bool) -> Self {
+        self.is_admin = is_admin;
+        self
+    }
+
+    pub fn profile_picture(mut self, profile_picture: Option<Uuid>) -> Self {
+        self.profile_picture = profile_picture;
+        self
+    }
+    pub fn build(self) -> UpdateUser {
+        UpdateUser {
+            id: self.id,
+            user_name: self.user_name,
+            email: self.email,
+            password_hash: self.password_hash,
+            full_name: self.full_name,
+            phone: self.phone,
+            is_active: self.is_active,
+            is_admin: self.is_admin,
+            profile_picture: self.profile_picture,
         }
     }
 }
@@ -498,17 +584,13 @@ impl UpdateUser {
 impl From<UpdateUserRequest> for UpdateUser {
     fn from(value: UpdateUserRequest) -> Self {
         let pw_hash = Hash::create_password_hash(value.password.unwrap()).unwrap();
-        UpdateUser::new(
-            value.id,
-            value.user_name,
-            value.email,
-            pw_hash,
-            value.full_name,
-            value.phone,
-            value.is_active,
-            value.is_admin,
-            value.profile_picture,
-        )
+        UpdateUserBuilder::new(value.id, value.user_name, value.email, pw_hash)
+            .full_name(value.full_name)
+            .phone(value.phone)
+            .is_active(value.is_active)
+            .is_admin(value.is_admin)
+            .profile_picture(value.profile_picture)
+            .build()
     }
 }
 
@@ -531,16 +613,16 @@ mod test {
     #[test]
     fn test_insert_user() {
         let pool = establish_pool();
-        let request_user = InsertUserRequest::new(
-            "test_insert_user".to_string(),
-            "lindesong666@gmail.com".to_string(),
-            "070011".to_string(),
-            None,
-            None,
-            true,
-            true,
-            None,
-        );
+        let request_user = InsertUserRequest {
+            user_name: "test_insert_user".to_string(),
+            email: "lindesong666@gmail.com".to_string(),
+            password: "070011".to_string(),
+            full_name: None,
+            phone: None,
+            is_active: true,
+            is_admin: true,
+            profile_picture: None,
+        };
         let result = User::insert_user(&pool, request_user.into()).unwrap();
 
         assert_eq!(result.data.user_name, "test_insert_user");
