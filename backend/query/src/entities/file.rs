@@ -99,7 +99,7 @@ impl File {
     ) -> Result<Data<File>, diesel::result::Error> {
         use crate::schema::files::dsl;
         use diesel::prelude::*;
-        let mut conn = establish_pg_connection(&pool).unwrap();
+        let mut conn = establish_pg_connection(pool).unwrap();
         let data = diesel::delete(dsl::files)
             .filter(dsl::path.eq(path))
             .get_result::<File>(&mut conn)?;

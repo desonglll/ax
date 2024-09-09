@@ -71,7 +71,7 @@ pub async fn upload(
     mut payload: Multipart,
 ) -> Result<impl Responder> {
     use std::fs::File as StdFile;
-    Log::info(format!("Accessing upload api."));
+    Log::info("Accessing upload api.".to_string());
     let mut result: Data<Vec<File>> = Data::default();
 
     if let Some(_is_login) = session.get::<bool>("is_login").unwrap() {
@@ -105,7 +105,7 @@ pub async fn upload(
             let mut size = 0;
             let mut hasher = Sha256::new(); // Change to Md5::new() if MD5 is desired
 
-            Log::info(format!("Writing File."));
+            Log::info("Writing File.".to_string());
             // Write each chunk to the file
             while let Some(chunk) = field.next().await {
                 let chunk = chunk?;
@@ -133,8 +133,8 @@ pub async fn upload(
                 // Update hash with the chunk
                 hasher.update(&chunk);
             }
-            Log::info(format!("Writing File Successful."));
-            Log::info(format!("Changing File Name From *.tmp to real."));
+            Log::info("Writing File Successful.".to_string());
+            Log::info("Changing File Name From *.tmp to real.".to_string());
 
             // Rename the temporary file to the final file name
             std::fs::rename(tmp_full_path.clone(), full_path.clone())
@@ -143,7 +143,7 @@ pub async fn upload(
                     HttpResponse::InternalServerError().finish()
                 })
                 .unwrap();
-            Log::info(format!("Changing File Name Successful."));
+            Log::info("Changing File Name Successful.".to_string());
             // -------------------------------------------------------------------
 
             // 产生插入数据库的File对象
@@ -165,23 +165,23 @@ pub async fn upload(
             );
             // 如果数据库中存在path相同的记录，则删掉
             match File::delete_file_by_path(&pool, full_path.clone()) {
-                Ok(_deleted_record) => Log::info(format!("Delete existed record")),
+                Ok(_deleted_record) => Log::info("Delete existed record".to_string()),
                 Err(_) => {}
             }
             // 插入数据库完成
-            Log::info(format!("Insert Into File Table."));
+            Log::info("Insert Into File Table.".to_string());
             // result = FileHandler::handle_upload(&pool, new_file);
             result.data.push(new_file.insert_file(&pool).unwrap().data);
-            Log::info(format!("Insert Into File Table Successful."));
+            Log::info("Insert Into File Table Successful.".to_string());
         }
-        Log::info(format!("Operation Finished Successfully"));
+        Log::info("Operation Finished Successfully".to_string());
         Ok(HttpResponse::Ok().json(ApiResponse::success(
             "Upload Successful".to_string(),
             Some(result),
         )))
     } else {
-        Log::info(format!("Please Login To Upload."));
-        Log::info(format!("Operation Finished Unsuccessfully"));
+        Log::info("Please Login To Upload.".to_string());
+        Log::info("Operation Finished Unsuccessfully".to_string());
         Ok(HttpResponse::Ok().json(ApiResponse::<String>::new(
             StatusCode::Unauthorized,
             "Please Log In.".to_string(),
@@ -247,7 +247,7 @@ pub async fn download(
     response.content_type(file_info.data.content_type);
     // 设置内容长度
     // 获取文件大小
-    let file_size = match std::fs::metadata(&file_path.clone()) {
+    let file_size = match std::fs::metadata(file_path.clone()) {
         Ok(metadata) => metadata.len(),
         Err(e) => {
             eprintln!("Error getting file metadata: {:?}", e);

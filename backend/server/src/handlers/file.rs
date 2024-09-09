@@ -10,7 +10,7 @@ pub struct FileHandler {}
 
 impl FileHandler {
     pub fn handle_upload(pool: &web::Data<DbPool>, file: File) -> ApiResponse<Data<File>> {
-        let save_result = file.insert_file(&pool);
+        let save_result = file.insert_file(pool);
         match save_result {
             Ok(result) => ApiResponse::new(
                 StatusCode::Success,
@@ -21,7 +21,7 @@ impl FileHandler {
         }
     }
     pub fn handle_get_file(pool: &web::Data<DbPool>, id: Uuid) -> ApiResponse<Data<File>> {
-        let result = File::get_file(&pool, id);
+        let result = File::get_file(pool, id);
         match result {
             Ok(data) => ApiResponse::new(
                 StatusCode::Success,

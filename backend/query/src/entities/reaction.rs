@@ -60,7 +60,7 @@ impl Reaction {
         use diesel::pg::upsert::excluded;
         use diesel::prelude::*;
 
-        let mut conn = establish_pg_connection(&pool).unwrap();
+        let mut conn = establish_pg_connection(pool).unwrap();
 
         let data = diesel::insert_into(dsl::reactions)
             .values(&insert_reaction)
@@ -82,7 +82,7 @@ impl Reaction {
     ) -> Result<Data<Reaction>, diesel::result::Error> {
         use crate::schema::reactions::dsl;
         use diesel::prelude::*;
-        let mut conn = establish_pg_connection(&pool).unwrap();
+        let mut conn = establish_pg_connection(pool).unwrap();
         let data = diesel::delete(dsl::reactions)
             .filter(dsl::user_id.eq(delete_reaction.user_id))
             .filter(dsl::post_id.eq(delete_reaction.post_id))
@@ -100,7 +100,7 @@ impl Reaction {
     ) -> Result<Data<Vec<Reaction>>, diesel::result::Error> {
         use crate::schema::reactions::dsl;
         use diesel::prelude::*;
-        let mut conn = establish_pg_connection(&pool).unwrap();
+        let mut conn = establish_pg_connection(pool).unwrap();
         let data = dsl::reactions
             .filter(dsl::user_id.eq(user_id))
             .filter(dsl::post_id.eq(post_id))

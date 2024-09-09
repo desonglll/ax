@@ -35,8 +35,8 @@ pub fn make_directory(path: &str, delete_existing: bool) {
 
             if delete_existing {
                 // 删除并重新创建文件夹
-                fs::remove_dir_all(&path).expect("Failed to delete the folder");
-                fs::create_dir(&path).expect("Failed to create the folder");
+                fs::remove_dir_all(path).expect("Failed to delete the folder");
+                fs::create_dir(path).expect("Failed to create the folder");
                 println!("Folder deleted and re-created.");
             } else {
                 // 使用已存在的文件夹

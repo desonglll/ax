@@ -8,7 +8,7 @@ pub struct PostHandler {}
 impl PostHandler {
     pub fn handle_insert_post(pool: &DbPool, request_data: InsertPost) -> ApiResponse<Data<Post>> {
         Log::info("Executing handle_insert_post".to_string());
-        match Post::insert_post(&pool, request_data.into()) {
+        match Post::insert_post(pool, request_data) {
             Ok(result) => {
                 Log::info("Insert Post Successful".to_string());
                 ApiResponse::success("Insert Post Successful.".to_string(), Some(result))
@@ -56,7 +56,7 @@ impl PostHandler {
         request_data: UpdatePost,
     ) -> ApiResponse<Data<Post>> {
         Log::info("Executing handle_update_post".to_string());
-        match Post::update_post(&pool, post_id, request_data.into()) {
+        match Post::update_post(pool, post_id, request_data) {
             Ok(result) => {
                 Log::info("Update Post Successful".to_string());
                 ApiResponse::success("Update Post Successful.".to_string(), Some(result))

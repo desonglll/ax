@@ -49,7 +49,7 @@ pub async fn index(session: Session) -> impl Responder {
     if let Some(user_name) = session.get::<String>("user_name").unwrap() {
         HttpResponse::Ok().json(ApiResponse::<String>::new(
             StatusCode::Success,
-            String::from(format!("Welcome back! {}", user_name)),
+            format!("Welcome back! {}", user_name),
             None,
         ))
     } else {

@@ -15,7 +15,7 @@ impl CommentReactionHandler {
         request_data: InsertCommentReaction,
     ) -> ApiResponse<Data<CommentReaction>> {
         Log::info("Executing handle_insert_comment_reaction".to_string());
-        match CommentReaction::insert_comment_reaction(&pool, request_data) {
+        match CommentReaction::insert_comment_reaction(pool, request_data) {
             Ok(result) => {
                 Log::info("Insert CommentReaction Successful".to_string());
                 ApiResponse::success(
@@ -35,7 +35,7 @@ impl CommentReactionHandler {
         request_data: DeleteCommentReaction,
     ) -> ApiResponse<Data<CommentReaction>> {
         Log::info("Executing handle_delete_comment_reaction".to_string());
-        match CommentReaction::delete_comment_reaction(&pool, request_data) {
+        match CommentReaction::delete_comment_reaction(pool, request_data) {
             Ok(result) => {
                 Log::info("Delete CommentReaction Successful".to_string());
                 ApiResponse::success(
@@ -56,7 +56,7 @@ impl CommentReactionHandler {
         comment_id: i32,
     ) -> ApiResponse<Data<Vec<CommentReaction>>> {
         Log::info("Executing handle_get_post_comment_reactions".to_string());
-        match CommentReaction::get_comment_comment_reactions(&pool, user_id, comment_id) {
+        match CommentReaction::get_comment_comment_reactions(pool, user_id, comment_id) {
             Ok(result) => {
                 Log::info("Get Post CommentReactions Successful".to_string());
                 ApiResponse::success(

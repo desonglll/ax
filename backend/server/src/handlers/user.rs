@@ -12,7 +12,7 @@ impl UserHandler {
         request_data: InsertUserRequest,
     ) -> ApiResponse<Data<User>> {
         Log::info("Executing handle_insert_user".to_string());
-        match User::insert_user(&pool, request_data.into()) {
+        match User::insert_user(pool, request_data.into()) {
             Ok(result) => {
                 Log::info("Insert User Successful".to_string());
                 ApiResponse::success("Insert User Successful.".to_string(), Some(result))

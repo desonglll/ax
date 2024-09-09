@@ -117,7 +117,7 @@ pub async fn download(
     response.content_type(file_info.content_type);
     // 设置内容长度
     // 获取文件大小
-    let file_size = match std::fs::metadata(&file_path.clone()) {
+    let file_size = match std::fs::metadata(file_path.clone()) {
         Ok(metadata) => metadata.len(),
         Err(e) => {
             eprintln!("Error getting file metadata: {:?}", e);

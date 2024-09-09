@@ -69,7 +69,7 @@ impl User {
         user_name: String,
         password: String,
     ) -> Result<bool, diesel::result::Error> {
-        let mut conn = establish_pg_connection(&pool).unwrap();
+        let mut conn = establish_pg_connection(pool).unwrap();
         let result = users::dsl::users
             .filter(users::user_name.eq(user_name))
             .first::<User>(&mut conn);
@@ -86,7 +86,7 @@ impl User {
         pool: &DbPool,
         insert_user: InsertUser,
     ) -> Result<Data<User>, diesel::result::Error> {
-        let mut conn = establish_pg_connection(&pool).unwrap();
+        let mut conn = establish_pg_connection(pool).unwrap();
         let data = diesel::insert_into(users::dsl::users)
             .values(insert_user)
             .returning(User::as_returning())
@@ -245,7 +245,7 @@ impl User {
         user_name: String,
     ) -> Result<Data<User>, Box<dyn std::error::Error>> {
         use crate::schema::users::dsl;
-        let mut conn = establish_pg_connection(&pool).unwrap();
+        let mut conn = establish_pg_connection(pool).unwrap();
         let data = diesel::delete(dsl::users)
             .filter(dsl::user_name.eq(user_name))
             .get_result::<User>(&mut conn)?;
@@ -257,7 +257,7 @@ impl User {
         user_name: String,
     ) -> Result<Data<User>, Box<dyn std::error::Error>> {
         use crate::schema::users::dsl;
-        let mut conn = establish_pg_connection(&pool).unwrap();
+        let mut conn = establish_pg_connection(pool).unwrap();
         let data = dsl::users
             .filter(dsl::user_name.eq(user_name))
             .first(&mut conn)?;
