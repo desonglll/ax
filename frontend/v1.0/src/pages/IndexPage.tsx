@@ -1,25 +1,25 @@
-import {useEffect} from "react";
-import {useNavigate} from "react-router-dom";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import loginCheck from "../utils/login_check.ts";
-import {Typography} from "@mui/material";
-import End_points from "../routes/common/end_points.ts";
-import {AxSkeleton} from "../components/AxSkeleton.tsx";
+import { Typography } from "@mui/material";
+import { AxSkeleton } from "../components/AxSkeleton.tsx";
+import Endpoint from "../routes/common/end_point.ts";
 
 export default function IndexPage() {
-    const navigate = useNavigate();
-    useEffect(() => {
-        loginCheck().then((resp) => {
-            if (resp.data.code === "Unauthorized") {
-                navigate(End_points.SignIn);
-            }
-        });
-    }, [navigate]);
+  const navigate = useNavigate();
+  useEffect(() => {
+    loginCheck().then((result) => {
+      if (!result) {
+        navigate(Endpoint.SignIn);
+      }
+    });
+  }, [navigate]);
 
-    return (
-        <>
-            <AxSkeleton>
-                <Typography>This is Index Page</Typography>
-            </AxSkeleton>
-        </>
-    );
+  return (
+    <>
+      <AxSkeleton>
+        <Typography>This is Index Page</Typography>
+      </AxSkeleton>
+    </>
+  );
 }
