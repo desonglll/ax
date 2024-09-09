@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 ///
 /// ```
 ///
-/// use shared::response::pagination::ResponsePagination;
+/// use tweet_server::libraries::response::pagination::ResponsePagination;
 /// let pagination = ResponsePagination::new(
 ///     1,
 ///     10,
@@ -70,7 +70,7 @@ impl ResponsePagination {
     ///
     /// ```
     ///
-    /// use shared::response::pagination::ResponsePagination;
+    /// use tweet_server::libraries::response::pagination::ResponsePagination;
     /// let pagination = ResponsePagination::new(
     ///     1,
     ///     10,
@@ -116,7 +116,7 @@ impl std::fmt::Display for ResponsePagination {
     ///
     /// ```
     ///
-    /// use shared::response::pagination::ResponsePagination;
+    /// use tweet_server::libraries::response::pagination::ResponsePagination;
     /// let pagination = ResponsePagination::new(
     ///     1,
     ///     10,

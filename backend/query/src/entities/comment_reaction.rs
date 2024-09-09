@@ -60,7 +60,7 @@ impl CommentReaction {
         use diesel::pg::upsert::excluded;
         use diesel::prelude::*;
 
-        let mut conn = establish_pg_connection(&pool).unwrap();
+        let mut conn = establish_pg_connection(pool).unwrap();
 
         let data = diesel::insert_into(dsl::comment_reactions)
             .values(&insert_commentreaction)
@@ -82,7 +82,7 @@ impl CommentReaction {
     ) -> Result<Data<CommentReaction>, diesel::result::Error> {
         use crate::schema::comment_reactions::dsl;
         use diesel::prelude::*;
-        let mut conn = establish_pg_connection(&pool).unwrap();
+        let mut conn = establish_pg_connection(pool).unwrap();
         let data = diesel::delete(dsl::comment_reactions)
             .filter(dsl::user_id.eq(delete_commentreaction.user_id))
             .filter(dsl::comment_id.eq(delete_commentreaction.comment_id))
@@ -100,7 +100,7 @@ impl CommentReaction {
     ) -> Result<Data<Vec<CommentReaction>>, diesel::result::Error> {
         use crate::schema::comment_reactions::dsl;
         use diesel::prelude::*;
-        let mut conn = establish_pg_connection(&pool).unwrap();
+        let mut conn = establish_pg_connection(pool).unwrap();
         let data = dsl::comment_reactions
             .filter(dsl::user_id.eq(user_id))
             .filter(dsl::comment_id.eq(comment_id))

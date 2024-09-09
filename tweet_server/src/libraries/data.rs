@@ -13,6 +13,8 @@ use super::response::pagination::ResponsePagination;
 ///
 /// ```
 ///
+/// use tweet_server::libraries::data::Data;
+/// use tweet_server::libraries::response::pagination::ResponsePagination;
 /// use super::data::Data;
 /// use super::response::pagination::ResponsePagination;
 /// let data = vec![1, 2, 3];
@@ -47,8 +49,8 @@ impl<T> Data<T> {
     ///
     /// ```
     ///
-    /// use shared::lib::data::Data;
-    /// use shared::response::pagination::ResponsePagination;
+    /// use tweet_server::libraries::data::Data;
+    /// use tweet_server::libraries::response::pagination::ResponsePagination;
     /// let data = vec![1, 2, 3];
     /// let pagination = ResponsePagination::new(1, 10, 5, 30, Some("http://example.com?page=2".to_string()), None);
     /// let response = Data::new(data, Some(pagination));
@@ -75,8 +77,8 @@ impl<T: std::fmt::Debug> std::fmt::Display for Data<T> {
     ///
     /// ```
     ///
-    /// use shared::lib::data::Data;
-    /// use shared::response::pagination::ResponsePagination;
+    /// use tweet_server::libraries::data::Data;
+    /// use tweet_server::libraries::response::pagination::ResponsePagination;
     /// let data = vec![1, 2, 3];
     /// let pagination = ResponsePagination::new(1, 10, 5, 30, Some("http://example.com?page=2".to_string()), None);
     /// let response = Data::new(data, Some(pagination));

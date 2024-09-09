@@ -5,5 +5,5 @@ pub mod lib {
     pub mod mkdir;
 }
 
-pub mod request;
-pub mod response;
+pub mod req;
+pub mod resp;

@@ -18,8 +18,8 @@ use super::pagination::RequestPagination;
 /// # Examples
 ///
 /// ```
-/// use shared::request::pagination::RequestPagination;
-/// use shared::request::request::ListRequest;
+/// use tweet_server::libraries::request::pagination::RequestPagination;
+/// use tweet_server::libraries::request::request::ListRequest;
 /// let request = ListRequest::<String,String>::new(
 ///     None,
 ///     Some(1),
@@ -60,8 +60,8 @@ impl<F, S> ListRequest<F, S> {
     ///
     /// ```
     ///
-    /// use shared::request::pagination::RequestPagination;
-    /// use shared::request::request::ListRequest;
+    /// use tweet_server::libraries::request::pagination::RequestPagination;
+    /// use tweet_server::libraries::request::request::ListRequest;
     /// let request = ListRequest::<String,String>::new(
     ///     None,
     ///     Some(1),

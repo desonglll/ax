@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use query::entities::user::User;
 use query::DbPool;
 use shared::lib::log::Log;
-use shared::response::api_response::{ApiResponse, StatusCode};
+use shared::resp::api_response::{ApiResponse, StatusCode};
 
 /// 用户登录请求
 ///

@@ -47,7 +47,7 @@ impl Comment {
     ) -> Result<Data<Comment>, diesel::result::Error> {
         use crate::schema::comments::dsl;
         use diesel::prelude::*;
-        let mut conn = establish_pg_connection(&pool).unwrap();
+        let mut conn = establish_pg_connection(pool).unwrap();
         let data = diesel::insert_into(dsl::comments)
             .values(insert_comment)
             .returning(Comment::as_returning())
@@ -61,7 +61,7 @@ impl Comment {
     ) -> Result<Data<Comment>, diesel::result::Error> {
         use crate::schema::comments::dsl;
         use diesel::prelude::*;
-        let mut conn = establish_pg_connection(&pool).unwrap();
+        let mut conn = establish_pg_connection(pool).unwrap();
         let data = diesel::delete(dsl::comments)
             .filter(dsl::id.eq(delete_comment_id))
             .get_result::<Comment>(&mut conn)?;
@@ -76,7 +76,7 @@ impl Comment {
     ) -> Result<Data<Vec<Comment>>, diesel::result::Error> {
         use crate::schema::comments::dsl;
         use diesel::prelude::*;
-        let mut conn = establish_pg_connection(&pool).unwrap();
+        let mut conn = establish_pg_connection(pool).unwrap();
         let data = dsl::comments
             .filter(dsl::reply_to_type.eq(reply_to_type))
             .filter(dsl::reply_to.eq(post_id))

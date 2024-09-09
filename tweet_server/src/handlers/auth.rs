@@ -24,7 +24,7 @@ use crate::{
 pub async fn index(session: Session) -> impl Responder {
     // 尝试获取 session 中的 `user_name`
     if let Some(user_name) = session.get::<String>("user_name").unwrap() {
-        HttpResponse::Ok().json(String::from(format!("Welcome back! {}", user_name)))
+        HttpResponse::Ok().json(format!("Welcome back! {}", user_name))
     } else {
         HttpResponse::Ok().json(String::from("Please Log in!"))
     }
@@ -39,7 +39,7 @@ pub async fn index(session: Session) -> impl Responder {
 /// # Examples
 ///
 /// ```
-/// use crate::handlers::auth::greet;
+/// use tweet_server::handlers::auth::greet;
 /// let user_name = "Alice".to_string();
 /// let message = greet(user_name);
 /// println!("{}", message);
@@ -176,9 +176,8 @@ pub async fn logout(session: Session) -> Result<impl Responder, AxError> {
         Ok(HttpResponse::Ok().json(format!("Logged out {} successfully.", user_name)))
     } else {
         Log::warning("Attempt to log out failed: no user found in session.".to_string());
-        Ok(HttpResponse::Ok().json(format!(
-            "Attempt to log out failed: no user found in session."
-        )))
+        Ok(HttpResponse::Ok()
+            .json("Attempt to log out failed: no user found in session.".to_string()))
     }
 }
 

@@ -1,7 +1,7 @@
 use query::entities::post::{InsertPost, UpdatePost};
 use query::{entities::post::Post, filter::PostFilter, sort::PostSort, DbPool};
 use shared::lib::log::Log;
-use shared::{lib::data::Data, request::request::ListRequest, response::api_response::ApiResponse};
+use shared::{lib::data::Data, req::request::ListRequest, resp::api_response::ApiResponse};
 
 pub struct PostHandler {}
 

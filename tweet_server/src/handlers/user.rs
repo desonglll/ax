@@ -91,13 +91,23 @@ pub async fn update_user_details(
 curl -X DELETE http://localhost:8000/users/1
  */
 pub async fn delete_user(
+    session: Session,
     app_state: web::Data<AppState>,
     path: web::Path<(i32,)>,
 ) -> Result<HttpResponse, AxError> {
     let (user_id,) = path.into_inner();
-    delete_user_db(&app_state.db, user_id)
-        .await
-        .map(|resp| HttpResponse::Ok().json(resp))
+    match session.get::<i32>("user_id") {
+        Ok(session_user_id) => {
+            if session_user_id.unwrap_or(-1) == user_id {
+                delete_user_db(&app_state.db, user_id)
+                    .await
+                    .map(|resp| HttpResponse::Ok().json(resp))
+            } else {
+                Ok(HttpResponse::Unauthorized().json(ErrorMsg("Invalid user".to_owned())))
+            }
+        }
+        Err(e) => Err(e.into()),
+    }
 }
 
 #[cfg(test)]
@@ -236,8 +246,11 @@ mod user_dbaccess_tests {
         let insert_result = insert_user_db(&app_state.db, user.clone()).await.unwrap();
         assert_eq!(&user.user_name, &insert_result.user_name);
         // Delete test user.
+        let session = get_test_session(&insert_result).await;
         let delete_params: web::Path<(i32,)> = web::Path::from((insert_result.id,));
-        let resp = delete_user(app_state.clone(), delete_params).await.unwrap();
+        let resp = delete_user(session, app_state.clone(), delete_params)
+            .await
+            .unwrap();
         assert_eq!(resp.status(), StatusCode::OK);
     }
     #[actix_rt::test]

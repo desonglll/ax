@@ -6,8 +6,8 @@ use uuid::Uuid;
 
 use shared::lib::data::Data;
 use shared::lib::hash::Hash;
-use shared::request::request::ListRequest;
-use shared::response::pagination::ResponsePagination;
+use shared::req::request::ListRequest;
+use shared::resp::pagination::ResponsePagination;
 
 use crate::filter::UserFilter;
 use crate::sort::UserSort;
@@ -518,7 +518,7 @@ mod test {
     use uuid::Uuid;
 
     use shared::lib::hash::Hash;
-    use shared::request::{pagination::RequestPagination, request::ListRequest};
+    use shared::req::{pagination::RequestPagination, request::ListRequest};
 
     use crate::entities::user::{InsertUserRequest, User};
     use crate::{

@@ -1,5 +1,5 @@
 use actix_session::Session;
-use actix_web::{test::TestRequest, FromRequest};
+use actix_web::{FromRequest, test::TestRequest};
 
 use crate::{errors::AxError, models::user::User};
 
@@ -9,6 +9,7 @@ pub async fn is_admin(session: Session) -> Result<bool, AxError> {
         Err(e) => Err(e.into()),
     }
 }
+
 pub async fn is_login(session: Session) -> Result<bool, AxError> {
     match session.get::<bool>("is_login") {
         Ok(is_login) => Ok(is_login.unwrap_or(false)),
@@ -24,7 +25,7 @@ pub async fn get_test_session(user: &User) -> Session {
         .unwrap();
     session.insert("is_admin", user.is_admin).unwrap();
     session.insert("user_name", user.user_name.clone()).unwrap();
-    session.insert("id", user.id).unwrap();
+    session.insert("user_id", user.id).unwrap();
     session
 }
 // pub struct User {

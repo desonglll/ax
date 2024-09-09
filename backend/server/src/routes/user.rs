@@ -9,9 +9,9 @@ use actix_web::{
 use query::entities::user::{InsertUserRequest, UpdateUserRequest};
 use query::{filter::UserFilter, sort::UserSort, DbPool};
 use shared::lib::log::Log;
-use shared::request::pagination::RequestPagination;
-use shared::request::request::ListRequest;
-use shared::response::api_response::{ApiResponse, StatusCode};
+use shared::req::pagination::RequestPagination;
+use shared::req::request::ListRequest;
+use shared::resp::api_response::{ApiResponse, StatusCode};
 
 use crate::handlers::user::UserHandler;
 

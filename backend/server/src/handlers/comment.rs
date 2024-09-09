@@ -4,7 +4,7 @@ use query::{
 };
 use shared::{
     lib::{data::Data, log::Log},
-    response::api_response::ApiResponse,
+    resp::api_response::ApiResponse,
 };
 
 pub struct CommentHandler {}

@@ -2,7 +2,7 @@ use query::entities::user::{InsertUserRequest, UpdateUserRequest, User};
 use query::{filter::UserFilter, sort::UserSort, DbPool};
 use shared::lib::data::Data;
 use shared::lib::log::Log;
-use shared::{request::request::ListRequest, response::api_response::ApiResponse};
+use shared::{req::request::ListRequest, resp::api_response::ApiResponse};
 
 pub struct UserHandler {}
 

@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use crate::response::pagination::ResponsePagination;
+use crate::resp::pagination::ResponsePagination;
 
 /// 包装数据和分页信息的响应结构
 ///

@@ -7,12 +7,12 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use shared::lib::data::Data;
-use shared::request::request::ListRequest;
-use shared::response::pagination::ResponsePagination;
+use shared::req::request::ListRequest;
+use shared::resp::pagination::ResponsePagination;
 
-use crate::{DbPool, establish_pg_connection};
 use crate::filter::PostFilter;
 use crate::sort::PostSort;
+use crate::{establish_pg_connection, DbPool};
 
 #[derive(Serialize, Deserialize, Debug, Default, Queryable, Selectable)]
 #[diesel(table_name = crate::schema::posts)]
@@ -214,7 +214,10 @@ impl Post {
         Ok(Data::new(data, None))
     }
 
-    pub fn delete_post_by_id(pool: &DbPool, post_id: i32) -> Result<Data<Post>, diesel::result::Error> {
+    pub fn delete_post_by_id(
+        pool: &DbPool,
+        post_id: i32,
+    ) -> Result<Data<Post>, diesel::result::Error> {
         use crate::schema::posts::dsl;
         let mut conn = establish_pg_connection(pool).expect("msg");
         let data = diesel::delete(dsl::posts.filter(dsl::id.eq(post_id))).get_result(&mut conn)?;
@@ -224,7 +227,7 @@ impl Post {
 
 #[cfg(test)]
 mod test {
-    use shared::request::{pagination::RequestPagination, request::ListRequest};
+    use shared::req::{pagination::RequestPagination, request::ListRequest};
 
     use crate::{
         entities::post::{InsertPost, Post},
@@ -314,7 +317,7 @@ mod test {
                 reply_to: None,
             },
         )
-            .expect("Failed to insert post");
+        .expect("Failed to insert post");
 
         let inserted_post = new_post.data;
 

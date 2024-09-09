@@ -8,6 +8,12 @@
 export DATABASE_URL=postgres://localhost:5432/hello_rocket
 ```
 
+```shell
+SELECT pg_terminate_backend(pid)
+FROM pg_stat_activity
+WHERE datname = 'hello_rocket';
+```
+
 ### Run sqlx-cli
 
 ```shell

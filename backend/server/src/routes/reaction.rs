@@ -11,7 +11,7 @@ use query::{
 };
 use shared::{
     lib::log::Log,
-    response::api_response::{ApiResponse, StatusCode},
+    resp::api_response::{ApiResponse, StatusCode},
 };
 
 use crate::handlers::reaction::ReactionHandler;

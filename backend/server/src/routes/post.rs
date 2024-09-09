@@ -8,10 +8,10 @@ use actix_web::{
 
 use query::entities::post::{InsertPost, InsertPostRequest, UpdatePost, UpdatePostRequest};
 use query::{filter::PostFilter, sort::PostSort, DbPool};
-use shared::response::api_response::{ApiResponse, StatusCode};
+use shared::resp::api_response::{ApiResponse, StatusCode};
 use shared::{
     lib::log::Log,
-    request::{pagination::RequestPagination, request::ListRequest},
+    req::{pagination::RequestPagination, request::ListRequest},
 };
 
 use crate::handlers::post::PostHandler;

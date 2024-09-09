@@ -3,20 +3,20 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use actix_multipart::Multipart;
 use actix_session::Session;
-use actix_web::{HttpRequest, HttpResponse, Responder, Result, web};
+use actix_web::{web, HttpRequest, HttpResponse, Responder, Result};
 use actix_ws::Message;
 use futures::StreamExt;
-use percent_encoding::{NON_ALPHANUMERIC, percent_encode};
+use percent_encoding::{percent_encode, NON_ALPHANUMERIC};
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
 // Correct trait import
-use query::{DbPool, entities::file::File};
+use query::{entities::file::File, DbPool};
+use shared::resp::api_response::StatusCode;
 use shared::{
     lib::{data::Data, log::Log},
-    response::api_response::ApiResponse,
+    resp::api_response::ApiResponse,
 };
-use shared::response::api_response::StatusCode;
 
 // =============================================================================
 // =============================================================================
@@ -182,7 +182,11 @@ pub async fn upload(
     } else {
         Log::info(format!("Please Login To Upload."));
         Log::info(format!("Operation Finished Unsuccessfully"));
-        Ok(HttpResponse::Ok().json(ApiResponse::<String>::new(StatusCode::Unauthorized, "Please Log In.".to_string(), None)))
+        Ok(HttpResponse::Ok().json(ApiResponse::<String>::new(
+            StatusCode::Unauthorized,
+            "Please Log In.".to_string(),
+            None,
+        )))
     }
 }
 

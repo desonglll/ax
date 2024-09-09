@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 ///
 /// ```
 ///
-/// use shared::response::api_response::ApiResponse;
+/// use tweet_server::libraries::response::api_response::ApiResponse;
 /// let response: ApiResponse<String> = ApiResponse::success("Success".to_string(),Some("Data".to_string()));
 /// println!("{:?}", response);
 ///
@@ -50,7 +50,7 @@ pub struct ApiResponse<T> {
 ///
 /// ```
 ///
-/// use shared::response::api_response::StatusCode;
+/// use tweet_server::libraries::response::api_response::StatusCode;
 /// let status = StatusCode::Success;
 /// println!("Status: {:?}", status);
 /// ```
@@ -105,7 +105,7 @@ impl<T: Default> ApiResponse<T> {
     /// # Examples
     ///
     /// ```
-    /// use shared::response::api_response::{ApiResponse, StatusCode};
+    /// use tweet_server::libraries::response::api_response::ApiResponse;
     /// let response = ApiResponse::new(StatusCode::Success, "Operation successful".to_string(), Some("Data".to_string()));
     /// println!("{:?}", response);
     /// ```
@@ -132,8 +132,7 @@ impl<T: Default> ApiResponse<T> {
     /// # Examples
     ///
     /// ```
-    ///
-    /// use shared::response::api_response::ApiResponse;
+    /// use tweet_server::libraries::response::api_response::ApiResponse;
     /// let response = ApiResponse::success("Success".to_string(),Some("Data".to_string()));
     /// println!("{:?}", response);
     /// ```
@@ -160,8 +159,7 @@ impl<T: Default> ApiResponse<T> {
     /// # Examples
     ///
     /// ```
-    ///
-    /// use shared::response::api_response::ApiResponse;
+    /// use tweet_server::libraries::response::api_response::ApiResponse;
     /// let error = Box::new(std::io::Error::new(std::io::ErrorKind::Other, "Something went wrong"));
     /// let response = ApiResponse::<String>::error(error);
     /// println!("{:?}", response);

@@ -11,7 +11,6 @@ pub enum AxError {
     NotFound(String),
     InvalidInput(String),
     AuthenticationError(String),
-
     SessionGetError(String),
 }
 #[derive(Debug, Serialize)]
@@ -70,7 +69,14 @@ impl error::ResponseError for AxError {
 
 impl fmt::Display for AxError {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(f, "{}", self)
+        match self {
+            AxError::DBError(msg) => write!(f, "Database error: {}", msg),
+            AxError::ActixError(msg) => write!(f, "Actix error: {}", msg),
+            AxError::NotFound(msg) => write!(f, "Not found: {}", msg),
+            AxError::InvalidInput(msg) => write!(f, "Invalid input: {}", msg),
+            AxError::AuthenticationError(msg) => write!(f, "Authentication error: {}", msg),
+            AxError::SessionGetError(msg) => write!(f, "Session get error: {}", msg),
+        }
     }
 }
 

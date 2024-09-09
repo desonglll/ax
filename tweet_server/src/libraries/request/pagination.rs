@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 ///
 /// ```
 ///
-/// use shared::request::pagination::RequestPagination;
+/// use tweet_server::libraries::request::pagination::RequestPagination;
 /// let pagination = RequestPagination::new(Some(20), Some(5));
 /// println!("{:?}", pagination);
 /// ```
@@ -43,7 +43,7 @@ impl RequestPagination {
     ///
     /// ```
     ///
-    /// use shared::request::pagination::RequestPagination;
+    /// use tweet_server::libraries::request::pagination::RequestPagination;
     /// let pagination = RequestPagination::new(Some(20), Some(5));
     /// println!("{:?}", pagination);
     /// ```
@@ -63,7 +63,7 @@ impl RequestPagination {
     ///
     /// ```
     ///
-    /// use shared::request::pagination::RequestPagination;
+    /// use tweet_server::libraries::request::pagination::RequestPagination;
     /// let pagination = RequestPagination::demo();
     /// println!("{:?}", pagination);
     /// ```
@@ -88,7 +88,7 @@ impl Default for RequestPagination {
     ///
     /// ```
     ///
-    /// use shared::request::pagination::RequestPagination;
+    /// use tweet_server::libraries::request::pagination::RequestPagination;
     /// let pagination = RequestPagination::default();
     /// println!("{:?}", pagination);
     /// ```

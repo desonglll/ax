@@ -47,8 +47,8 @@ pub fn make_directory(path: &str) {
                 match input.to_lowercase().as_str() {
                     "" => {
                         // 删除并重新创建文件夹
-                        fs::remove_dir_all(&path).expect("Failed to delete the folder");
-                        fs::create_dir(&path).expect("Failed to create the folder");
+                        fs::remove_dir_all(path).expect("Failed to delete the folder");
+                        fs::create_dir(path).expect("Failed to create the folder");
                         println!("Folder deleted and re-created.");
                         break;
                     }

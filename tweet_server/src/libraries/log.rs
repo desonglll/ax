@@ -41,7 +41,7 @@ impl LogLevel {
     ///
     /// ```
     ///
-    /// use shared::lib::log::LogLevel;
+    /// use tweet_server::libraries::log::LogLevel;
     /// let level = LogLevel::Info;
     /// assert_eq!(level.prefix(), "INFO");
     /// ```
@@ -68,7 +68,7 @@ impl LogLevel {
     /// # Examples
     ///
     /// ```
-    /// use shared::lib::log::LogLevel;
+    /// use tweet_server::libraries::log::LogLevel;
     /// let level = LogLevel::Error;
     /// let message = "An error occurred".to_string();
     /// let colored_message = level.colorize_message(&message);
@@ -99,7 +99,7 @@ impl LogLevel {
 /// # Examples
 ///
 /// ```
-/// use shared::lib::log::Log;
+/// use tweet_server::libraries::log::Log;
 /// Log::info("This is an info message.".to_string());
 /// ```
 pub struct Log;
@@ -112,8 +112,7 @@ impl Log {
     /// # Examples
     ///
     /// ```
-    ///
-    /// use shared::lib::log::{Log, LogLevel};
+    /// use tweet_server::libraries::log::{Log, LogLevel};
     /// Log::log(LogLevel::Info, "This is an info message.".to_string());
     /// ```
     pub fn log(level: LogLevel, message: String) {

@@ -15,9 +15,9 @@ use super::pagination::ResponsePagination;
 ///
 /// ```
 ///
-/// use shared::lib::data::Data;
-/// use shared::response::pagination::ResponsePagination;
-/// use shared::response::response::ListResponse;
+/// use tweet_server::libraries::data::Data;
+/// use tweet_server::libraries::response::pagination::ResponsePagination;
+/// use tweet_server::libraries::response::response::ListResponse;
 /// let data = Data::new(vec![1, 2, 3], None);
 /// let pagination = ResponsePagination::new(1, 10, 5, 30, Some("http://example.com?page=2".to_string()), None);
 /// let response = ListResponse {
