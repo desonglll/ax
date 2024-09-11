@@ -1,7 +1,11 @@
+use std::collections::HashMap;
+
 use actix_web::{web, HttpResponse};
 
 use crate::dbaccess::post::*;
 use crate::errors::AxError;
+use crate::libraries::resp::api_response::ApiResponse;
+use crate::libraries::resp::data::DataBuilder;
 use crate::models::post::{CreatePost, UpdatePost};
 use crate::state::AppState;
 
@@ -41,10 +45,23 @@ pub async fn get_post_detail(
 /*
 curl -X GET http://localhost:8000/posts
 */
-pub async fn get_post_list(app_state: web::Data<AppState>) -> Result<HttpResponse, AxError> {
-    get_post_list_db(&app_state.db)
-        .await
-        .map(|resp| HttpResponse::Ok().json(resp))
+pub async fn get_post_list(
+    app_state: web::Data<AppState>,
+    query: Option<web::Query<HashMap<String, String>>>,
+) -> Result<HttpResponse, AxError> {
+    get_post_list_db(&app_state.db, query).await.map(|resp| {
+        let api_response = ApiResponse::new(
+            200,
+            "Success".to_string(),
+            Some(
+                DataBuilder::new()
+                    .set_data(resp.0)
+                    .set_pagination(resp.1)
+                    .build(),
+            ),
+        );
+        HttpResponse::Ok().json(api_response)
+    })
 }
 // Update
 /*

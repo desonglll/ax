@@ -58,11 +58,11 @@ pub fn post_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/posts")
             // 新增推文
-            .route("", web::post().to(post_new_post))
-            .route("", web::get().to(get_post_list))
-            .route("/{post_id}", web::delete().to(delete_post))
-            .route("/{post_id}", web::put().to(update_post_details))
-            .route("/{post_id}", web::get().to(get_post_detail)),
+            .route("/post", web::post().to(post_new_post))
+            .route("/get", web::get().to(get_post_list))
+            .route("/delete/{post_id}", web::delete().to(delete_post))
+            .route("/put/{post_id}", web::put().to(update_post_details))
+            .route("/get/{post_id}", web::get().to(get_post_detail)),
     );
 }
 // 添加共同的 /api scope

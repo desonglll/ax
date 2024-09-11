@@ -2,8 +2,9 @@ use actix_web::web;
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use sqlx::prelude::FromRow;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, FromRow)]
 #[serde(rename_all = "camelCase")]
 pub struct Post {
     pub id: i32,

@@ -6,7 +6,7 @@ use crate::{
         delete_user_db, get_user_detail_db, get_user_list_db, insert_user_db, update_user_db,
     },
     errors::AxError,
-    libraries::resp::{api_response::ApiResponse, data::Data, response::ErrorMsg},
+    libraries::resp::{api_response::ApiResponse, data::DataBuilder, response::ErrorMsg},
     models::user::{CreateUser, UpdateUser},
     state::AppState,
 };
@@ -60,7 +60,7 @@ pub async fn get_user_profile(
                 HttpResponse::Ok().json(ApiResponse::new(
                     201,
                     format!("Get `{}` profile successfully.", user_id),
-                    Some(Data { data: Some(user) }),
+                    Some(DataBuilder::new().set_data(user).build()),
                 ))
             })
     } else {

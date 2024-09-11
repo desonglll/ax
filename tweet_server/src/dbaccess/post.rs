@@ -1,7 +1,11 @@
+use std::collections::HashMap;
+
+use actix_web::web::{self};
 use sqlx::PgPool;
 
 use crate::{
     errors::AxError,
+    libraries::resp::pagination::{Pagination, PaginationBuilder},
     models::post::{CreatePost, Post, UpdatePost},
 };
 
@@ -22,11 +26,48 @@ pub async fn get_post_detail_db(pool: &PgPool, post_id: i32) -> Result<Post, AxE
         .await?;
     Ok(post_row)
 }
-pub async fn get_post_list_db(pool: &PgPool) -> Result<Vec<Post>, AxError> {
-    let posts = sqlx::query_as!(Post, "select * from posts")
+pub async fn get_post_list_db(
+    pool: &PgPool,
+    query: Option<web::Query<HashMap<String, String>>>,
+) -> Result<(Vec<Post>, Pagination), AxError> {
+    let query = query.unwrap();
+    let order_by = query.get("order_by");
+    let sort = query.get("sort");
+    let limit = query
+        .get("limit")
+        .and_then(|s| s.parse::<i64>().ok())
+        .unwrap_or(10);
+    let offset = query
+        .get("offset")
+        .and_then(|s| s.parse::<i64>().ok())
+        .unwrap_or(0);
+    println!("order_by: {:#?} sort: {:#?}", order_by, sort);
+    /*
+    order_by 和 sort 是通过拼接 SQL 字符串的方式直接插入到查询中的
+    因为它们是 SQL 语法的一部分，不能使用占位符
+    */
+    // 拼接 SQL 查询字符串
+    let sql = format!(
+        "SELECT * FROM posts ORDER BY {} {} LIMIT $1 OFFSET $2",
+        order_by.unwrap_or(&String::from("id")),
+        sort.unwrap_or(&String::from("asc"))
+    );
+
+    // 执行查询
+    let posts = sqlx::query_as::<_, Post>(&sql)
+        .bind(limit) // 绑定 limit 参数
+        .bind(offset) // 绑定 offset 参数
         .fetch_all(pool)
         .await?;
-    Ok(posts)
+
+    let count = sqlx::query_scalar!("select count(*) from posts")
+        .fetch_one(pool)
+        .await?;
+    let pagination = PaginationBuilder::new(limit, offset)
+        .set_count(count.unwrap_or(0))
+        .build();
+
+    Ok((posts, pagination))
 }
 // Delete
 pub async fn delete_post_db(pool: &PgPool, post_id: i32) -> Result<Post, AxError> {

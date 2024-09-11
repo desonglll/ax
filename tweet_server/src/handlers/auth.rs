@@ -8,7 +8,10 @@ use crate::{
     errors::AxError,
     libraries::{
         log::Log,
-        resp::{api_response::ApiResponse, data::Data},
+        resp::{
+            api_response::ApiResponse,
+            data::{Data, DataBuilder},
+        },
         session::insert_user_to_redis,
     },
     models::{auth::LoginRequest, user::User},
@@ -119,7 +122,7 @@ pub async fn login(
                         Ok(HttpResponse::Ok().json(ApiResponse::<Data<User>>::new(
                             200,
                             format!("Logged in {}.", user_name),
-                            Some(Data { data: Some(user) }),
+                            Some(DataBuilder::new().set_data(user).build()),
                         )))
                     } else {
                         Log::info(format!("Password validation failed for `{}`", user_name));
