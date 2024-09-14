@@ -47,7 +47,7 @@ jobs:
       - name: Database initialization
         run: cd ./tweet_server && sqlx database create && sqlx migrate run
       - name: Check
-        run: cargo check --bin tweet_server
+        run: cargo check -p tweet_server
       - name: Build
         run: cargo build --bin tweet_server --release
       - name: Check status of release binaries
@@ -96,4 +96,4 @@ jobs:
         run: cd ./tweet_server && sqlx database create && sqlx migrate run
 
       - name: Run tests
-        run: cargo test --bin tweet_server
+        run: cargo test -p tweet_server
