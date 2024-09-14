@@ -7,6 +7,7 @@ use crate::handlers::{
         upload_public,
     },
     post::{delete_post, get_post_detail, get_post_list, post_new_post, update_post_details},
+    reaction::{get_reaction_by_post_id, post_new_reaction},
     user::{
         delete_user, get_user_detail, get_user_list, get_user_profile, post_new_user,
         update_user_details,
@@ -65,6 +66,13 @@ pub fn post_routes(cfg: &mut web::ServiceConfig) {
             .route("/get/{post_id}", web::get().to(get_post_detail)),
     );
 }
+pub fn reaction_routes(cfg: &mut web::ServiceConfig) {
+    cfg.service(
+        web::scope("/reactions")
+            .route("/post", web::post().to(post_new_reaction))
+            .route("/get/{post_id}", web::get().to(get_reaction_by_post_id)),
+    );
+}
 // 添加共同的 /api scope
 pub fn api_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
@@ -72,6 +80,7 @@ pub fn api_routes(cfg: &mut web::ServiceConfig) {
             .configure(user_routes) // 配置用户路由
             .configure(auth_routes) // 配置认证路由
             .configure(file_routes) // 配置文件路由
-            .configure(post_routes), // 配置推文路由
+            .configure(post_routes) // 配置推文路由
+            .configure(reaction_routes),
     );
 }

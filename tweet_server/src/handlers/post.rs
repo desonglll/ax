@@ -11,7 +11,7 @@ use crate::state::AppState;
 
 // Create
 /*
-curl -X POST localhost:8000/posts \
+curl -X POST localhost:8000/api/posts/post \
    -H "Content-Type: application/json" \
    -d '{
        "content": "Never Settle",
@@ -31,7 +31,7 @@ pub async fn post_new_post(
 }
 // Read
 /*
-curl -X GET http://localhost:8000/posts/1
+curl -X GET http://localhost:8000/api/posts/get/1
 */
 pub async fn get_post_detail(
     app_state: web::Data<AppState>,
@@ -43,7 +43,7 @@ pub async fn get_post_detail(
         .map(|resp| HttpResponse::Ok().json(resp))
 }
 /*
-curl -X GET http://localhost:8000/posts
+curl -X GET http://localhost:8000/api/posts/get
 */
 pub async fn get_post_list(
     app_state: web::Data<AppState>,
@@ -65,7 +65,7 @@ pub async fn get_post_list(
 }
 // Update
 /*
-curl -X PUT localhost:8000/posts/1 \
+curl -X PUT localhost:8000/api/posts/1 \
    -H "Content-Type: application/json" \
    -d '{
        "content": "Modified content."
@@ -83,7 +83,7 @@ pub async fn update_post_details(
 }
 // Delete
 /*
-curl -X DELETE http://localhost:8000/posts/1
+curl -X DELETE http://localhost:8000/api/posts/1
 */
 pub async fn delete_post(
     app_state: web::Data<AppState>,

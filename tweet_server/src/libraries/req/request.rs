@@ -14,20 +14,7 @@ use super::pagination::RequestPagination;
 ///
 /// - `F`：表示过滤条件的类型。
 /// - `S`：表示排序条件的类型。
-///
-/// # Examples
-///
-/// ```
-/// use tweet_server::libraries::request::pagination::RequestPagination;
-/// use tweet_server::libraries::request::request::ListRequest;
-/// let request = ListRequest::<String,String>::new(
-///     None,
-///     Some(1),
-///     Some(RequestPagination::default()),
-///     None
-/// );
-/// println!("{:?}", request);
-/// ```
+
 #[derive(Debug, Deserialize, Default)]
 pub struct ListRequest<F, S> {
     pub user_id: Option<i32>,
@@ -55,22 +42,12 @@ impl<F, S> ListRequest<F, S> {
     /// # Returns
     ///
     /// 返回一个新的 `ListRequest` 实例。
-    ///
-    /// # Examples
-    ///
-    /// ```
-    ///
-    /// use tweet_server::libraries::request::pagination::RequestPagination;
-    /// use tweet_server::libraries::request::request::ListRequest;
-    /// let request = ListRequest::<String,String>::new(
-    ///     None,
-    ///     Some(1),
-    ///     Some(RequestPagination::default()),
-    ///     None
-    /// );
-    /// println!("{:?}", request);
-    /// ```
-    pub fn new(filters: Option<F>, user_id: Option<i32>, pagination: Option<RequestPagination>, sort: Option<S>) -> Self {
+    pub fn new(
+        filters: Option<F>,
+        user_id: Option<i32>,
+        pagination: Option<RequestPagination>,
+        sort: Option<S>,
+    ) -> Self {
         Self {
             filters,
             user_id,

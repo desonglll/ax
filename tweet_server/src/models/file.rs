@@ -1,5 +1,5 @@
 use actix_session::Session;
-use chrono::{Local, NaiveDateTime};
+use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -11,8 +11,8 @@ pub struct File {
     pub path: String,
     pub size: i64,
     pub content_type: String,
-    pub created_at: Option<NaiveDateTime>,
-    pub updated_at: Option<NaiveDateTime>,
+    pub created_at: Option<DateTime<chrono::Utc>>,
+    pub updated_at: Option<DateTime<chrono::Utc>>,
     pub user_id: i32,
     pub description: Option<String>,
     pub checksum: String,
@@ -43,8 +43,8 @@ impl File {
             path,
             size,
             content_type,
-            created_at: Some(Local::now().naive_local()),
-            updated_at: Some(Local::now().naive_local()),
+            created_at: Some(Local::now().to_utc()),
+            updated_at: Some(Local::now().to_utc()),
             user_id,
             description,
             checksum,

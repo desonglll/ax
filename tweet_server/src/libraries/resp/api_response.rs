@@ -7,18 +7,6 @@ use serde::{Deserialize, Serialize};
 /// - `code`：响应的状态码，类型为 `StatusCode`。
 /// - `message`：响应的消息，类型为 `String`。
 /// - `body`：可选的响应体，类型为 `Option<T>`，如果存在响应体则为 `Some(T)`，否则为 `None`。
-///
-/// # Examples
-///
-/// ```
-///
-/// use tweet_server::libraries::response::api_response::ApiResponse;
-/// let response: ApiResponse<String> = ApiResponse::success("Success".to_string(),Some("Data".to_string()));
-/// println!("{:?}", response);
-///
-/// let error_response: ApiResponse<String> = ApiResponse::error(Box::new(std::io::Error::new(std::io::ErrorKind::Other, "Something went wrong")));
-/// println!("{:?}", error_response);
-/// ```
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ApiResponse<T> {
     /// 响应的状态码

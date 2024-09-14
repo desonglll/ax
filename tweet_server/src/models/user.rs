@@ -1,5 +1,5 @@
 use actix_web::web;
-use chrono::{NaiveDateTime, Utc};
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -14,9 +14,9 @@ pub struct User {
     pub password_hash: String,
     pub full_name: Option<String>,
     pub phone: Option<String>,
-    pub created_at: Option<NaiveDateTime>,
-    pub updated_at: Option<NaiveDateTime>,
-    pub last_login: Option<NaiveDateTime>,
+    pub created_at: Option<DateTime<chrono::Utc>>,
+    pub updated_at: Option<DateTime<chrono::Utc>>,
+    pub last_login: Option<DateTime<chrono::Utc>>,
     pub is_active: bool,
     pub is_admin: bool,
     pub profile_picture: Option<Uuid>,
@@ -90,9 +90,9 @@ impl User {
             is_active: Some(true).is_some(),
             is_admin: Some(true).is_some(),
             profile_picture: Some(Uuid::new_v4()),
-            created_at: Some(Utc::now().naive_local()),
-            updated_at: Some(Utc::now().naive_local()),
-            last_login: Some(Utc::now().naive_local()),
+            created_at: Some(Utc::now().to_utc()),
+            updated_at: Some(Utc::now().to_utc()),
+            last_login: Some(Utc::now().to_utc()),
         }
     }
 }

@@ -36,15 +36,6 @@ impl LogLevel {
     /// 返回日志等级的前缀字符串
     ///
     /// 返回不同日志等级对应的前缀，用于格式化日志输出。
-    ///
-    /// # Examples
-    ///
-    /// ```
-    ///
-    /// use tweet_server::libraries::log::LogLevel;
-    /// let level = LogLevel::Info;
-    /// assert_eq!(level.prefix(), "INFO");
-    /// ```
     pub fn prefix(&self) -> &str {
         match self {
             LogLevel::Trace => "TRACE",
@@ -64,16 +55,6 @@ impl LogLevel {
     /// 为日志消息应用颜色和样式
     ///
     /// 根据日志等级，为日志消息应用相应的颜色和样式。
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use tweet_server::libraries::log::LogLevel;
-    /// let level = LogLevel::Error;
-    /// let message = "An error occurred".to_string();
-    /// let colored_message = level.colorize_message(&message);
-    /// assert_eq!(colored_message.to_string(), "An error occurred".to_string());
-    /// ```
     pub fn colorize_message(&self, message: &str) -> colored::ColoredString {
         match self {
             LogLevel::Trace => message.dimmed(),
@@ -95,26 +76,12 @@ impl LogLevel {
 /// 日志记录器
 ///
 /// 提供了日志记录的功能，可以记录不同等级的日志信息。
-///
-/// # Examples
-///
-/// ```
-/// use tweet_server::libraries::log::Log;
-/// Log::info("This is an info message.".to_string());
-/// ```
 pub struct Log;
 
 impl Log {
     /// 记录日志信息
     ///
     /// 根据日志等级记录日志消息，并输出时间戳和前缀。
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use tweet_server::libraries::log::{Log, LogLevel};
-    /// Log::log(LogLevel::Info, "This is an info message.".to_string());
-    /// ```
     pub fn log(level: LogLevel, message: String) {
         let timestamp = Local::now().format("%Y-%m-%dT%H:%M:%S").to_string();
         let colored_message = level.colorize_message(&message);

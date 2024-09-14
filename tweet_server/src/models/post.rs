@@ -1,5 +1,5 @@
 use actix_web::web;
-use chrono::NaiveDateTime;
+use chrono::DateTime;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sqlx::prelude::FromRow;
@@ -9,8 +9,8 @@ use sqlx::prelude::FromRow;
 pub struct Post {
     pub id: i32,
     pub content: String,
-    pub created_at: NaiveDateTime,
-    pub updated_at: NaiveDateTime,
+    pub created_at: DateTime<chrono::Utc>,
+    pub updated_at: DateTime<chrono::Utc>,
     pub user_id: i32,
     pub reply_to: Option<i32>,
     pub user_name: String,

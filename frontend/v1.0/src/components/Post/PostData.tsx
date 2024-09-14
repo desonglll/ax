@@ -32,7 +32,7 @@ export default function PostData() {
   const [response, setResponse] = useState<Partial<ApiResponse<Post>>>();
 
   useEffect(() => {
-    const endpoint = `${AxiosEndpoint.PostListAll}?limit=${pageSize}&offset=${
+    const endpoint = `${AxiosEndpoint.PostList}?limit=${pageSize}&offset=${
       pageSize * (currentPage - 1)
     }`;
     getData(endpoint).then((response: AxiosResponse<ApiResponse<Post>>) => {
@@ -63,7 +63,7 @@ export default function PostData() {
     try {
       axios
         .get(
-          `post/list-all?limit=${pagination.limit}&offset=${pagination.offset}`
+          `${AxiosEndpoint.PostList}?limit=${pagination.limit}&offset=${pagination.offset}`
         )
         .then((resp) => {
           if (resp.data.code === "Success") {
