@@ -34,7 +34,7 @@ impl From<web::Json<CreateReaction>> for CreateReaction {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct ReactionResponseTable {
     pub like: i64,
     pub dislike: i64,

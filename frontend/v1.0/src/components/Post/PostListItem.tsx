@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { Sheet } from "@mui/joy";
 import Vditor from "vditor";
 import Endpoint from "../../routes/common/end_point.ts";
+import { AxiosEndpoint } from "../../libs/axios_endpoint.ts";
 
 const bull = (
   <Box
@@ -31,15 +32,15 @@ export default function PostListItem({ post }: { post: Post }) {
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
-    getData(`reaction/post/${post.id}`).then((resp) => {
-      const resp_reactions = resp.data.body.data;
-      resp_reactions.map((reaction_item: { reaction_name: string }) => {
-        if (reaction_item.reaction_name === "like") {
-          setLike(true);
-        } else if (reaction_item.reaction_name === "dislike") {
-          setDislike(true);
-        }
-      });
+    getData(`${AxiosEndpoint.GetReaction}?postId=${post.id}`).then((resp) => {
+      console.log(resp.data.body.data);
+
+      const resp_reaction = resp.data.body.data;
+      if (resp_reaction.reactionName === "Like") {
+        setLike(true);
+      } else if (resp_reaction.reactionName === "Dislike") {
+        setDislike(true);
+      }
       Vditor.preview(
         document.getElementById(`pre-${post.id}`) as HTMLDivElement,
         post.content,
@@ -51,56 +52,10 @@ export default function PostListItem({ post }: { post: Post }) {
     });
   }, [post.id]);
 
-  const handleReaction = async (
-    status: boolean,
-    setStatus: (arg0: boolean) => void,
-    reaction_name: string
-  ) => {
-    const data = {
-      postId: Number(post.id),
-      reactionName: reaction_name,
-    };
-    console.log(data);
-
-    try {
-      if (status) {
-        await axios.post("reaction/delete", data);
-        setStatus(false);
-      } else {
-        await axios.post("reaction/insert", data);
-        setStatus(true);
-      }
-
-      const response = await getData(`post/detail/${postItem.id}`);
-      if (response.data.code === "Success") {
-        setPostItem(response.data.body.data);
-        console.log("setPostItem");
-      }
-    } catch (error) {
-      console.error("Error handling reaction", error);
-    }
-  };
-
   const handleLike = () => {
-    if (like) {
-      handleReaction(like, setLike, "like");
-    } else {
-      if (dislike) {
-        handleReaction(dislike, setDislike, "dislike");
-      }
-      handleReaction(like, setLike, "like");
-    }
+    axios.post(`${AxiosEndpoint.LikeReaction}?postId=${post.id}`);
   };
-  const handleDislike = () => {
-    if (dislike) {
-      handleReaction(dislike, setDislike, "dislike");
-    } else {
-      if (like) {
-        handleReaction(like, setLike, "like");
-      }
-      handleReaction(dislike, setDislike, "dislike");
-    }
-  };
+  const handleDislike = () => {};
   const handleDetail = (id: number) => {
     navigate(`${Endpoint.PostDetail}/${id}`);
   };

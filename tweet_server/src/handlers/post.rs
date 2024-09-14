@@ -79,7 +79,13 @@ pub async fn update_post_details(
     let (post_id,) = path.into_inner();
     update_post_db(&app_state.db, post_id, update_post.into())
         .await
-        .map(|post| HttpResponse::Ok().json(post))
+        .map(|post| {
+            HttpResponse::Ok().json(ApiResponse::new(
+                200,
+                "Update Successful".to_string(),
+                Some(DataBuilder::new().set_data(post).build()),
+            ))
+        })
 }
 // Delete
 /*
@@ -90,9 +96,13 @@ pub async fn delete_post(
     path: web::Path<(i32,)>,
 ) -> Result<HttpResponse, AxError> {
     let (post_id,) = path.into_inner();
-    delete_post_db(&app_state.db, post_id)
-        .await
-        .map(|post| HttpResponse::Ok().json(post))
+    delete_post_db(&app_state.db, post_id).await.map(|post| {
+        HttpResponse::Ok().json(ApiResponse::new(
+            200,
+            "Delete Successful".to_string(),
+            Some(DataBuilder::new().set_data(post).build()),
+        ))
+    })
 }
 
 #[cfg(test)]
