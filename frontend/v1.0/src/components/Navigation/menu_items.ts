@@ -5,12 +5,12 @@ export const menu_items: MenuItem[] = [
   {
     id: "index",
     name: "Index",
-    path: "/common/index",
+    path: Endpoint.Index,
   },
   {
     id: "login",
     name: "Login",
-    path: "/login",
+    path: Endpoint.SignIn,
   },
   {
     id: "post-list-all",

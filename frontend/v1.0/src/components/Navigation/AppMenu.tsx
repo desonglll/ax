@@ -58,6 +58,7 @@ export default function AppMenu({
       .then((result) => {
         if (!result) {
           setAuth(false);
+          navigate(Endpoint.SignIn);
         }
       })
       .then(() => {
@@ -70,7 +71,7 @@ export default function AppMenu({
       .finally(() => {
         setLoading(false);
       });
-  }, []);
+  }, [navigate]);
 
   return (
     <>
@@ -107,7 +108,7 @@ export default function AppMenu({
                 >
                   {profile?.profilePicture ? (
                     <Avatar
-                      src={`${axios.defaults.baseURL}/stream/${profile.profilePicture}`}
+                      src={`${axios.defaults.baseURL}/${AxiosEndpoint.StreamFile}/${profile.profilePicture}`}
                     />
                   ) : (
                     <AccountCircle />
@@ -132,7 +133,7 @@ export default function AppMenu({
                     <div>
                       <MenuItem
                         onClick={() => {
-                          navigate("/common/user/profile");
+                          navigate(`${Endpoint.Profile}`);
                         }}
                       >
                         Profile

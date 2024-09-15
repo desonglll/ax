@@ -3,6 +3,7 @@ export enum AxiosEndpoint {
   Login = "auth/login",
   LogOut = "/auth/logout",
   Profile = "users/profile",
+  UpdateUser = "users/put",
   PostList = "posts/get",
   PostDetail = "posts/get",
   CreatePost = "posts/post",

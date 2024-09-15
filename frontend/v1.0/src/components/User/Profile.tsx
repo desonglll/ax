@@ -7,6 +7,7 @@ import { LoadingOutlined, PlusOutlined } from "@ant-design/icons";
 import axios from "axios";
 import { Upload } from "antd";
 import { Button } from "@mui/joy";
+import { AxiosEndpoint } from "../../libs/axios_endpoint";
 
 function Profile() {
   //希望 user 的初始状态是一个空对象，并且你不想提供所有字段
@@ -15,9 +16,9 @@ function Profile() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getData("user/profile")
+    getData(AxiosEndpoint.Profile)
       .then((resp) => {
-        if (resp.data.code === "Success") {
+        if (resp.data.code === 200) {
           console.log(resp.data.body.data);
           setUser(resp.data.body.data);
           setImageUuid(resp.data.body.data.profilePicture);
@@ -53,8 +54,8 @@ function Profile() {
     console.log(data);
 
     try {
-      axios.post("user/update", data).then((resp) => {
-        if (resp.data.code === "Success") {
+      axios.put(`${AxiosEndpoint.UpdateUser}/${user.id}`, data).then((resp) => {
+        if (resp.data.code === 200) {
           console.log(resp.data);
         }
       });
@@ -70,7 +71,7 @@ function Profile() {
         file: info.file,
       };
       axios
-        .post("upload", data, {
+        .post(AxiosEndpoint.UploadPubFile, data, {
           headers: {
             "Content-Type": "multipart/form-data",
           },
@@ -78,7 +79,7 @@ function Profile() {
         .then((resp) => {
           console.log(resp.data);
           // Assuming your backend returns the uploaded image URL
-          if (resp.data.code === "Success") {
+          if (resp.data.code === 200) {
             const uuid = resp.data.body.data[0].id;
             setImageUuid(uuid);
           }
@@ -128,7 +129,7 @@ function Profile() {
             >
               {imageUuid ? (
                 <Avatar
-                  src={`${axios.defaults.baseURL}/stream/${imageUuid}`}
+                  src={`${axios.defaults.baseURL}/${AxiosEndpoint.StreamFile}/${imageUuid}`}
                   //   alt="avatar"
                   style={{ width: "100%", height: "100%" }}
                 />

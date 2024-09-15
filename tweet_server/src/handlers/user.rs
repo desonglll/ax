@@ -32,7 +32,13 @@ pub async fn post_new_user(
 ) -> Result<HttpResponse, AxError> {
     insert_user_db(&app_state.db, new_user.into())
         .await
-        .map(|user| HttpResponse::Ok().json(user))
+        .map(|user| {
+            HttpResponse::Ok().json(ApiResponse::new(
+                200,
+                "Create User Success".to_string(),
+                Some(DataBuilder::new().set_data(user).build()),
+            ))
+        })
 }
 
 // Read
@@ -46,8 +52,15 @@ pub async fn get_user_detail(
     let (user_id,) = path.into_inner();
     get_user_detail_db(&app_state.db, user_id)
         .await
-        .map(|resp| HttpResponse::Ok().json(resp))
+        .map(|resp| {
+            HttpResponse::Ok().json(ApiResponse::new(
+                200,
+                "Get UserDetail Success".to_string(),
+                Some(DataBuilder::new().set_data(resp).build()),
+            ))
+        })
 }
+
 pub async fn get_user_profile(
     app_state: web::Data<AppState>,
     session: Session,
@@ -58,7 +71,7 @@ pub async fn get_user_profile(
             .await
             .map(|user| {
                 HttpResponse::Ok().json(ApiResponse::new(
-                    201,
+                    200,
                     format!("Get `{}` profile successfully.", user_id),
                     Some(DataBuilder::new().set_data(user).build()),
                 ))
@@ -75,9 +88,13 @@ pub async fn get_user_profile(
 curl -X GET http://localhost:8000/users
 */
 pub async fn get_user_list(app_state: web::Data<AppState>) -> Result<HttpResponse, AxError> {
-    get_user_list_db(&app_state.db)
-        .await
-        .map(|resp| HttpResponse::Ok().json(resp))
+    get_user_list_db(&app_state.db).await.map(|resp| {
+        HttpResponse::Ok().json(ApiResponse::new(
+            200,
+            "Get UserList Success".to_string(),
+            Some(DataBuilder::new().set_data(resp).build()),
+        ))
+    })
 }
 
 // Update
@@ -100,7 +117,13 @@ pub async fn update_user_details(
             if session_user_id.unwrap_or(-1) == user_id {
                 update_user_db(&app_state.db, user_id, update_user.into())
                     .await
-                    .map(|user| HttpResponse::Ok().json(user))
+                    .map(|user| {
+                        HttpResponse::Ok().json(ApiResponse::new(
+                            200,
+                            "Update User Success".to_string(),
+                            Some(DataBuilder::new().set_data(user).build()),
+                        ))
+                    })
             } else {
                 Ok(HttpResponse::Unauthorized().json(ErrorMsg("Invalid user".to_owned())))
             }
