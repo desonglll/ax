@@ -50,7 +50,7 @@ pub async fn get_post_list_db(
     let sql = format!(
         "SELECT * FROM posts ORDER BY {} {} LIMIT $1 OFFSET $2",
         order_by.unwrap_or(&String::from("id")),
-        sort.unwrap_or(&String::from("asc"))
+        sort.unwrap_or(&String::from("desc"))
     );
 
     // 执行查询

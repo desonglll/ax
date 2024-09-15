@@ -18,7 +18,10 @@ use crate::{
     state::AppState,
 };
 
-use super::log::Log;
+use super::{
+    log::Log,
+    resp::{api_response::ApiResponse, data::DataBuilder},
+};
 
 static LAST_LOGGED_SIZE_MB: AtomicUsize = AtomicUsize::new(0);
 
@@ -30,7 +33,7 @@ pub async fn upload(
 ) -> actix_web::Result<impl Responder> {
     Log::info("Accessing upload API.".to_string());
 
-    if session.get::<bool>("is_login").unwrap().unwrap_or(false) {
+    if session.get::<bool>("is_active").unwrap().unwrap_or(false) {
         let user_name = session.get::<String>("user_name").unwrap().unwrap();
         Log::info(format!("User {} logged in.", user_name));
 
@@ -54,10 +57,19 @@ pub async fn upload(
         }
 
         Log::info("Operation finished successfully.".to_string());
-        Ok(HttpResponse::Ok().json(result))
+        let api_response = ApiResponse::new(
+            200,
+            "Uploaded".to_string(),
+            Some(DataBuilder::new().set_data(result).build()),
+        );
+        Ok(HttpResponse::Ok().json(api_response))
     } else {
         Log::info("Please log in to upload.".to_string());
-        Ok(HttpResponse::Ok().json("Please log in to upload.".to_string()))
+        Ok(HttpResponse::Ok().json(ApiResponse::<()>::new(
+            401,
+            "Please log in to upload.".to_string(),
+            None,
+        )))
     }
 }
 

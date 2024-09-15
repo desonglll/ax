@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use actix_session::Session;
 use actix_web::{web, HttpResponse};
 
 use crate::dbaccess::post::*;
@@ -22,12 +23,22 @@ curl -X POST localhost:8000/api/posts/post \
    }'
 */
 pub async fn post_new_post(
+    session: Session,
     app_state: web::Data<AppState>,
     new_post: web::Json<CreatePost>,
 ) -> Result<HttpResponse, AxError> {
-    insert_post_db(&app_state.db, new_post.into())
-        .await
-        .map(|post| HttpResponse::Ok().json(post))
+    let mut new_post: CreatePost = new_post.into();
+    let user_id = session.get::<i32>("user_id").unwrap().unwrap();
+    new_post.set_user_id(user_id);
+
+    insert_post_db(&app_state.db, new_post).await.map(|post| {
+        let api_response = ApiResponse::new(
+            200,
+            "Success".to_string(),
+            Some(DataBuilder::new().set_data(post).build()),
+        );
+        HttpResponse::Ok().json(api_response)
+    })
 }
 // Read
 /*
@@ -40,7 +51,14 @@ pub async fn get_post_detail(
     let (post_id,) = path.into_inner();
     get_post_detail_db(&app_state.db, post_id)
         .await
-        .map(|resp| HttpResponse::Ok().json(resp))
+        .map(|resp| {
+            let api_response = ApiResponse::new(
+                200,
+                "Success".to_string(),
+                Some(DataBuilder::new().set_data(resp).build()),
+            );
+            HttpResponse::Ok().json(api_response)
+        })
 }
 /*
 curl -X GET http://localhost:8000/api/posts/get
@@ -116,7 +134,8 @@ mod tests {
         models::post::{CreatePost, UpdatePost},
         state::AppState,
     };
-    use actix_web::{http::StatusCode, web, ResponseError};
+    use actix_session::SessionExt;
+    use actix_web::{http::StatusCode, test, web, ResponseError};
     use dotenv::dotenv;
     use serde_json::Value;
     use sqlx::PgPool;
@@ -129,13 +148,21 @@ mod tests {
         let app_state: web::Data<AppState> = web::Data::new(AppState { db: pool });
         let new_post_msg = CreatePost {
             content: "测试内容".to_string(),
-            user_id: 1,                             // 假设 1 是一个有效的用户ID
+            user_id: Some(1),                       // 假设 1 是一个有效的用户ID
             reply_to: None,                         // 如果没有回复目标则为 None
             reactions: Some(serde_json::json!({})), // 空的 JSON 对象表示没有反应
-            user_name: "测试用户".to_string(),
+            user_name: Some("测试用户".to_string()),
         };
         let post_param = web::Json(new_post_msg.clone());
-        let resp = post_new_post(app_state.clone(), post_param).await.unwrap();
+
+        // 发送请求前设置 session 数据
+        let session = test::TestRequest::with_uri("/posts/post")
+            .to_http_request()
+            .get_session();
+        session.insert("user_id", 1).unwrap(); // 模拟 user_id 为 1
+        let resp = post_new_post(session, app_state.clone(), post_param)
+            .await
+            .unwrap();
         assert_eq!(resp.status(), StatusCode::OK);
 
         // 获取响应 body 中的 JSON 数据
@@ -144,7 +171,7 @@ mod tests {
         let body_json: Value = serde_json::from_slice(&body_bytes).unwrap();
 
         // 从 JSON 中获取 id 字段
-        let post_id = body_json["id"]
+        let post_id = body_json["body"]["data"]["id"]
             .as_i64()
             .expect("id not found or not an integer") as i32;
 
@@ -163,9 +190,9 @@ mod tests {
         let app_state: web::Data<AppState> = web::Data::new(AppState { db: pool });
         let post = CreatePost {
             content: String::from("new post"),
-            user_id: 1,
+            user_id: Some(1),
             reply_to: None,
-            user_name: String::from("mike"),
+            user_name: Some(String::from("mike")),
             reactions: Some(serde_json::json!({})),
         };
         let insert_result = insert_post_db(&app_state.db, post.clone()).await.unwrap();
@@ -184,9 +211,9 @@ mod tests {
         let app_state: web::Data<AppState> = web::Data::new(AppState { db: pool });
         let post = CreatePost {
             content: String::from("test_update_post_before"),
-            user_id: 1,
+            user_id: Some(1),
             reply_to: None,
-            user_name: String::from("mike"),
+            user_name: Some(String::from("mike")),
             reactions: Some(serde_json::json!({})),
         };
         let insert_result = insert_post_db(&app_state.db, post.clone()).await.unwrap();
@@ -215,10 +242,10 @@ mod tests {
         let app_state: web::Data<AppState> = web::Data::new(AppState { db: pool });
         let new_post_msg = CreatePost {
             content: "测试内容".to_string(),
-            user_id: 1,                             // 假设 1 是一个有效的用户ID
+            user_id: Some(1),                       // 假设 1 是一个有效的用户ID
             reply_to: None,                         // 如果没有回复目标则为 None
             reactions: Some(serde_json::json!({})), // 空的 JSON 对象表示没有反应
-            user_name: "测试用户".to_string(),
+            user_name: Some("测试用户".to_string()),
         };
         let result = insert_post_db(&app_state.db, new_post_msg.clone())
             .await

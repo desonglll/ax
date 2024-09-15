@@ -2,6 +2,7 @@ use sqlx::PgPool;
 
 use crate::{
     errors::AxError,
+    libraries::log::Log,
     models::reaction::{CreateReaction, Reaction, ReactionResponseTable},
 };
 
@@ -9,6 +10,7 @@ pub async fn insert_like_reaction_db(
     pool: &PgPool,
     create_reaction: CreateReaction,
 ) -> Result<Reaction, AxError> {
+    println!("{:#?}", create_reaction);
     if let Ok(existed_dislike) = is_record_exists_db(
         pool,
         create_reaction.post_id,
@@ -17,8 +19,10 @@ pub async fn insert_like_reaction_db(
     )
     .await
     {
-        let _ = delete_reaction_db(pool, existed_dislike.id).await;
+        Log::info(String::from("existed_dislike, deleting..."));
+        let _ = delete_reaction_by_id_db(pool, existed_dislike.id).await;
     }
+
     let reaction_row = sqlx::query_as!(
         Reaction,
         "insert into reactions (user_id, post_id, reaction_name) values ($1, $2, $3) on conflict (user_id, post_id, reaction_name) do update set created_at = CURRENT_TIMESTAMP returning id, user_id, post_id, created_at, reaction_name",
@@ -41,8 +45,9 @@ pub async fn insert_dislike_reaction_db(
     )
     .await
     {
-        let _ = delete_reaction_db(pool, existed_like.id).await;
+        let _ = delete_reaction_by_id_db(pool, existed_like.id).await;
     }
+
     let reaction_row = sqlx::query_as!(
         Reaction,
         "insert into reactions (user_id, post_id, reaction_name) values ($1, $2, $3) on conflict (user_id, post_id, reaction_name) do update set created_at = CURRENT_TIMESTAMP returning id, user_id, post_id, created_at, reaction_name",
@@ -53,7 +58,7 @@ pub async fn insert_dislike_reaction_db(
     Ok(reaction_row)
 }
 
-pub async fn delete_reaction_db(pool: &PgPool, id: i32) -> Result<Reaction, sqlx::Error> {
+pub async fn delete_reaction_by_id_db(pool: &PgPool, id: i32) -> Result<Reaction, sqlx::Error> {
     sqlx::query_as!(
         Reaction,
         "delete from reactions where id = $1 returning id, post_id, user_id, created_at, reaction_name",

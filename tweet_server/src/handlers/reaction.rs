@@ -24,6 +24,7 @@ pub async fn post_like_reaction(
         .and_then(|s| s.parse::<i32>().ok())
         .unwrap_or(0);
     let new_reaction = CreateReaction { user_id, post_id };
+    println!("{:#?}", new_reaction);
     insert_like_reaction_db(&app_state.db, new_reaction)
         .await
         .map(|reaction| {
@@ -104,6 +105,28 @@ pub async fn get_reaction_by_user_id_and_post_id(
                 Some(DataBuilder::new().set_data(reaction).build()),
             ))
         })
+}
+// Delete
+pub async fn delete_reaction_by_id(
+    _session: Session,
+    app_state: web::Data<AppState>,
+    query: Option<web::Query<HashMap<String, String>>>,
+) -> Result<HttpResponse, AxError> {
+    let reaction_id = query
+        .unwrap()
+        .get("reactionId")
+        .and_then(|s| s.parse::<i32>().ok())
+        .unwrap_or(0);
+
+    Ok(delete_reaction_by_id_db(&app_state.db, reaction_id)
+        .await
+        .map(|reaction| {
+            HttpResponse::Ok().json(ApiResponse::new(
+                200,
+                "Delete Reaction Successful".to_string(),
+                Some(DataBuilder::new().set_data(reaction).build()),
+            ))
+        })?)
 }
 
 #[cfg(test)]

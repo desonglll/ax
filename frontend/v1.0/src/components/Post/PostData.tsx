@@ -132,7 +132,7 @@ export default function PostData() {
             aria-label="add"
             sx={{ position: "fixed", bottom: 70, right: 16 }}
             onClick={() => {
-              navigate("/common/post/new");
+              navigate(`${Endpoint.PostNew}`);
             }}
           >
             <AddIcon />

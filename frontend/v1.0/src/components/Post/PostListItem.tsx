@@ -14,6 +14,7 @@ import { Sheet } from "@mui/joy";
 import Vditor from "vditor";
 import Endpoint from "../../routes/common/end_point.ts";
 import { AxiosEndpoint } from "../../libs/axios_endpoint.ts";
+import type { Reaction } from "../../models/reaction.ts";
 
 const bull = (
   <Box
@@ -28,13 +29,13 @@ export default function PostListItem({ post }: { post: Post }) {
   const [like, setLike] = useState<boolean>(false);
   const [dislike, setDislike] = useState<boolean>(false);
   const navigate = useNavigate();
-  const [postItem, setPostItem] = useState<Post>(post);
+  const [postItem, _setPostItem] = useState<Post>(post);
+  const [reactionItem, setReactionItem] = useState<Reaction>();
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     getData(`${AxiosEndpoint.GetReaction}?postId=${post.id}`).then((resp) => {
-      console.log(resp.data.body.data);
-
+      setReactionItem(resp.data.body.data);
       const resp_reaction = resp.data.body.data;
       if (resp_reaction.reactionName === "Like") {
         setLike(true);
@@ -53,9 +54,39 @@ export default function PostListItem({ post }: { post: Post }) {
   }, [post.id]);
 
   const handleLike = () => {
-    axios.post(`${AxiosEndpoint.LikeReaction}?postId=${post.id}`);
+    if (like) {
+      axios
+        .delete(
+          `${AxiosEndpoint.DeleteReaction}?reactionId=${reactionItem?.id}`
+        )
+        .then(() => {
+          setLike(!like);
+        });
+    } else {
+      axios.post(`${AxiosEndpoint.LikeReaction}?postId=${post.id}`).then(() => {
+        setDislike(false);
+        setLike(!like);
+      });
+    }
   };
-  const handleDislike = () => {};
+  const handleDislike = () => {
+    if (dislike) {
+      axios
+        .delete(
+          `${AxiosEndpoint.DeleteReaction}?reactionId=${reactionItem?.id}`
+        )
+        .then(() => {
+          setDislike(!dislike);
+        });
+    } else {
+      axios
+        .post(`${AxiosEndpoint.DislikeReaction}?postId=${post.id}`)
+        .then(() => {
+          setLike(false);
+          setDislike(!dislike);
+        });
+    }
+  };
   const handleDetail = (id: number) => {
     navigate(`${Endpoint.PostDetail}/${id}`);
   };

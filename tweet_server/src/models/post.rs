@@ -21,10 +21,16 @@ pub struct Post {
 #[serde(rename_all = "camelCase")]
 pub struct CreatePost {
     pub content: String,
-    pub user_id: i32,
+    pub user_id: Option<i32>,
     pub reply_to: Option<i32>,
-    pub user_name: String,
+    pub user_name: Option<String>,
     pub reactions: Option<Value>,
+}
+impl CreatePost {
+    pub fn set_user_id(&mut self, user_id: i32) -> &Self {
+        self.user_id = Some(user_id);
+        self
+    }
 }
 
 impl From<web::Json<CreatePost>> for CreatePost {

@@ -1,10 +1,17 @@
 export enum AxiosEndpoint {
   LoginCheck = "auth/login-check",
   Login = "auth/login",
+  LogOut = "/auth/logout",
   Profile = "users/profile",
   PostList = "posts/get",
+  PostDetail = "posts/get",
+  CreatePost = "posts/post",
+  UpdatePost = "posts/put",
+  UploadPubFile = "files/upload-public",
+  StreamFile = "files/stream",
   GetReactionTable = "reactions/get-table",
   GetReaction = "reactions/get",
   LikeReaction = "reactions/post/like",
   DislikeReaction = "reactions/post/dislike",
+  DeleteReaction = "reactions/delete",
 }

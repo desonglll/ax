@@ -36,7 +36,7 @@ impl File {
             .to_str()
             .unwrap()
             .to_string();
-        let path = format!("{}/upload/{}", base_url, name);
+        let path = format!("{}/uploads/{}", base_url, name);
         Self {
             id: Uuid::new_v4(),
             name,
@@ -53,6 +53,7 @@ impl File {
         }
     }
 }
+
 #[derive(Deserialize)]
 pub struct FileFilter {
     pub name: Option<String>,

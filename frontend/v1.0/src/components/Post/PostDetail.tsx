@@ -9,12 +9,13 @@ import ThumbUpOffAltIcon from "@mui/icons-material/ThumbUpOffAlt";
 import ThumbDownAltIcon from "@mui/icons-material/ThumbDown";
 import ThumbDownOffAltIcon from "@mui/icons-material/ThumbDownOffAlt";
 import axios from "axios";
-import { PostComment } from "./PostComment.tsx";
 import Vditor from "vditor";
 import BackButton from "../Navigation/BackButton.tsx";
 import type { ApiResponse } from "../../models/api_response.ts";
 import type { File } from "../../models/file.ts";
 import Endpoint from "../../routes/common/end_point.ts";
+import { AxiosEndpoint } from "../../libs/axios_endpoint.ts";
+import type { Reaction } from "../../models/reaction.ts";
 
 export function PostDetail() {
   const { id } = useParams(); // 获取路径参数 id
@@ -35,73 +36,29 @@ export function PostDetail() {
   const [editing, setEditing] = useState(false);
   const navigate = useNavigate();
 
-  const handleReaction = async (
-    status: boolean,
-    setStatus: (arg0: boolean) => void,
-    reaction_name: string
-  ) => {
-    const data = {
-      postId: Number(id),
-      reactionName: reaction_name,
-    };
-    try {
-      if (status) {
-        await axios.post("reaction/delete", data);
-        setStatus(false);
-      } else {
-        await axios.post("reaction/insert", data);
-        setStatus(true);
-      }
-
-      // Fetch updated post details
-      const response = await getData(`post/detail/${id}`);
-      if (response.data.code === "Success") {
-        setPost(response.data.body.data);
-      }
-    } catch (error) {
-      console.error("Error updating reaction:", error);
-    }
-  };
-
-  const handleLike = () => {
-    if (like) {
-      handleReaction(like, setLike, "like");
-    } else {
-      if (dislike) {
-        handleReaction(dislike, setDislike, "dislike");
-      }
-      handleReaction(like, setLike, "like");
-    }
-  };
-  const handleDislike = () => {
-    if (dislike) {
-      handleReaction(dislike, setDislike, "dislike");
-    } else {
-      if (like) {
-        handleReaction(like, setLike, "like");
-      }
-      handleReaction(dislike, setDislike, "dislike");
-    }
-  };
+  const handleLike = () => {};
+  const handleDislike = () => {};
 
   useEffect(() => {
-    getData(`reaction/post/${id}`).then((resp) => {
-      if (resp.data.code !== "Success") {
+    getData(`${AxiosEndpoint.GetReaction}?postId=${id}`).then((resp) => {
+      console.log("reaction: ", resp.data);
+
+      if (resp.data.code !== 200) {
         navigate(Endpoint.SignIn);
       } else {
-        const resp_reactions = resp.data.body.data;
-        resp_reactions.map((reaction_item: { reaction_name: string }) => {
-          if (reaction_item.reaction_name === "like") {
-            setLike(true);
-          } else if (reaction_item.reaction_name === "dislike") {
-            setDislike(true);
-          }
-        });
+        const reaction: Reaction = resp.data.body.data;
+        if (reaction.reactionName === "Like") {
+          setLike(true);
+        } else if (reaction.reactionName === "Dislike") {
+          setDislike(true);
+        }
       }
     });
-    getData(`post/detail/${id}`)
+    getData(`${AxiosEndpoint.PostDetail}/${id}`)
       .then((resp) => {
-        if (resp.data.code === "Success") {
+        console.log("post: ", resp.data);
+
+        if (resp.data.code === 200) {
           setPost(resp.data.body.data);
           const vditor = new Vditor("vditor", {
             typewriterMode: true,
@@ -111,30 +68,32 @@ export function PostDetail() {
             ctrlEnter: (value) => {
               console.log("hello", value);
               const updated_request = {
-                id: Number(id),
                 content: value,
               };
-              axios.post("post/update", updated_request).then((resp) => {
-                if (resp.data.code === "Success") {
-                  console.log(resp.data);
-                }
-              });
+              axios
+                .put(`${AxiosEndpoint.UpdatePost}/${id}`, updated_request)
+                .then((resp) => {
+                  if (resp.data.code === "Success") {
+                    console.log(resp.data);
+                  }
+                });
             },
             blur(value: string) {
               console.log("hello", value);
               const updated_request = {
-                id: Number(id),
                 content: value,
               };
-              axios.post("post/update", updated_request).then((resp) => {
-                if (resp.data.code === "Success") {
-                  console.log(resp.data);
-                }
-              });
+              axios
+                .put(`${AxiosEndpoint.UpdatePost}/${id}`, updated_request)
+                .then((resp) => {
+                  if (resp.data.code === "Success") {
+                    console.log(resp.data);
+                  }
+                });
             },
             upload: {
               accept: "image/*,.mp3, .wav, .rar",
-              url: `${axios.defaults.baseURL}/upload`,
+              url: `${axios.defaults.baseURL}/${AxiosEndpoint.UploadPubFile}`,
               filename(name) {
                 return name
                   .replace(/[^(a-zA-Z0-9\u4e00-\u9fa5\.)]/g, "")
@@ -156,12 +115,12 @@ export function PostDetail() {
                   },
                 };
 
-                if (response.code === "Success") {
+                if (response.code === 200) {
                   const data = response.body.data;
                   data.map((file) => {
                     result.data.succMap[
                       file.name
-                    ] = `${axios.defaults.baseURL}/stream/${file.id}`;
+                    ] = `${axios.defaults.baseURL}/${AxiosEndpoint.StreamFile}/${file.id}`;
                   });
                 } else {
                   // 如果上传不成功，可以在 msg 中返回服务器的错误信息
@@ -244,9 +203,9 @@ export function PostDetail() {
                 </Button>
               </div>
             </Box>
-            <Box sx={{ display: "flex", justifyContent: "center" }}>
+            {/* <Box sx={{ display: "flex", justifyContent: "center" }}>
               <PostComment reply_to={Number(id)} />
-            </Box>
+            </Box> */}
           </Box>
         </Fade>
       )}

@@ -180,6 +180,7 @@ pub async fn stream(
     }
 
     let file_path = file_info.path;
+    println!("File path: {}", file_path);
 
     // 打开文件
     let mut file = match StdFile::open(file_path.clone()) {

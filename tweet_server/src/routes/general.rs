@@ -8,8 +8,8 @@ use crate::handlers::{
     },
     post::{delete_post, get_post_detail, get_post_list, post_new_post, update_post_details},
     reaction::{
-        get_reaction_by_post_id, get_reaction_by_user_id_and_post_id, post_dislike_reaction,
-        post_like_reaction,
+        delete_reaction_by_id, get_reaction_by_post_id, get_reaction_by_user_id_and_post_id,
+        post_dislike_reaction, post_like_reaction,
     },
     user::{
         delete_user, get_user_detail, get_user_list, get_user_profile, post_new_user,
@@ -75,7 +75,8 @@ pub fn reaction_routes(cfg: &mut web::ServiceConfig) {
             .route("/post/like", web::post().to(post_like_reaction))
             .route("/post/dislike", web::post().to(post_dislike_reaction))
             .route("/get-table", web::get().to(get_reaction_by_post_id))
-            .route("/get", web::get().to(get_reaction_by_user_id_and_post_id)),
+            .route("/get", web::get().to(get_reaction_by_user_id_and_post_id))
+            .route("/delete", web::delete().to(delete_reaction_by_id)),
     );
 }
 // 添加共同的 /api scope

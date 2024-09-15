@@ -39,7 +39,7 @@ export default function AppMenu({
   };
   const handleLogout = () => {
     axios
-      .post("logout")
+      .post(`${AxiosEndpoint.LogOut}`)
       .then((r) => {
         if (r.data.code === "Success") {
           setAuth(false);
