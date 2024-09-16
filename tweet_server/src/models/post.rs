@@ -26,10 +26,20 @@ pub struct CreatePost {
     pub user_name: Option<String>,
     pub reactions: Option<Value>,
 }
+
 impl CreatePost {
     pub fn set_user_id(&mut self, user_id: i32) -> &Self {
         self.user_id = Some(user_id);
         self
+    }
+    pub fn demo() -> Self {
+        CreatePost {
+            content: String::from(""),
+            user_id: Some(1),
+            reply_to: Some(1),
+            user_name: Some(String::from("")),
+            reactions: Some(serde_json::json!({})),
+        }
     }
 }
 

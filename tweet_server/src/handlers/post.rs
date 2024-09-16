@@ -158,13 +158,7 @@ mod tests {
         let database_url = env::var("DATABASE_URL").expect("DATABASE_URL is not set in .env file");
         let pool: PgPool = PgPool::connect(&database_url).await.unwrap();
         let app_state: web::Data<AppState> = web::Data::new(AppState { db: pool });
-        let new_post_msg = CreatePost {
-            content: "测试内容".to_string(),
-            user_id: Some(1),                       // 假设 1 是一个有效的用户ID
-            reply_to: None,                         // 如果没有回复目标则为 None
-            reactions: Some(serde_json::json!({})), // 空的 JSON 对象表示没有反应
-            user_name: Some("测试用户".to_string()),
-        };
+        let new_post_msg = CreatePost::demo();
         let post_param = web::Json(new_post_msg.clone());
 
         // 发送请求前设置 session 数据
@@ -200,15 +194,9 @@ mod tests {
         let database_url = env::var("DATABASE_URL").expect("DATABASE_URL is not set in .env file");
         let pool: PgPool = PgPool::connect(&database_url).await.unwrap();
         let app_state: web::Data<AppState> = web::Data::new(AppState { db: pool });
-        let post = CreatePost {
-            content: String::from("new post"),
-            user_id: Some(1),
-            reply_to: None,
-            user_name: Some(String::from("mike")),
-            reactions: Some(serde_json::json!({})),
-        };
+        let post = CreatePost::demo();
         let insert_result = insert_post_db(&app_state.db, post.clone()).await.unwrap();
-        assert_eq!("new post", &insert_result.content);
+        assert_eq!(post.content, insert_result.content);
         // Delete test post.
         let delete_params: web::Path<(i32, )> = web::Path::from((insert_result.id, ));
         let resp = delete_post(app_state.clone(), delete_params).await.unwrap();
@@ -221,13 +209,7 @@ mod tests {
         let database_url = env::var("DATABASE_URL").expect("DATABASE_URL is not set in .env file");
         let pool: PgPool = PgPool::connect(&database_url).await.unwrap();
         let app_state: web::Data<AppState> = web::Data::new(AppState { db: pool });
-        let post = CreatePost {
-            content: String::from("test_update_post_before"),
-            user_id: Some(1),
-            reply_to: None,
-            user_name: Some(String::from("mike")),
-            reactions: Some(serde_json::json!({})),
-        };
+        let post = CreatePost::demo();
         let insert_result = insert_post_db(&app_state.db, post.clone()).await.unwrap();
         assert_eq!(&post.content, &insert_result.content);
         // Update test user.
@@ -265,13 +247,7 @@ mod tests {
             .get_session();
         session.insert("user_id", 1).unwrap(); // 模拟 user_id 为 1
 
-        let new_post_msg = CreatePost {
-            content: "测试内容".to_string(),
-            user_id: Some(1),                       // 假设 1 是一个有效的用户ID
-            reply_to: None,                         // 如果没有回复目标则为 None
-            reactions: Some(serde_json::json!({})), // 空的 JSON 对象表示没有反应
-            user_name: Some("测试用户".to_string()),
-        };
+        let new_post_msg = CreatePost::demo();
         let result = insert_post_db(&app_state.db, new_post_msg.clone())
             .await
             .unwrap();
