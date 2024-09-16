@@ -1,5 +1,5 @@
 use actix_session::Session;
-use actix_web::{web, HttpResponse, Responder};
+use actix_web::{HttpResponse, Responder, web};
 use chrono::{Local, Timelike};
 use serde_json::{json, Value};
 
@@ -17,6 +17,7 @@ use crate::{
     models::{auth::LoginRequest, user::User},
     state::AppState,
 };
+use crate::libraries::session::is_login;
 
 /// 处理用户访问请求的处理器函数
 ///
@@ -180,5 +181,18 @@ pub async fn check_login(session: &Session) -> Result<bool, AxError> {
     match session.get::<String>("user_name") {
         Ok(_user_name) => Ok(true),
         _ => Ok(false),
+    }
+}
+
+pub async fn login_in_unauthentic(session: &Session) -> Result<HttpResponse, AxError> {
+    if !is_login(session).await.unwrap() {
+        let api_response = ApiResponse::<()>::new(
+            401,
+            "Please Login".to_string(),
+            None,
+        );
+        Ok(HttpResponse::Ok().json(api_response))
+    } else {
+        Err(AxError::ActixError("`login_in_unauthentic` error".to_string()))
     }
 }

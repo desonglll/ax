@@ -16,6 +16,7 @@ use crate::handlers::{
         update_user_details,
     },
 };
+use crate::handlers::comment::insert_comment;
 
 pub fn user_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
@@ -69,6 +70,7 @@ pub fn post_routes(cfg: &mut web::ServiceConfig) {
             .route("/get/{post_id}", web::get().to(get_post_detail)),
     );
 }
+
 pub fn reaction_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/reactions")
@@ -79,6 +81,14 @@ pub fn reaction_routes(cfg: &mut web::ServiceConfig) {
             .route("/delete", web::delete().to(delete_reaction_by_id)),
     );
 }
+
+pub fn comment_routes(cfg: &mut web::ServiceConfig) {
+    cfg.service(
+        web::scope("/comments")
+            .route("/post", web::post().to(insert_comment))
+    );
+}
+
 // 添加共同的 /api scope
 pub fn api_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
@@ -87,6 +97,7 @@ pub fn api_routes(cfg: &mut web::ServiceConfig) {
             .configure(auth_routes) // 配置认证路由
             .configure(file_routes) // 配置文件路由
             .configure(post_routes) // 配置推文路由
-            .configure(reaction_routes),
+            .configure(reaction_routes)
+            .configure(comment_routes)
     );
 }
