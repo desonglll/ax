@@ -158,22 +158,21 @@ pub async fn delete_user(
 
 #[cfg(test)]
 mod user_dbaccess_tests {
-    use std::env;
+    
 
     use actix_web::{
         http::StatusCode,
         ResponseError,
         web::{self},
     };
-    use dotenv::dotenv;
-    use sqlx::PgPool;
+    
+    
     use uuid::Uuid;
 
     use crate::{
         dbaccess::user::{check_password_correct_db, insert_user_db},
         handlers::user::{delete_user, get_user_detail, post_new_user, update_user_details},
         models::user::{CreateUser, UpdateUser},
-        state::AppState,
     };
     use crate::state::get_demo_state;
     use crate::utils::test::get_test_session;
