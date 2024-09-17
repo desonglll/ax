@@ -36,7 +36,7 @@ export function PostComment({ reply_to }: { reply_to: number }) {
       replyToType: "post",
     };
     console.log(data);
-    axios.post("comment/insert", data).then((resp) => {
+    axios.post(`${AxiosEndpoint.CreateComment}`, data).then((resp) => {
       console.log(resp.data);
     });
   };

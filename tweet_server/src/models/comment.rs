@@ -12,7 +12,6 @@ pub struct Comment {
     pub user_name: String,
     pub created_at: DateTime<chrono::Utc>,
     pub updated_at: DateTime<chrono::Utc>,
-    pub reactions: String,
     pub reply_to_type: String,
 }
 
@@ -22,13 +21,12 @@ pub struct CreateComment {
     content: String,
     reply_to: i32,
     user_id: Option<i32>,
-    reactions: String,
     reply_to_type: String,
 }
 
 impl CreateComment {
-    pub fn new(content: String, reply_to: i32, user_id: Option<i32>, reactions: String, reply_to_type: String) -> Self {
-        Self { content, reply_to, user_id, reactions, reply_to_type }
+    pub fn new(content: String, reply_to: i32, user_id: Option<i32>, reply_to_type: String) -> Self {
+        Self { content, reply_to, user_id, reply_to_type }
     }
     pub fn set_content(&mut self, content: String) {
         self.content = content;
@@ -39,9 +37,7 @@ impl CreateComment {
     pub fn set_user_id(&mut self, user_id: Option<i32>) {
         self.user_id = user_id;
     }
-    pub fn set_reactions(&mut self, reactions: String) {
-        self.reactions = reactions;
-    }
+
     pub fn set_reply_to_type(&mut self, reply_to_type: String) {
         self.reply_to_type = reply_to_type;
     }
@@ -54,9 +50,6 @@ impl CreateComment {
     pub fn user_id(&self) -> Option<i32> {
         self.user_id
     }
-    pub fn reactions(&self) -> &str {
-        &self.reactions
-    }
     pub fn reply_to_type(&self) -> &str {
         &self.reply_to_type
     }
@@ -66,7 +59,6 @@ impl CreateComment {
             content: "demo".to_string(),
             reply_to: 0,
             user_id: None,
-            reactions: "".to_string(),
             reply_to_type: "post".to_string(),
         }
     }

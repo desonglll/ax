@@ -1,5 +1,4 @@
 import {
-  Box,
   Button,
   Card,
   CardActions,
@@ -7,72 +6,10 @@ import {
   Typography,
 } from "@mui/material";
 import type { Comment } from "../../models/post";
-import ThumbUpAltIcon from "@mui/icons-material/ThumbUpAlt";
-import ThumbDownOffAltIcon from "@mui/icons-material/ThumbDownOffAlt";
-import ThumbDownAltIcon from "@mui/icons-material/ThumbDown";
-import CommentIcon from "@mui/icons-material/Comment";
-import ThumbUpOffAltIcon from "@mui/icons-material/ThumbUpOffAlt";
-import { useEffect, useState } from "react";
-import getData from "../../utils/data_fetch";
-import axios from "axios";
-import { AxiosEndpoint } from "../../libs/axios_endpoint";
-import { Reaction } from "../../models/reaction";
+import { useEffect } from "react";
+import ReactionItem from "../ReactionItem";
 function PostCommentItem({ comment }: { comment: Comment }) {
-  const [like, setLike] = useState<boolean>(false);
-  const [dislike, setDislike] = useState<boolean>(false);
-  const [reactionItem, setReactionItem] = useState<Reaction>();
-
-  useEffect(() => {
-    getData(`${AxiosEndpoint.GetReaction}?toId=${comment.id}`).then((resp) => {
-      console.log(resp.data);
-
-      const resp_reactions = resp.data.body.data;
-      resp_reactions.map((reaction_item: { reaction_name: string }) => {
-        if (reaction_item.reaction_name === "like") {
-          setLike(true);
-        } else if (reaction_item.reaction_name === "dislike") {
-          setDislike(true);
-        }
-      });
-    });
-  }, [comment.id]);
-
-  const handleLike = () => {
-    if (like) {
-      axios
-        .delete(
-          `${AxiosEndpoint.DeleteReaction}?reactionId=${reactionItem?.id}`
-        )
-        .then(() => {
-          setLike(!like);
-        });
-    } else {
-      axios
-        .post(`${AxiosEndpoint.LikeReaction}?toId=${comment.id}`)
-        .then(() => {
-          setDislike(false);
-          setLike(!like);
-        });
-    }
-  };
-  const handleDislike = () => {
-    if (dislike) {
-      axios
-        .delete(
-          `${AxiosEndpoint.DeleteReaction}?reactionId=${reactionItem?.id}`
-        )
-        .then(() => {
-          setDislike(!dislike);
-        });
-    } else {
-      axios
-        .post(`${AxiosEndpoint.DislikeReaction}?toId=${comment.id}`)
-        .then(() => {
-          setLike(false);
-          setDislike(!dislike);
-        });
-    }
-  };
+  useEffect(() => {}, [comment.id]);
 
   return (
     <>
@@ -100,22 +37,7 @@ function PostCommentItem({ comment }: { comment: Comment }) {
           </Button>
         </CardContent>
         <CardActions sx={{ justifyContent: "space-between" }}>
-          {/*<Button size="small" onClick={() => handleDetail(postItem.id)}>Detail</Button>*/}
-          <Box sx={{ display: "flex" }}>
-            <div>
-              <Button size="small" onClick={() => handleLike()}>
-                {like ? <ThumbUpAltIcon /> : <ThumbUpOffAltIcon />}
-              </Button>
-            </div>
-            <div>
-              <Button size="small" onClick={() => handleDislike()}>
-                {dislike ? <ThumbDownAltIcon /> : <ThumbDownOffAltIcon />}
-              </Button>
-            </div>
-            <Button size="small">
-              <CommentIcon />
-            </Button>
-          </Box>
+          <ReactionItem toId={comment.id} toType="comment" />
         </CardActions>
       </Card>
     </>

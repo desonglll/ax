@@ -29,7 +29,7 @@ pub async fn insert_like_reaction_db(
 
     let reaction_row = sqlx::query_as!(
         Reaction,
-        "insert into reactions (user_id, to_id, reaction_name, to_type) values ($1, $2, $3, $4) on conflict (user_id, to_id, reaction_name) do update set created_at = CURRENT_TIMESTAMP returning id, user_id, to_id, created_at, reaction_name, to_type",
+        "insert into reactions (user_id, to_id, reaction_name, to_type) values ($1, $2, $3, $4) on conflict (user_id, to_id, reaction_name, to_type) do update set created_at = CURRENT_TIMESTAMP returning id, user_id, to_id, created_at, reaction_name, to_type",
         create_reaction.user_id,
         create_reaction.to_id,
         "Like",
@@ -53,10 +53,11 @@ pub async fn insert_dislike_reaction_db(
     {
         let _ = delete_reaction_by_id_db(pool, existed_like.id).await;
     }
+    println!("{:?}", create_reaction);
 
     let reaction_row = sqlx::query_as!(
         Reaction,
-        "insert into reactions (user_id, to_id, reaction_name, to_type) values ($1, $2, $3, $4) on conflict (user_id, to_id, reaction_name) do update set created_at = CURRENT_TIMESTAMP returning id, user_id, to_id, created_at, reaction_name, to_type",
+        "insert into reactions (user_id, to_id, reaction_name, to_type) values ($1, $2, $3, $4) on conflict (user_id, to_id, reaction_name, to_type) do update set created_at = CURRENT_TIMESTAMP returning id, user_id, to_id, created_at, reaction_name, to_type",
         create_reaction.user_id,
         create_reaction.to_id,
         "Dislike",

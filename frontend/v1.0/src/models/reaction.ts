@@ -6,3 +6,8 @@ export interface Reaction {
   reactionName: string;
   toType: string;
 }
+
+export interface ReactionTable {
+  like: number;
+  dislike: number;
+}

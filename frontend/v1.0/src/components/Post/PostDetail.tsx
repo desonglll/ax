@@ -4,18 +4,12 @@ import { useEffect, useState } from "react";
 import getData from "../../utils/data_fetch.ts";
 import type { Post } from "../../models/post.ts";
 import Box from "@mui/material/Box";
-import ThumbUpAltIcon from "@mui/icons-material/ThumbUpAlt";
-import ThumbUpOffAltIcon from "@mui/icons-material/ThumbUpOffAlt";
-import ThumbDownAltIcon from "@mui/icons-material/ThumbDown";
-import ThumbDownOffAltIcon from "@mui/icons-material/ThumbDownOffAlt";
 import axios from "axios";
 import Vditor from "vditor";
 import BackButton from "../Navigation/BackButton.tsx";
 import type { ApiResponse } from "../../models/api_response.ts";
 import type { File } from "../../models/file.ts";
-import Endpoint from "../../routes/common/end_point.ts";
 import { AxiosEndpoint } from "../../libs/axios_endpoint.ts";
-import type { Reaction } from "../../models/reaction.ts";
 import { PostComment } from "./PostComment.tsx";
 import ReactionItem from "../ReactionItem.tsx";
 
@@ -32,27 +26,11 @@ export function PostDetail() {
     userName: "",
   });
 
-  const [like, setLike] = useState<boolean>(false);
-  const [dislike, setDislike] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    getData(`${AxiosEndpoint.GetReaction}?postId=${id}`).then((resp) => {
-      console.log("reaction: ", resp.data);
-
-      if (resp.data.code !== 200) {
-        navigate(Endpoint.SignIn);
-      } else {
-        const reaction: Reaction = resp.data.body.data;
-        if (reaction.reactionName === "Like") {
-          setLike(true);
-        } else if (reaction.reactionName === "Dislike") {
-          setDislike(true);
-        }
-      }
-    });
     getData(`${AxiosEndpoint.PostDetail}/${id}`)
       .then((resp) => {
         console.log("post: ", resp.data);
@@ -182,7 +160,7 @@ export function PostDetail() {
               <div id="pre" />
             </div>
 
-            <ReactionItem toId={Number(id)} />
+            <ReactionItem toId={Number(id)} toType="post" />
             <Box sx={{ display: "flex", justifyContent: "center" }}>
               <PostComment reply_to={Number(id)} />
             </Box>

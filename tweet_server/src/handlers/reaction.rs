@@ -47,12 +47,14 @@ pub async fn insert_dislike_reaction(
     query: Option<web::Query<HashMap<String, String>>>,
 ) -> Result<HttpResponse, AxError> {
     let query = query.unwrap();
+    println!("{:?}", query);
     let user_id = session.get::<i32>("user_id").unwrap().unwrap_or(0);
     let to_id = query
         .get("toId")
         .and_then(|s| s.parse::<i32>().ok())
         .unwrap_or(0);
     let to_type = query.get("toType").unwrap_or(&"post".to_string()).clone();
+    println!("to_type: {:?}", to_type);
     let new_reaction = CreateReaction { user_id, to_id, to_type };
     insert_dislike_reaction_db(&app_state.db, new_reaction)
         .await

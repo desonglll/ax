@@ -16,4 +16,5 @@ export enum AxiosEndpoint {
   DislikeReaction = "reactions/post/dislike",
   DeleteReaction = "reactions/delete",
   GetComment = "comments/get",
+  CreateComment = "comments/post",
 }
