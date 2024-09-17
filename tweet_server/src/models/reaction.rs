@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug)]
 pub enum ReactionName {
     Like(i32),
-    Dislik(i32),
+    Dislike(i32),
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]

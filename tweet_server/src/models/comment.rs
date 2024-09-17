@@ -60,4 +60,14 @@ impl CreateComment {
     pub fn reply_to_type(&self) -> &str {
         &self.reply_to_type
     }
+
+    pub fn demo() -> Self {
+        CreateComment {
+            content: "demo".to_string(),
+            reply_to: 0,
+            user_id: None,
+            reactions: "".to_string(),
+            reply_to_type: "".to_string(),
+        }
+    }
 }

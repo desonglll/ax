@@ -20,3 +20,15 @@ pub async fn insert_comment_db(
     ).fetch_one(pool).await?;
     Ok(row)
 }
+
+pub async fn delete_comment_by_id_db(
+    pool: &PgPool,
+    id: i32,
+) -> Result<Comment, AxError> {
+    let row = sqlx::query_as!(
+        Comment,
+        "delete from comments where id = $1 returning id, content, reply_to, user_id, user_name, created_at, updated_at, reactions, reply_to_type",
+        id
+    ).fetch_one(pool).await?;
+    Ok(row)
+}

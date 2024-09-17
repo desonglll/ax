@@ -6,7 +6,7 @@ use crate::handlers::{
         download, get_file_list, get_pub_file_list, get_user_file, stream, upload_private,
         upload_public,
     },
-    post::{delete_post, get_post_detail, get_post_list, post_new_post, update_post_details},
+    post::{delete_post, get_post_detail, get_post_list, insert_new_post, update_post_details},
     reaction::{
         delete_reaction_by_id, get_reaction_by_post_id, get_reaction_by_user_id_and_post_id,
         post_dislike_reaction, post_like_reaction,
@@ -63,7 +63,7 @@ pub fn post_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/posts")
             // 新增推文
-            .route("/post", web::post().to(post_new_post))
+            .route("/post", web::post().to(insert_new_post))
             .route("/get", web::get().to(get_post_list))
             .route("/delete/{post_id}", web::delete().to(delete_post))
             .route("/put/{post_id}", web::put().to(update_post_details))

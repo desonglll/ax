@@ -23,7 +23,7 @@ curl -X POST localhost:8000/api/posts/post \
        "reactions": null
    }'
 */
-pub async fn post_new_post(
+pub async fn insert_new_post(
     session: Session,
     app_state: web::Data<AppState>,
     new_post: web::Json<CreatePost>,
@@ -36,7 +36,7 @@ pub async fn post_new_post(
     insert_post_db(&app_state.db, new_post).await.map(|post| {
         let api_response = ApiResponse::new(
             200,
-            "Success".to_string(),
+            "Insert Post Successful".to_string(),
             Some(DataBuilder::new().set_data(post).build()),
         );
         HttpResponse::Ok().json(api_response)
@@ -59,7 +59,7 @@ pub async fn get_post_detail(
         .map(|resp| {
             let api_response = ApiResponse::new(
                 200,
-                "Success".to_string(),
+                "Get Post Successful".to_string(),
                 Some(DataBuilder::new().set_data(resp).build()),
             );
             HttpResponse::Ok().json(api_response)
@@ -121,9 +121,11 @@ pub async fn update_post_details(
 curl -X DELETE http://localhost:8000/api/posts/1
 */
 pub async fn delete_post(
+    session: Session,
     app_state: web::Data<AppState>,
     path: web::Path<(i32, )>,
 ) -> Result<HttpResponse, AxError> {
+    let _ = login_in_unauthentic(&session).await;
     let (post_id, ) = path.into_inner();
     delete_post_db(&app_state.db, post_id).await.map(|post| {
         HttpResponse::Ok().json(ApiResponse::new(
@@ -146,7 +148,7 @@ mod tests {
 
     use crate::{
         handlers::post::{
-            delete_post, get_post_detail, insert_post_db, post_new_post, update_post_details,
+            delete_post, get_post_detail, insert_new_post, insert_post_db, update_post_details,
         },
         models::post::{CreatePost, UpdatePost},
         state::AppState,
@@ -166,7 +168,7 @@ mod tests {
             .to_http_request()
             .get_session();
         session.insert("user_id", 1).unwrap(); // 模拟 user_id 为 1
-        let resp = post_new_post(session, app_state.clone(), post_param)
+        let resp = insert_new_post(session, app_state.clone(), post_param)
             .await
             .unwrap();
         assert_eq!(resp.status(), StatusCode::OK);
@@ -194,12 +196,17 @@ mod tests {
         let database_url = env::var("DATABASE_URL").expect("DATABASE_URL is not set in .env file");
         let pool: PgPool = PgPool::connect(&database_url).await.unwrap();
         let app_state: web::Data<AppState> = web::Data::new(AppState { db: pool });
+        // 发送请求前设置 session 数据
+        let session = test::TestRequest::post()
+            .to_http_request()
+            .get_session();
+        session.insert("user_id", 1).unwrap(); // 模拟 user_id 为 1
         let post = CreatePost::demo();
         let insert_result = insert_post_db(&app_state.db, post.clone()).await.unwrap();
         assert_eq!(post.content, insert_result.content);
         // Delete test post.
         let delete_params: web::Path<(i32, )> = web::Path::from((insert_result.id, ));
-        let resp = delete_post(app_state.clone(), delete_params).await.unwrap();
+        let resp = delete_post(session, app_state.clone(), delete_params).await.unwrap();
         assert_eq!(resp.status(), StatusCode::OK);
     }
 

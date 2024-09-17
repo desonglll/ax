@@ -1,5 +1,5 @@
 use actix_session::Session;
-use actix_web::{web, HttpResponse};
+use actix_web::{HttpResponse, web};
 
 use crate::{
     dbaccess::user::{
@@ -47,9 +47,9 @@ curl -X GET http://localhost:8000/users/1
 */
 pub async fn get_user_detail(
     app_state: web::Data<AppState>,
-    path: web::Path<(i32,)>,
+    path: web::Path<(i32, )>,
 ) -> Result<HttpResponse, AxError> {
-    let (user_id,) = path.into_inner();
+    let (user_id, ) = path.into_inner();
     get_user_detail_db(&app_state.db, user_id)
         .await
         .map(|resp| {
@@ -108,10 +108,10 @@ curl -X PUT localhost:8000/users/1 \
 pub async fn update_user_details(
     session: Session,
     app_state: web::Data<AppState>,
-    path: web::Path<(i32,)>,
+    path: web::Path<(i32, )>,
     update_user: web::Json<UpdateUser>,
 ) -> Result<HttpResponse, AxError> {
-    let (user_id,) = path.into_inner();
+    let (user_id, ) = path.into_inner();
     match session.get::<i32>("user_id") {
         Ok(session_user_id) => {
             if session_user_id.unwrap_or(-1) == user_id {
@@ -139,9 +139,9 @@ curl -X DELETE http://localhost:8000/users/1
 pub async fn delete_user(
     session: Session,
     app_state: web::Data<AppState>,
-    path: web::Path<(i32,)>,
+    path: web::Path<(i32, )>,
 ) -> Result<HttpResponse, AxError> {
-    let (user_id,) = path.into_inner();
+    let (user_id, ) = path.into_inner();
     match session.get::<i32>("user_id") {
         Ok(session_user_id) => {
             if session_user_id.unwrap_or(-1) == user_id {
@@ -162,8 +162,8 @@ mod user_dbaccess_tests {
 
     use actix_web::{
         http::StatusCode,
-        web::{self},
         ResponseError,
+        web::{self},
     };
     use dotenv::dotenv;
     use sqlx::PgPool;
@@ -172,17 +172,15 @@ mod user_dbaccess_tests {
     use crate::{
         dbaccess::user::{check_password_correct_db, insert_user_db},
         handlers::user::{delete_user, get_user_detail, post_new_user, update_user_details},
-        libraries::session::get_test_session,
         models::user::{CreateUser, UpdateUser},
         state::AppState,
     };
+    use crate::state::get_demo_state;
+    use crate::utils::test::get_test_session;
 
     #[actix_rt::test]
     async fn test_check_password_correct() {
-        dotenv().ok();
-        let database_url = env::var("DATABASE_URL").expect("DATABASE_URL is not set in .env file");
-        let pool: PgPool = PgPool::connect(&database_url).await.unwrap();
-        let app_state: web::Data<AppState> = web::Data::new(AppState { db: pool });
+        let app_state = get_demo_state().await;
         let password = String::from("070011");
         let user = CreateUser {
             user_name: "test_password_correct".to_owned(),
@@ -208,17 +206,14 @@ mod user_dbaccess_tests {
             "delete from users where user_name = $1",
             result.user_name.clone()
         )
-        .execute(&app_state.db)
-        .await
-        .unwrap();
+            .execute(&app_state.db)
+            .await
+            .unwrap();
     }
 
     #[actix_rt::test]
     async fn test_insert_user() {
-        dotenv().ok();
-        let database_url = env::var("DATABASE_URL").expect("DATABASE_URL is not set in .env file");
-        let pool: PgPool = PgPool::connect(&database_url).await.unwrap();
-        let app_state: web::Data<AppState> = web::Data::new(AppState { db: pool });
+        let app_state = get_demo_state().await;
         let new_user_msg = CreateUser {
             user_name: "test_insert_user".to_owned(),
             email: "test_insert_user@gmail.com".to_owned(),
@@ -238,16 +233,14 @@ mod user_dbaccess_tests {
             "delete from users where user_name = $1",
             new_user_msg.user_name
         )
-        .execute(&app_state.db)
-        .await
-        .unwrap();
+            .execute(&app_state.db)
+            .await
+            .unwrap();
     }
+
     #[actix_rt::test]
     async fn test_get_user_detail() {
-        dotenv().ok();
-        let database_url = env::var("DATABASE_URL").expect("DATABASE_URL is not set in .env file");
-        let pool: PgPool = PgPool::connect(&database_url).await.unwrap();
-        let app_state: web::Data<AppState> = web::Data::new(AppState { db: pool });
+        let app_state = get_demo_state().await;
         let user = CreateUser {
             user_name: "test_get_user_detail".to_owned(),
             email: "test_get_user_detail@gmail.com".to_owned(),
@@ -260,7 +253,7 @@ mod user_dbaccess_tests {
         };
         let result = insert_user_db(&app_state.db, user.clone()).await.unwrap();
         assert_eq!(&user.user_name, &result.user_name);
-        let parameters: web::Path<(i32,)> = web::Path::from((result.id,));
+        let parameters: web::Path<(i32, )> = web::Path::from((result.id, ));
         let resp = get_user_detail(app_state.clone(), parameters).await;
         match resp {
             Ok(_) => println!("Something wrong"),
@@ -273,12 +266,10 @@ mod user_dbaccess_tests {
             .await
             .unwrap();
     }
+
     #[actix_rt::test]
     async fn test_delete_user() {
-        dotenv().ok();
-        let database_url = env::var("DATABASE_URL").expect("DATABASE_URL is not set in .env file");
-        let pool: PgPool = PgPool::connect(&database_url).await.unwrap();
-        let app_state: web::Data<AppState> = web::Data::new(AppState { db: pool });
+        let app_state = get_demo_state().await;
         let user = CreateUser {
             user_name: "test_delete_user".to_owned(),
             email: "test_delete_user@gmail.com".to_owned(),
@@ -293,18 +284,16 @@ mod user_dbaccess_tests {
         assert_eq!(&user.user_name, &insert_result.user_name);
         // Delete test user.
         let session = get_test_session(&insert_result).await;
-        let delete_params: web::Path<(i32,)> = web::Path::from((insert_result.id,));
+        let delete_params: web::Path<(i32, )> = web::Path::from((insert_result.id, ));
         let resp = delete_user(session, app_state.clone(), delete_params)
             .await
             .unwrap();
         assert_eq!(resp.status(), StatusCode::OK);
     }
+
     #[actix_rt::test]
     async fn test_update_user() {
-        dotenv().ok();
-        let database_url = env::var("DATABASE_URL").expect("DATABASE_URL is not set in .env file");
-        let pool: PgPool = PgPool::connect(&database_url).await.unwrap();
-        let app_state: web::Data<AppState> = web::Data::new(AppState { db: pool });
+        let app_state = get_demo_state().await;
         let user = CreateUser {
             user_name: "test_update_user".to_owned(),
             email: "test_update_user@gmail.com".to_owned(),
@@ -328,7 +317,7 @@ mod user_dbaccess_tests {
             is_admin: None,
             profile_picture: None,
         };
-        let parameters: web::Path<(i32,)> = web::Path::from((insert_result.id,));
+        let parameters: web::Path<(i32, )> = web::Path::from((insert_result.id, ));
         let update_param = web::Json(update_user_msg);
         let session = get_test_session(&insert_result).await;
         let resp = update_user_details(session, app_state.clone(), parameters, update_param)

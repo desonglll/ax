@@ -51,14 +51,7 @@ pub struct UpdateUser {
 impl From<web::Json<CreateUser>> for CreateUser {
     fn from(value: web::Json<CreateUser>) -> Self {
         CreateUser {
-            user_name: value.user_name.clone(),
-            password: value.password.clone(),
-            email: value.email.clone(),
-            full_name: value.full_name.clone(),
-            phone: value.phone.clone(),
-            is_active: value.is_active,
-            is_admin: value.is_admin,
-            profile_picture: value.profile_picture,
+            ..value.clone()
         }
     }
 }
@@ -66,14 +59,7 @@ impl From<web::Json<CreateUser>> for CreateUser {
 impl From<web::Json<UpdateUser>> for UpdateUser {
     fn from(value: web::Json<UpdateUser>) -> Self {
         UpdateUser {
-            user_name: value.user_name.clone(),
-            password: value.password.clone(),
-            email: value.email.clone(),
-            full_name: value.full_name.clone(),
-            phone: value.phone.clone(),
-            is_active: value.is_active,
-            is_admin: value.is_admin,
-            profile_picture: value.profile_picture,
+            ..value.clone()
         }
     }
 }

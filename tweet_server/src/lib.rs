@@ -1,6 +1,7 @@
 // use libraries::mkdir::make_directory;
 
 use clap::{arg, command, Parser};
+
 use libraries::mkdir::make_directory;
 
 pub mod dbaccess;
@@ -10,6 +11,8 @@ pub mod libraries;
 pub mod models;
 pub mod routes;
 pub mod state;
+pub mod utils;
+
 /// Simple program to greet a person
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -22,6 +25,7 @@ struct Args {
     #[arg(short, long, default_value_t = 1)]
     count: u8,
 }
+
 pub async fn preload() {
     let args = Args::parse();
     make_directory("uploads", args.rmfolder);

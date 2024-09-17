@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 
 use actix_session::Session;
-use actix_web::{web, HttpResponse};
+use actix_web::{HttpResponse, web};
 
+use crate::{errors::AxError, models::reaction::CreateReaction, state::AppState};
 use crate::dbaccess::reaction::*;
 use crate::libraries::resp::api_response::ApiResponse;
 use crate::libraries::resp::data::DataBuilder;
-use crate::{errors::AxError, models::reaction::CreateReaction, state::AppState};
 
 // Create
 /*
@@ -61,6 +61,7 @@ pub async fn post_dislike_reaction(
             ))
         })
 }
+
 // Read
 /*
 http://localhost:8000/api/reactions/get?postId=1
@@ -106,6 +107,7 @@ pub async fn get_reaction_by_user_id_and_post_id(
             ))
         })
 }
+
 // Delete
 pub async fn delete_reaction_by_id(
     _session: Session,
@@ -133,15 +135,17 @@ pub async fn delete_reaction_by_id(
 mod tests {
     use std::env;
 
+    use actix_session::SessionMiddleware;
+    use actix_session::storage::RedisSessionStore;
+    use actix_web::{App, cookie::Key, http::StatusCode, test, web};
+    use dotenv::dotenv;
+    use serde_json::Value;
+    use sqlx::PgPool;
+
     use crate::{
         handlers::reaction::{post_dislike_reaction, post_like_reaction},
         state::AppState,
     };
-    use actix_session::{storage::RedisActorSessionStore, SessionMiddleware};
-    use actix_web::{cookie::Key, http::StatusCode, test, web, App};
-    use dotenv::dotenv;
-    use serde_json::Value;
-    use sqlx::PgPool;
 
     #[actix_rt::test]
     async fn test_insert_like_reaction() {
@@ -152,21 +156,23 @@ mod tests {
 
         // 模拟请求和会话
         let secret_key = Key::generate();
-        let redis_connection_string = "127.0.0.1:6379";
+        let redis_connection_string = "redis://127.0.0.1:6379";
+        let store = RedisSessionStore::new(redis_connection_string).await.unwrap();
+
         let app = test::init_service(
             App::new()
                 .app_data(app_state.clone())
                 .wrap(
                     SessionMiddleware::builder(
-                        RedisActorSessionStore::new(redis_connection_string),
+                        store,
                         secret_key.clone(),
                     )
-                    .cookie_secure(false) // https://docs.rs/actix-session/latest/actix_session/config/struct.SessionMiddlewareBuilder.html#method.cookie_secure
-                    .build(),
+                        .cookie_secure(false) // https://docs.rs/actix-session/latest/actix_session/config/struct.SessionMiddlewareBuilder.html#method.cookie_secure
+                        .build(),
                 )
                 .route("/like", web::post().to(post_like_reaction)),
         )
-        .await;
+            .await;
 
         // 构建请求，并模拟会话
         let req = test::TestRequest::post()
@@ -196,6 +202,7 @@ mod tests {
             .await
             .unwrap();
     }
+
     #[actix_rt::test]
     async fn test_insert_dislike_reaction() {
         dotenv().ok();
@@ -204,21 +211,22 @@ mod tests {
         let app_state: web::Data<AppState> = web::Data::new(AppState { db: pool });
         // 模拟请求和会话
         let secret_key = Key::generate();
-        let redis_connection_string = "127.0.0.1:6379";
+        let redis_connection_string = "redis://127.0.0.1:6379";
+        let store = RedisSessionStore::new(redis_connection_string).await.unwrap();
         let app = test::init_service(
             App::new()
                 .app_data(app_state.clone())
                 .wrap(
                     SessionMiddleware::builder(
-                        RedisActorSessionStore::new(redis_connection_string),
+                        store,
                         secret_key.clone(),
                     )
-                    .cookie_secure(false) // https://docs.rs/actix-session/latest/actix_session/config/struct.SessionMiddlewareBuilder.html#method.cookie_secure
-                    .build(),
+                        .cookie_secure(false) // https://docs.rs/actix-session/latest/actix_session/config/struct.SessionMiddlewareBuilder.html#method.cookie_secure
+                        .build(),
                 )
                 .route("/dislike", web::post().to(post_dislike_reaction)),
         )
-        .await;
+            .await;
 
         // 构建请求，并模拟会话
         let req = test::TestRequest::post()
