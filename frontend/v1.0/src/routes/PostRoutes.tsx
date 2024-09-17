@@ -1,8 +1,8 @@
 import { Route, Routes } from "react-router-dom";
-import { PostDetail } from "../components/post/PostDetail.tsx";
-import { ReleasePost } from "../components/post/ReleasePost.tsx";
-import { AxSkeleton } from "../components/AxSkeleton.tsx";
-import Endpoint from "./common/end_point.ts";
+import { PostDetail } from "../components/structures/post/PostDetail.tsx";
+import { ReleasePost } from "../components/structures/post/ReleasePost.tsx";
+import { AxSkeleton } from "../components/common/skeleton/AxSkeleton.tsx";
+import RouteEndpoint from "../config/endpoints/route_endpoint.ts";
 import PostPage from "../pages/PostPage.tsx";
 
 export default function PostRoutes() {
@@ -10,9 +10,9 @@ export default function PostRoutes() {
     <>
       <AxSkeleton>
         <Routes>
-          <Route path={Endpoint.List} element={<PostPage />} />
-          <Route path={`${Endpoint.Detail}/:id`} element={<PostDetail />} />
-          <Route path={Endpoint.New} element={<ReleasePost />} />
+          <Route path={RouteEndpoint.List} element={<PostPage />} />
+          <Route path={`${RouteEndpoint.Detail}/:id`} element={<PostDetail />} />
+          <Route path={RouteEndpoint.New} element={<ReleasePost />} />
         </Routes>
       </AxSkeleton>
     </>

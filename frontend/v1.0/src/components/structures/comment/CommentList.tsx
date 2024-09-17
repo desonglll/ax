@@ -3,12 +3,12 @@ import Box from "@mui/material/Box";
 import Button from "@mui/joy/Button";
 import type React from "react";
 import axios from "axios";
-import type {Comment} from "../../models/post.ts";
+import type {Comment} from "../../../models/post.ts";
 import {useEffect, useState} from "react";
-import getData from "../../utils/data_fetch.ts";
+import getData from "../../../utils/data_fetch.ts";
 import {Fade, List, ListItem} from "@mui/material";
 import CommentItem from "./CommentItem.tsx";
-import {AxiosEndpoint} from "../../libs/axios_endpoint.ts";
+import {AxiosEndpoint} from "../../../config/endpoints/axios_endpoint.ts";
 
 export function CommentList({reply_to}: { reply_to: number }) {
     const [comments, setComments] = useState<Comment[]>([]);

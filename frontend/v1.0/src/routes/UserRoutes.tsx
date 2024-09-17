@@ -1,5 +1,5 @@
 import { Route, Routes } from "react-router-dom";
-import { AxSkeleton } from "../components/AxSkeleton.tsx";
+import { AxSkeleton } from "../components/common/skeleton/AxSkeleton.tsx";
 import UserPage from "../pages/UserPage.tsx";
 
 export function UserRoutes() {

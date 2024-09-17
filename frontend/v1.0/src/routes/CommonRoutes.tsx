@@ -1,14 +1,14 @@
 import { Box, Paper } from "@mui/material";
-import AppMenu from "../components/navigation/AppMenu";
-import { SideDrawer } from "../components/navigation/SideDrawer";
+import TopMenu from "../components/structures/navigation/menu/TopMenu.tsx";
+import { SideDrawer } from "../components/structures/navigation/sider/SideDrawer.tsx";
 import { useState } from "react";
 import { Route, Routes } from "react-router-dom";
 import IndexPage from "../pages/IndexPage";
 import TestPage from "../pages/TestPage";
 import PostRoutes from "./PostRoutes";
 import { UserRoutes } from "./UserRoutes";
-import BottomNav from "../components/navigation/BottomNav";
-import Endpoint from "./common/end_point";
+import BottomNav from "../components/structures/navigation/BottomNav";
+import RouteEndpoint from "../config/endpoints/route_endpoint.ts";
 
 function CommonRoutes() {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -21,12 +21,12 @@ function CommonRoutes() {
           flexDirection: "column",
         }}
       >
-        <AppMenu drawerOpen={drawerOpen} setDrawerOpen={setDrawerOpen} />
+        <TopMenu drawerOpen={drawerOpen} setDrawerOpen={setDrawerOpen} />
         <SideDrawer open={drawerOpen} setOpen={setDrawerOpen} />
         <Routes>
           <Route path={"post/*"} element={<PostRoutes />} />
           <Route path={"user/*"} element={<UserRoutes />} />
-          <Route path={Endpoint.Index} element={<IndexPage />} />
+          <Route path={RouteEndpoint.Index} element={<IndexPage />} />
           <Route path={"test"} element={<TestPage />} />
         </Routes>
         {/* BottomNav 固定在底部 */}

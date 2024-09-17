@@ -1,5 +1,5 @@
 import { Box } from "@mui/joy";
-import SignIn from "../components/SignIn.tsx";
+import SignIn from "../components/structures/auth/SignIn.tsx";
 
 function SignInPage() {
   return (

@@ -5,9 +5,9 @@ import "./SignIn.sass";
 import { useNavigate } from "react-router-dom";
 import { Button, FormControl, Input, Link, Sheet, Typography } from "@mui/joy";
 import { FormLabel } from "@mui/material";
-import Endpoint from "../routes/common/end_point.ts";
-import { AxiosEndpoint } from "../libs/axios_endpoint.ts";
-import loginCheck from "../utils/login_check.ts";
+import RouteEndpoint from "../../../config/endpoints/route_endpoint.ts";
+import { AxiosEndpoint } from "../../../config/endpoints/axios_endpoint.ts";
+import loginCheck from "../../../utils/login_check.ts";
 
 function SignIn() {
   const [, setIsLogin] = useState<boolean>(false);
@@ -42,7 +42,7 @@ function SignIn() {
           localStorage.setItem("user_name", userName as string);
           setIsLogin(true);
           setLoginInfo(resp.data.body);
-          navigate(Endpoint.Index);
+          navigate(RouteEndpoint.Index);
         } else {
           setLoginInfo(`Login failed! ${resp.data.message}`);
         }
@@ -63,7 +63,7 @@ function SignIn() {
   useEffect(() => {
     loginCheck().then((r: boolean) => {
       if (r) {
-        navigate(Endpoint.Index);
+        navigate(RouteEndpoint.Index);
       }
       setIsLogin(r);
     });

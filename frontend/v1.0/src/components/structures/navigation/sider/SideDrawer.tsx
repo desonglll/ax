@@ -1,5 +1,5 @@
 import { Drawer } from "@mui/material";
-import { MenuList } from "./MenuList.tsx";
+import { SideDrawerList } from "./SideDrawerList.tsx";
 
 export function SideDrawer({
   open,
@@ -15,7 +15,7 @@ export function SideDrawer({
   return (
     <>
       <Drawer open={open} onClose={toggleDrawer(false)}>
-        <MenuList toggleDrawer={setOpen} />
+        <SideDrawerList toggleDrawer={setOpen} />
       </Drawer>
     </>
   );

@@ -1,21 +1,21 @@
 import { useEffect } from "react";
 import loginCheck from "../utils/login_check";
 import { useNavigate } from "react-router-dom";
-import Endpoint from "../routes/common/end_point";
-import PostData from "../components/post/PostData";
+import RouteEndpoint from "../config/endpoints/route_endpoint.ts";
+import PostList from "../components/structures/post/PostList.tsx";
 
 function PostPage() {
   const navigate = useNavigate();
   useEffect(() => {
     loginCheck().then((result) => {
       if (!result) {
-        navigate(Endpoint.SignIn);
+        navigate(RouteEndpoint.SignIn);
       }
     });
   }, [navigate]);
   return (
     <>
-      <PostData />
+      <PostList />
     </>
   );
 }

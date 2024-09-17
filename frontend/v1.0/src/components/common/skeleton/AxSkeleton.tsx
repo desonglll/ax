@@ -1,8 +1,8 @@
 import {ReactNode, useState} from "react";
-import AppMenu from "./navigation/AppMenu.tsx";
-import {SideDrawer} from "./navigation/SideDrawer.tsx";
+import TopMenu from "../../structures/navigation/menu/TopMenu.tsx";
+import {SideDrawer} from "../../structures/navigation/sider/SideDrawer.tsx";
 import {Paper} from "@mui/material";
-import BottomNav from "./navigation/BottomNav.tsx";
+import BottomNav from "../../structures/navigation/BottomNav.tsx";
 import {Box} from "@mui/joy";
 
 export function AxSkeleton({children}: { children: ReactNode }) {
@@ -16,7 +16,7 @@ export function AxSkeleton({children}: { children: ReactNode }) {
                     flexDirection: "column",
                 }}
             >
-                <AppMenu drawerOpen={drawerOpen} setDrawerOpen={setDrawerOpen}/>
+                <TopMenu drawerOpen={drawerOpen} setDrawerOpen={setDrawerOpen}/>
                 <SideDrawer open={drawerOpen} setOpen={setDrawerOpen}/>
                 <Box
                     sx={{

@@ -4,7 +4,7 @@ import IndexPage from "../pages/IndexPage.tsx";
 import { BrowserRouter } from "react-router-dom";
 import PostRoutes from "./PostRoutes.tsx";
 import { UserRoutes } from "./UserRoutes.tsx";
-import Endpoint from "./common/end_point.ts";
+import RouteEndpoint from "../config/endpoints/route_endpoint.ts";
 
 function AllRoutes() {
   return (
@@ -13,9 +13,9 @@ function AllRoutes() {
         <Routes>
           <Route path={"/"} element={<IndexPage />} />
           <Route path={"/index"} element={<IndexPage />} />
-          <Route path={Endpoint.SignIn} element={<SignInPage />} />
-          <Route path={Endpoint.Post} element={<PostRoutes />} />
-          <Route path={Endpoint.User} element={<UserRoutes />} />
+          <Route path={RouteEndpoint.SignIn} element={<SignInPage />} />
+          <Route path={RouteEndpoint.Post} element={<PostRoutes />} />
+          <Route path={RouteEndpoint.User} element={<UserRoutes />} />
         </Routes>
       </BrowserRouter>
     </>
