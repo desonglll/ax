@@ -5,10 +5,10 @@ import {
   CardContent,
   Typography,
 } from "@mui/material";
-import type { Comment } from "../../models/post";
+import type { Comment } from "../../models/post.ts";
 import { useEffect } from "react";
-import ReactionItem from "../ReactionItem";
-function PostCommentItem({ comment }: { comment: Comment }) {
+import ReactionItem from "../ReactionItem.tsx";
+function CommentItem({ comment }: { comment: Comment }) {
   useEffect(() => {}, [comment.id]);
 
   return (
@@ -44,4 +44,4 @@ function PostCommentItem({ comment }: { comment: Comment }) {
   );
 }
 
-export default PostCommentItem;
+export default CommentItem;

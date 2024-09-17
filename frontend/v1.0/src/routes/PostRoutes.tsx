@@ -1,6 +1,6 @@
 import { Route, Routes } from "react-router-dom";
-import { PostDetail } from "../components/Post/PostDetail.tsx";
-import { ReleasePost } from "../components/Post/ReleasePost.tsx";
+import { PostDetail } from "../components/post/PostDetail.tsx";
+import { ReleasePost } from "../components/post/ReleasePost.tsx";
 import { AxSkeleton } from "../components/AxSkeleton.tsx";
 import Endpoint from "./common/end_point.ts";
 import PostPage from "../pages/PostPage.tsx";

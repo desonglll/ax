@@ -1,8 +1,8 @@
 import {ReactNode, useState} from "react";
-import AppMenu from "./Navigation/AppMenu.tsx";
-import {SideDrawer} from "./Navigation/SideDrawer.tsx";
+import AppMenu from "./navigation/AppMenu.tsx";
+import {SideDrawer} from "./navigation/SideDrawer.tsx";
 import {Paper} from "@mui/material";
-import BottomNav from "./Navigation/BottomNav.tsx";
+import BottomNav from "./navigation/BottomNav.tsx";
 import {Box} from "@mui/joy";
 
 export function AxSkeleton({children}: { children: ReactNode }) {

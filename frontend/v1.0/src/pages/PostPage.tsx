@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import loginCheck from "../utils/login_check";
 import { useNavigate } from "react-router-dom";
 import Endpoint from "../routes/common/end_point";
-import PostData from "../components/Post/PostData";
+import PostData from "../components/post/PostData";
 
 function PostPage() {
   const navigate = useNavigate();

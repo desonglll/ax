@@ -8,6 +8,5 @@ CREATE TABLE "posts" (
 	"user_id" INTEGER NOT NULL,
 	"reply_to" INTEGER,
 	"user_name" VARCHAR NOT NULL,
-	"reactions" JSONB,
 	PRIMARY KEY("id")
 );
