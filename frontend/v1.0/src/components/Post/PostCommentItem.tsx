@@ -15,12 +15,17 @@ import ThumbUpOffAltIcon from "@mui/icons-material/ThumbUpOffAlt";
 import { useEffect, useState } from "react";
 import getData from "../../utils/data_fetch";
 import axios from "axios";
+import { AxiosEndpoint } from "../../libs/axios_endpoint";
+import { Reaction } from "../../models/reaction";
 function PostCommentItem({ comment }: { comment: Comment }) {
   const [like, setLike] = useState<boolean>(false);
   const [dislike, setDislike] = useState<boolean>(false);
+  const [reactionItem, setReactionItem] = useState<Reaction>();
 
   useEffect(() => {
-    getData(`comment-reaction/comment/${comment.id}`).then((resp) => {
+    getData(`${AxiosEndpoint.GetReaction}?toId=${comment.id}`).then((resp) => {
+      console.log(resp.data);
+
       const resp_reactions = resp.data.body.data;
       resp_reactions.map((reaction_item: { reaction_name: string }) => {
         if (reaction_item.reaction_name === "like") {
@@ -32,48 +37,40 @@ function PostCommentItem({ comment }: { comment: Comment }) {
     });
   }, [comment.id]);
 
-  const handleReaction = async (
-    status: boolean,
-    setStatus: (arg0: boolean) => void,
-    reaction_name: string
-  ) => {
-    const data = {
-      commentId: Number(comment.id),
-      reactionName: reaction_name,
-    };
-    console.log(data);
-
-    try {
-      if (status) {
-        await axios.post("comment-reaction/delete", data);
-        setStatus(false);
-      } else {
-        await axios.post("comment-reaction/insert", data);
-        setStatus(true);
-      }
-    } catch (error) {
-      console.error("Error handling reaction", error);
-    }
-  };
-
   const handleLike = () => {
     if (like) {
-      handleReaction(like, setLike, "like");
+      axios
+        .delete(
+          `${AxiosEndpoint.DeleteReaction}?reactionId=${reactionItem?.id}`
+        )
+        .then(() => {
+          setLike(!like);
+        });
     } else {
-      if (dislike) {
-        handleReaction(dislike, setDislike, "dislike");
-      }
-      handleReaction(like, setLike, "like");
+      axios
+        .post(`${AxiosEndpoint.LikeReaction}?toId=${comment.id}`)
+        .then(() => {
+          setDislike(false);
+          setLike(!like);
+        });
     }
   };
   const handleDislike = () => {
     if (dislike) {
-      handleReaction(dislike, setDislike, "dislike");
+      axios
+        .delete(
+          `${AxiosEndpoint.DeleteReaction}?reactionId=${reactionItem?.id}`
+        )
+        .then(() => {
+          setDislike(!dislike);
+        });
     } else {
-      if (like) {
-        handleReaction(like, setLike, "like");
-      }
-      handleReaction(dislike, setDislike, "dislike");
+      axios
+        .post(`${AxiosEndpoint.DislikeReaction}?toId=${comment.id}`)
+        .then(() => {
+          setLike(false);
+          setDislike(!dislike);
+        });
     }
   };
 

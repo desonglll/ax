@@ -12,18 +12,20 @@ use crate::libraries::resp::data::DataBuilder;
 /*
 http://localhost:8000/api/reactions/post/like?userId=2&postId=1
 */
-pub async fn post_like_reaction(
+pub async fn insert_like_reaction(
     session: Session,
     app_state: web::Data<AppState>,
     query: Option<web::Query<HashMap<String, String>>>,
 ) -> Result<HttpResponse, AxError> {
     let query = query.unwrap();
     let user_id = session.get::<i32>("user_id").unwrap().unwrap_or(0);
-    let post_id = query
-        .get("postId")
+    let to_id = query
+        .get("toId")
         .and_then(|s| s.parse::<i32>().ok())
         .unwrap_or(0);
-    let new_reaction = CreateReaction { user_id, post_id };
+    let to_type = query.get("toType").unwrap_or(&"post".to_string()).clone();
+
+    let new_reaction = CreateReaction { user_id, to_id, to_type };
     println!("{:#?}", new_reaction);
     insert_like_reaction_db(&app_state.db, new_reaction)
         .await
@@ -39,18 +41,19 @@ pub async fn post_like_reaction(
 /*
 http://localhost:8000/api/reactions/post/dislike?userId=2&postId=1
 */
-pub async fn post_dislike_reaction(
+pub async fn insert_dislike_reaction(
     session: Session,
     app_state: web::Data<AppState>,
     query: Option<web::Query<HashMap<String, String>>>,
 ) -> Result<HttpResponse, AxError> {
     let query = query.unwrap();
     let user_id = session.get::<i32>("user_id").unwrap().unwrap_or(0);
-    let post_id = query
-        .get("postId")
+    let to_id = query
+        .get("toId")
         .and_then(|s| s.parse::<i32>().ok())
         .unwrap_or(0);
-    let new_reaction = CreateReaction { user_id, post_id };
+    let to_type = query.get("toType").unwrap_or(&"post".to_string()).clone();
+    let new_reaction = CreateReaction { user_id, to_id, to_type };
     insert_dislike_reaction_db(&app_state.db, new_reaction)
         .await
         .map(|reaction| {
@@ -66,16 +69,11 @@ pub async fn post_dislike_reaction(
 /*
 http://localhost:8000/api/reactions/get?postId=1
  */
-pub async fn get_reaction_by_post_id(
+pub async fn get_reaction_table_by_query(
     app_state: web::Data<AppState>,
     query: Option<web::Query<HashMap<String, String>>>,
 ) -> Result<HttpResponse, AxError> {
-    let post_id = query
-        .unwrap()
-        .get("postId")
-        .and_then(|s| s.parse::<i32>().ok())
-        .unwrap();
-    get_reaction_by_post_id_db(&app_state.db, post_id)
+    get_reaction_table_by_query_db(&app_state.db, query.unwrap())
         .await
         .map(|reaction_table| {
             HttpResponse::Ok().json(ApiResponse::new(
@@ -86,27 +84,27 @@ pub async fn get_reaction_by_post_id(
         })
 }
 
-pub async fn get_reaction_by_user_id_and_post_id(
+pub async fn get_reactions_by_query(
     session: Session,
     app_state: web::Data<AppState>,
     query: Option<web::Query<HashMap<String, String>>>,
 ) -> Result<HttpResponse, AxError> {
-    let post_id = query
-        .unwrap()
-        .get("postId")
-        .and_then(|s| s.parse::<i32>().ok())
-        .unwrap();
-    let user_id = session.get::<i32>("user_id").unwrap().unwrap_or(0);
-    get_reaction_by_user_id_and_post_id_db(&app_state.db, post_id, user_id)
+    let mut query = query.unwrap();
+    if query.get("userId").is_none() {
+        let user_id = session.get::<i32>("user_id").unwrap();
+        query.insert("userId".to_string(), user_id.unwrap().to_string());
+    }
+    get_reactions_by_query_db(&app_state.db, query)
         .await
-        .map(|reaction| {
+        .map(|reactions| {
             HttpResponse::Ok().json(ApiResponse::new(
                 200,
-                "Get Reaction Successful".to_string(),
-                Some(DataBuilder::new().set_data(reaction).build()),
+                "Get Reactions Successful".to_string(),
+                Some(DataBuilder::new().set_data(reactions).build()),
             ))
         })
 }
+
 
 // Delete
 pub async fn delete_reaction_by_id(
@@ -143,7 +141,7 @@ mod tests {
     use sqlx::PgPool;
 
     use crate::{
-        handlers::reaction::{post_dislike_reaction, post_like_reaction},
+        handlers::reaction::{insert_dislike_reaction, insert_like_reaction},
         state::AppState,
     };
 
@@ -170,7 +168,7 @@ mod tests {
                         .cookie_secure(false) // https://docs.rs/actix-session/latest/actix_session/config/struct.SessionMiddlewareBuilder.html#method.cookie_secure
                         .build(),
                 )
-                .route("/like", web::post().to(post_like_reaction)),
+                .route("/like", web::post().to(insert_like_reaction)),
         )
             .await;
 
@@ -224,7 +222,7 @@ mod tests {
                         .cookie_secure(false) // https://docs.rs/actix-session/latest/actix_session/config/struct.SessionMiddlewareBuilder.html#method.cookie_secure
                         .build(),
                 )
-                .route("/dislike", web::post().to(post_dislike_reaction)),
+                .route("/dislike", web::post().to(insert_dislike_reaction)),
         )
             .await;
 

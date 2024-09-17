@@ -8,14 +8,17 @@ import { useEffect, useState } from "react";
 import getData from "../../utils/data_fetch";
 import { Fade, List, ListItem } from "@mui/material";
 import PostCommentItem from "./PostCommentItem";
+import { AxiosEndpoint } from "../../libs/axios_endpoint";
 
 export function PostComment({ reply_to }: { reply_to: number }) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   useEffect(() => {
-    getData(`comment/reply-to-post/${reply_to}`)
+    getData(`${AxiosEndpoint.GetComment}?replyTo=${reply_to}&replyToType=post`)
       .then((resp) => {
-        if (resp.data.code === "Success") {
+        console.log(resp);
+
+        if (resp.data.code === 200) {
           setComments(resp.data.body.data);
         }
       })

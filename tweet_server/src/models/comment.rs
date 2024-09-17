@@ -67,7 +67,7 @@ impl CreateComment {
             reply_to: 0,
             user_id: None,
             reactions: "".to_string(),
-            reply_to_type: "".to_string(),
+            reply_to_type: "post".to_string(),
         }
     }
 }

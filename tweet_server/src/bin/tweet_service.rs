@@ -1,10 +1,10 @@
 use actix_cors::Cors;
-use actix_session::SessionMiddleware;
 use actix_session::storage::RedisSessionStore;
-use actix_web::{App, HttpServer};
+use actix_session::SessionMiddleware;
 use actix_web::cookie::Key;
 use actix_web::middleware::Logger;
 use actix_web::web::{self, PayloadConfig};
+use actix_web::{App, HttpServer};
 use dotenv::dotenv;
 use env_logger::Env;
 
@@ -22,13 +22,15 @@ async fn main() -> std::io::Result<()> {
 
     // 加载密钥，用于加密 session cookie
     let secret_key = Key::generate();
-    let redis_connection_string = "127.0.0.1:6379";
+    let redis_connection_string = "redis://127.0.0.1:6379";
     // Construct App State
     dotenv().ok();
 
     let db_pool = get_db_pool().await;
     let shared_data = web::Data::new(AppState { db: db_pool });
-    let store = RedisSessionStore::new(redis_connection_string).await.unwrap();
+    let store = RedisSessionStore::new(redis_connection_string)
+        .await
+        .unwrap();
 
     HttpServer::new(move || {
         let cors = Cors::default()
@@ -40,10 +42,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(Logger::default())
             .wrap(
-                SessionMiddleware::builder(
-                    store.clone(),
-                    secret_key.clone(),
-                )
+                SessionMiddleware::builder(store.clone(), secret_key.clone())
                     .cookie_secure(false) // https://docs.rs/actix-session/latest/actix_session/config/struct.SessionMiddlewareBuilder.html#method.cookie_secure
                     .build(),
             )
@@ -53,9 +52,9 @@ async fn main() -> std::io::Result<()> {
             .configure(api_routes)
         // 将最大负载大小设置为 300MB
     })
-        .client_request_timeout(std::time::Duration::from_secs(60)) // 设置请求超时为 60 秒
-        .keep_alive(std::time::Duration::from_secs(75)) // 设置连接保活时间为 75 秒
-        .bind(("0.0.0.0", 8000))?
-        .run()
-        .await
+    .client_request_timeout(std::time::Duration::from_secs(60)) // 设置请求超时为 60 秒
+    .keep_alive(std::time::Duration::from_secs(75)) // 设置连接保活时间为 75 秒
+    .bind(("0.0.0.0", 8000))?
+    .run()
+    .await
 }

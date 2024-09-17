@@ -1,8 +1,10 @@
+use std::collections::HashMap;
+
 use actix_session::Session;
 use actix_web::{HttpResponse, web};
 
 use crate::{errors::AxError, models::comment::CreateComment, state::AppState};
-use crate::dbaccess::comment::{delete_comment_by_id_db, insert_comment_db};
+use crate::dbaccess::comment::{delete_comment_by_id_db, get_comment_by_query_db, insert_comment_db};
 use crate::handlers::auth::login_in_unauthentic;
 use crate::libraries::resp::api_response::ApiResponse;
 use crate::libraries::resp::data::DataBuilder;
@@ -53,13 +55,32 @@ pub async fn delete_comment(
     })
 }
 
+pub async fn get_comment_by_query(
+    session: Session,
+    app_state: web::Data<AppState>,
+    query: web::Query<HashMap<String, String>>,
+) -> Result<HttpResponse, AxError> {
+    // Login check
+    let _ = login_in_unauthentic(&session).await;
+    get_comment_by_query_db(&app_state.db, query).await.map(|comment| {
+        let api_response = ApiResponse::new(
+            200,
+            "Get Comment Successful".to_string(),
+            Some(DataBuilder::new().set_data(comment).build()),
+        );
+        HttpResponse::Ok().json(api_response)
+    })
+}
+
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+
     use actix_web::http::StatusCode;
-    use actix_web::web::Json;
+    use actix_web::web::{Json, Query};
     use serde_json::Value;
 
-    use crate::handlers::comment::{delete_comment, insert_comment};
+    use crate::handlers::comment::{delete_comment, get_comment_by_query, insert_comment};
     use crate::models::comment::CreateComment;
     use crate::state::get_demo_state;
     use crate::utils::test::{get_demo_session, http_response_to_json};
@@ -92,5 +113,31 @@ mod tests {
         let params = actix_web::web::Path::<(i32, )>::from((comment_id, ));
         let del_resp = delete_comment(session.clone(), app_state.clone(), params).await.unwrap();
         assert_eq!(del_resp.status(), StatusCode::OK);
+    }
+
+    #[actix_rt::test]
+    async fn test_get_comment() {
+        let new_comment = CreateComment::demo();
+        let session = get_demo_session().await;
+        let app_state = get_demo_state().await;
+        let resp = insert_comment(session.clone(), app_state.clone(), Json(new_comment)).await.unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
+        let body_json: Value = http_response_to_json(resp).await;
+        let comment_id = body_json["body"]["data"]["id"].as_i64().expect("id not found or not an integer") as i32;
+        let mut query = HashMap::<String, String>::new();
+        query.insert("commentId".to_string(), comment_id.to_string());
+
+        // Test get comment by id.
+        let get_resp = get_comment_by_query(session.clone(), app_state.clone(), Query(query)).await.unwrap();
+        let get_body_json: Value = http_response_to_json(get_resp).await;
+        println!("{:?}", get_body_json);
+        let get_comment_id = get_body_json["body"]["data"][0]["id"].as_i64().expect("id not found or not an integer") as i32;
+        assert_eq!(comment_id, get_comment_id);
+
+        // 删除测试插入的 post
+        sqlx::query!("DELETE FROM comments WHERE id = $1", comment_id)
+            .execute(&app_state.db)
+            .await
+            .unwrap();
     }
 }

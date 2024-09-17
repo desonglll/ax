@@ -8,15 +8,16 @@ use crate::handlers::{
     },
     post::{delete_post, get_post_detail, get_post_list, insert_new_post, update_post_details},
     reaction::{
-        delete_reaction_by_id, get_reaction_by_post_id, get_reaction_by_user_id_and_post_id,
-        post_dislike_reaction, post_like_reaction,
+        delete_reaction_by_id,
+        insert_like_reaction,
     },
     user::{
         delete_user, get_user_detail, get_user_list, get_user_profile, post_new_user,
         update_user_details,
     },
 };
-use crate::handlers::comment::insert_comment;
+use crate::handlers::comment::{delete_comment, get_comment_by_query, insert_comment};
+use crate::handlers::reaction::{get_reaction_table_by_query, get_reactions_by_query, insert_dislike_reaction};
 
 pub fn user_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
@@ -74,10 +75,10 @@ pub fn post_routes(cfg: &mut web::ServiceConfig) {
 pub fn reaction_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/reactions")
-            .route("/post/like", web::post().to(post_like_reaction))
-            .route("/post/dislike", web::post().to(post_dislike_reaction))
-            .route("/get-table", web::get().to(get_reaction_by_post_id))
-            .route("/get", web::get().to(get_reaction_by_user_id_and_post_id))
+            .route("/post/like", web::post().to(insert_like_reaction))
+            .route("/post/dislike", web::post().to(insert_dislike_reaction))
+            .route("/get-table", web::get().to(get_reaction_table_by_query))
+            .route("/get", web::get().to(get_reactions_by_query))
             .route("/delete", web::delete().to(delete_reaction_by_id)),
     );
 }
@@ -86,6 +87,8 @@ pub fn comment_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/comments")
             .route("/post", web::post().to(insert_comment))
+            .route("/delete", web::delete().to(delete_comment))
+            .route("/get", web::get().to(get_comment_by_query))
     );
 }
 

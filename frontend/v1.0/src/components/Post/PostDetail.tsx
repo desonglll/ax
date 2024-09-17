@@ -16,6 +16,8 @@ import type { File } from "../../models/file.ts";
 import Endpoint from "../../routes/common/end_point.ts";
 import { AxiosEndpoint } from "../../libs/axios_endpoint.ts";
 import type { Reaction } from "../../models/reaction.ts";
+import { PostComment } from "./PostComment.tsx";
+import ReactionItem from "../ReactionItem.tsx";
 
 export function PostDetail() {
   const { id } = useParams(); // 获取路径参数 id
@@ -35,9 +37,6 @@ export function PostDetail() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const navigate = useNavigate();
-
-  const handleLike = () => {};
-  const handleDislike = () => {};
 
   useEffect(() => {
     getData(`${AxiosEndpoint.GetReaction}?postId=${id}`).then((resp) => {
@@ -183,29 +182,10 @@ export function PostDetail() {
               <div id="pre" />
             </div>
 
-            <Box
-              sx={{
-                display: "flex",
-                marginBottom: "50px",
-                justifyContent: "flex-end",
-              }}
-            >
-              <div>
-                <Button size="small" onClick={() => handleLike()}>
-                  {like ? <ThumbUpAltIcon /> : <ThumbUpOffAltIcon />}
-                  {post.reactions?.like}
-                </Button>
-              </div>
-              <div>
-                <Button size="small" onClick={() => handleDislike()}>
-                  {dislike ? <ThumbDownAltIcon /> : <ThumbDownOffAltIcon />}
-                  {post.reactions?.dislike}
-                </Button>
-              </div>
-            </Box>
-            {/* <Box sx={{ display: "flex", justifyContent: "center" }}>
+            <ReactionItem toId={Number(id)} />
+            <Box sx={{ display: "flex", justifyContent: "center" }}>
               <PostComment reply_to={Number(id)} />
-            </Box> */}
+            </Box>
           </Box>
         </Fade>
       )}

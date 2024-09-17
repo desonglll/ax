@@ -1,7 +1,7 @@
 export enum AxiosEndpoint {
   LoginCheck = "auth/login-check",
   Login = "auth/login",
-  LogOut = "/auth/logout",
+  LogOut = "auth/logout",
   Profile = "users/profile",
   UpdateUser = "users/put",
   PostList = "posts/get",
@@ -15,4 +15,5 @@ export enum AxiosEndpoint {
   LikeReaction = "reactions/post/like",
   DislikeReaction = "reactions/post/dislike",
   DeleteReaction = "reactions/delete",
+  GetComment = "comments/get",
 }
