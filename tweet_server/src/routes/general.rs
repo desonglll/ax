@@ -1,5 +1,9 @@
-use actix_web::web;
+use actix_web::{web, HttpResponse};
 
+use crate::handlers::comment::{delete_comment, get_comment_by_query, insert_comment};
+use crate::handlers::reaction::{
+    get_reactions_by_query, get_single_reaction_table_by_query, insert_dislike_reaction,
+};
 use crate::handlers::{
     auth::{index, login, logout},
     file::{
@@ -7,17 +11,24 @@ use crate::handlers::{
         upload_public,
     },
     post::{delete_post, get_post_detail, get_post_list, insert_new_post, update_post_details},
-    reaction::{
-        delete_reaction_by_id,
-        insert_like_reaction,
-    },
+    reaction::{delete_reaction_by_id, insert_like_reaction},
     user::{
         delete_user, get_user_detail, get_user_list, get_user_profile, post_new_user,
         update_user_details,
     },
 };
-use crate::handlers::comment::{delete_comment, get_comment_by_query, insert_comment};
-use crate::handlers::reaction::{get_reaction_table_by_query, get_reactions_by_query, insert_dislike_reaction};
+use crate::state::{AppState, AppStateResponse};
+pub async fn get_stats(app_state: web::Data<AppState>) -> HttpResponse {
+    let request_count = *app_state.request_count.lock().unwrap();
+    let response_times = app_state.response_times.lock().unwrap().clone();
+
+    let stats = AppStateResponse {
+        request_count,
+        response_times,
+    };
+
+    HttpResponse::Ok().json(stats)
+}
 
 pub fn user_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
@@ -77,7 +88,10 @@ pub fn reaction_routes(cfg: &mut web::ServiceConfig) {
         web::scope("/reactions")
             .route("/post/like", web::post().to(insert_like_reaction))
             .route("/post/dislike", web::post().to(insert_dislike_reaction))
-            .route("/get-table", web::get().to(get_reaction_table_by_query))
+            .route(
+                "/get-table",
+                web::get().to(get_single_reaction_table_by_query),
+            )
             .route("/get", web::get().to(get_reactions_by_query))
             .route("/delete", web::delete().to(delete_reaction_by_id)),
     );
@@ -88,7 +102,7 @@ pub fn comment_routes(cfg: &mut web::ServiceConfig) {
         web::scope("/comments")
             .route("/post", web::post().to(insert_comment))
             .route("/delete", web::delete().to(delete_comment))
-            .route("/get", web::get().to(get_comment_by_query))
+            .route("/get", web::get().to(get_comment_by_query)),
     );
 }
 
@@ -101,6 +115,6 @@ pub fn api_routes(cfg: &mut web::ServiceConfig) {
             .configure(file_routes) // 配置文件路由
             .configure(post_routes) // 配置推文路由
             .configure(reaction_routes)
-            .configure(comment_routes)
+            .configure(comment_routes),
     );
 }

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use actix_session::Session;
-use actix_web::{HttpResponse, web};
+use actix_web::{web, HttpResponse};
 
 use crate::dbaccess::post::*;
 use crate::errors::AxError;
@@ -28,6 +28,7 @@ pub async fn insert_new_post(
     app_state: web::Data<AppState>,
     new_post: web::Json<CreatePost>,
 ) -> Result<HttpResponse, AxError> {
+    app_state.add_request_count();
     let _ = login_in_unauthentic(&session).await;
     let mut new_post: CreatePost = new_post.into();
     let user_id = session.get::<i32>("user_id").unwrap().unwrap();
@@ -50,10 +51,11 @@ curl -X GET http://localhost:8000/api/posts/get/1
 pub async fn get_post_detail(
     session: Session,
     app_state: web::Data<AppState>,
-    path: web::Path<(i32, )>,
+    path: web::Path<(i32,)>,
 ) -> Result<HttpResponse, AxError> {
+    app_state.add_request_count();
     let _ = login_in_unauthentic(&session).await;
-    let (post_id, ) = path.into_inner();
+    let (post_id,) = path.into_inner();
     get_post_detail_db(&app_state.db, post_id)
         .await
         .map(|resp| {
@@ -73,6 +75,7 @@ pub async fn get_post_list(
     app_state: web::Data<AppState>,
     query: Option<web::Query<HashMap<String, String>>>,
 ) -> Result<HttpResponse, AxError> {
+    app_state.add_request_count();
     let _ = login_in_unauthentic(&session).await;
     get_post_list_db(&app_state.db, query).await.map(|resp| {
         let api_response = ApiResponse::new(
@@ -100,11 +103,12 @@ curl -X PUT localhost:8000/api/posts/1 \
 pub async fn update_post_details(
     session: Session,
     app_state: web::Data<AppState>,
-    path: web::Path<(i32, )>,
+    path: web::Path<(i32,)>,
     update_post: web::Json<UpdatePost>,
 ) -> Result<HttpResponse, AxError> {
+    app_state.add_request_count();
     let _ = login_in_unauthentic(&session).await;
-    let (post_id, ) = path.into_inner();
+    let (post_id,) = path.into_inner();
     update_post_db(&app_state.db, post_id, update_post.into())
         .await
         .map(|post| {
@@ -123,10 +127,11 @@ curl -X DELETE http://localhost:8000/api/posts/1
 pub async fn delete_post(
     session: Session,
     app_state: web::Data<AppState>,
-    path: web::Path<(i32, )>,
+    path: web::Path<(i32,)>,
 ) -> Result<HttpResponse, AxError> {
+    app_state.add_request_count();
     let _ = login_in_unauthentic(&session).await;
-    let (post_id, ) = path.into_inner();
+    let (post_id,) = path.into_inner();
     delete_post_db(&app_state.db, post_id).await.map(|post| {
         HttpResponse::Ok().json(ApiResponse::new(
             200,
@@ -138,35 +143,27 @@ pub async fn delete_post(
 
 #[cfg(test)]
 mod tests {
-    use std::env;
 
     use actix_session::SessionExt;
-    use actix_web::{http::StatusCode, ResponseError, test, web};
-    use dotenv::dotenv;
+    use actix_web::{http::StatusCode, test, web, ResponseError};
     use serde_json::Value;
-    use sqlx::PgPool;
 
     use crate::{
         handlers::post::{
             delete_post, get_post_detail, insert_new_post, insert_post_db, update_post_details,
         },
         models::post::{CreatePost, UpdatePost},
-        state::AppState,
+        state::{get_demo_state, AppState},
     };
 
     #[actix_rt::test]
     async fn test_insert_post() {
-        dotenv().ok();
-        let database_url = env::var("DATABASE_URL").expect("DATABASE_URL is not set in .env file");
-        let pool: PgPool = PgPool::connect(&database_url).await.unwrap();
-        let app_state: web::Data<AppState> = web::Data::new(AppState { db: pool });
+        let app_state: web::Data<AppState> = get_demo_state().await;
         let new_post_msg = CreatePost::demo();
         let post_param = web::Json(new_post_msg.clone());
 
         // 发送请求前设置 session 数据
-        let session = test::TestRequest::post()
-            .to_http_request()
-            .get_session();
+        let session = test::TestRequest::post().to_http_request().get_session();
         session.insert("user_id", 1).unwrap(); // 模拟 user_id 为 1
         let resp = insert_new_post(session, app_state.clone(), post_param)
             .await
@@ -192,30 +189,24 @@ mod tests {
 
     #[actix_rt::test]
     async fn test_delete_post() {
-        dotenv().ok();
-        let database_url = env::var("DATABASE_URL").expect("DATABASE_URL is not set in .env file");
-        let pool: PgPool = PgPool::connect(&database_url).await.unwrap();
-        let app_state: web::Data<AppState> = web::Data::new(AppState { db: pool });
+        let app_state: web::Data<AppState> = get_demo_state().await;
         // 发送请求前设置 session 数据
-        let session = test::TestRequest::post()
-            .to_http_request()
-            .get_session();
+        let session = test::TestRequest::post().to_http_request().get_session();
         session.insert("user_id", 1).unwrap(); // 模拟 user_id 为 1
         let post = CreatePost::demo();
         let insert_result = insert_post_db(&app_state.db, post.clone()).await.unwrap();
         assert_eq!(post.content, insert_result.content);
         // Delete test post.
-        let delete_params: web::Path<(i32, )> = web::Path::from((insert_result.id, ));
-        let resp = delete_post(session, app_state.clone(), delete_params).await.unwrap();
+        let delete_params: web::Path<(i32,)> = web::Path::from((insert_result.id,));
+        let resp = delete_post(session, app_state.clone(), delete_params)
+            .await
+            .unwrap();
         assert_eq!(resp.status(), StatusCode::OK);
     }
 
     #[actix_rt::test]
     async fn test_update_post() {
-        dotenv().ok();
-        let database_url = env::var("DATABASE_URL").expect("DATABASE_URL is not set in .env file");
-        let pool: PgPool = PgPool::connect(&database_url).await.unwrap();
-        let app_state: web::Data<AppState> = web::Data::new(AppState { db: pool });
+        let app_state: web::Data<AppState> = get_demo_state().await;
         let post = CreatePost::demo();
         let insert_result = insert_post_db(&app_state.db, post.clone()).await.unwrap();
         assert_eq!(&post.content, &insert_result.content);
@@ -223,12 +214,10 @@ mod tests {
         let update_post_msg = UpdatePost {
             content: Some(String::from("test_update_post_after")),
         };
-        let parameters: web::Path<(i32, )> = web::Path::from((insert_result.id, ));
+        let parameters: web::Path<(i32,)> = web::Path::from((insert_result.id,));
         let update_param = web::Json(update_post_msg);
         // 发送请求前设置 session 数据
-        let session = test::TestRequest::put()
-            .to_http_request()
-            .get_session();
+        let session = test::TestRequest::put().to_http_request().get_session();
         session.insert("user_id", 1).unwrap(); // 模拟 user_id 为 1
 
         let resp = update_post_details(session, app_state.clone(), parameters, update_param)
@@ -244,14 +233,9 @@ mod tests {
 
     #[actix_rt::test]
     async fn test_get_post_detail() {
-        dotenv().ok();
-        let database_url = env::var("DATABASE_URL").expect("DATABASE_URL is not set in .env file");
-        let pool: PgPool = PgPool::connect(&database_url).await.unwrap();
-        let app_state: web::Data<AppState> = web::Data::new(AppState { db: pool });
+        let app_state: web::Data<AppState> = get_demo_state().await;
         // 发送请求前设置 session 数据
-        let session = test::TestRequest::get()
-            .to_http_request()
-            .get_session();
+        let session = test::TestRequest::get().to_http_request().get_session();
         session.insert("user_id", 1).unwrap(); // 模拟 user_id 为 1
 
         let new_post_msg = CreatePost::demo();
@@ -259,7 +243,7 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(&new_post_msg.content, &result.content);
-        let parameters: web::Path<(i32, )> = web::Path::from((result.id, ));
+        let parameters: web::Path<(i32,)> = web::Path::from((result.id,));
         let resp = get_post_detail(session, app_state.clone(), parameters).await;
         match resp {
             Ok(_) => println!("Something wrong"),

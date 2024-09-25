@@ -13,6 +13,8 @@ pub struct Post {
     pub user_id: i32,
     pub reply_to: Option<i32>,
     pub user_name: String,
+    pub like_count: Option<i32>,
+    pub dislike_count: Option<i32>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

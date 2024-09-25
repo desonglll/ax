@@ -1,8 +1,9 @@
 use actix_session::Session;
-use actix_web::{HttpResponse, Responder, web};
+use actix_web::{web, HttpResponse, Responder};
 use chrono::{Local, Timelike};
 use serde_json::{json, Value};
 
+use crate::libraries::session::is_login;
 use crate::{
     dbaccess::user::{check_password_correct_db, get_user_detail_by_name_db},
     errors::AxError,
@@ -17,7 +18,6 @@ use crate::{
     models::{auth::LoginRequest, user::User},
     state::AppState,
 };
-use crate::libraries::session::is_login;
 
 /// 处理用户访问请求的处理器函数
 ///
@@ -91,6 +91,7 @@ pub async fn login(
     app_state: web::Data<AppState>,
     login_params: Option<web::Json<LoginRequest>>,
 ) -> Result<impl Responder, AxError> {
+    app_state.add_request_count();
     match login_params {
         Some(login_params) => {
             // Extract user credentials from the request
@@ -186,13 +187,11 @@ pub async fn check_login(session: &Session) -> Result<bool, AxError> {
 
 pub async fn login_in_unauthentic(session: &Session) -> Result<HttpResponse, AxError> {
     if !is_login(session).await.unwrap() {
-        let api_response = ApiResponse::<()>::new(
-            401,
-            "Please Login".to_string(),
-            None,
-        );
+        let api_response = ApiResponse::<()>::new(401, "Please Login".to_string(), None);
         Ok(HttpResponse::Ok().json(api_response))
     } else {
-        Err(AxError::ActixError("`login_in_unauthentic` error".to_string()))
+        Err(AxError::ActixError(
+            "`login_in_unauthentic` error".to_string(),
+        ))
     }
 }

@@ -8,5 +8,7 @@ CREATE TABLE "posts" (
 	"user_id" INTEGER NOT NULL,
 	"reply_to" INTEGER,
 	"user_name" VARCHAR NOT NULL,
+	"like_count" INTEGER DEFAULT 0,
+	"dislike_count" INTEGER DEFAULT 0,
 	PRIMARY KEY("id")
 );

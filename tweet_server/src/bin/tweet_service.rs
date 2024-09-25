@@ -1,3 +1,6 @@
+use std::collections::HashMap;
+use std::sync::Mutex;
+
 use actix_cors::Cors;
 use actix_session::storage::RedisSessionStore;
 use actix_session::SessionMiddleware;
@@ -10,7 +13,7 @@ use env_logger::Env;
 
 use tweet_server::libraries::dbop::get_db_pool;
 use tweet_server::preload;
-use tweet_server::routes::general::api_routes;
+use tweet_server::routes::general::{api_routes, get_stats};
 use tweet_server::state::AppState;
 
 #[actix_web::main]
@@ -27,7 +30,11 @@ async fn main() -> std::io::Result<()> {
     dotenv().ok();
 
     let db_pool = get_db_pool().await;
-    let shared_data = web::Data::new(AppState { db: db_pool });
+    let app_state = web::Data::new(AppState {
+        db: db_pool,
+        request_count: Mutex::new(0),
+        response_times: Mutex::new(HashMap::new()),
+    });
     let store = RedisSessionStore::new(redis_connection_string)
         .await
         .unwrap();
@@ -48,8 +55,9 @@ async fn main() -> std::io::Result<()> {
             )
             .wrap(cors)
             .app_data(PayloadConfig::new(300 * 1024 * 1024).limit(20 * 1024 * 1024))
-            .app_data(shared_data.clone())
+            .app_data(app_state.clone())
             .configure(api_routes)
+            .route("/stats", web::get().to(get_stats))
         // 将最大负载大小设置为 300MB
     })
     .client_request_timeout(std::time::Duration::from_secs(60)) // 设置请求超时为 60 秒

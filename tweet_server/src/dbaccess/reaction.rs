@@ -21,7 +21,7 @@ pub async fn insert_like_reaction_db(
         String::from("Dislike"),
         create_reaction.to_type.clone(),
     )
-        .await
+    .await
     {
         Log::info(String::from("existed_dislike, deleting..."));
         let _ = delete_reaction_by_id_db(pool, existed_dislike.id).await;
@@ -49,7 +49,7 @@ pub async fn insert_dislike_reaction_db(
         String::from("Like"),
         create_reaction.to_type.clone(),
     )
-        .await
+    .await
     {
         let _ = delete_reaction_by_id_db(pool, existed_like.id).await;
     }
@@ -94,7 +94,6 @@ pub async fn is_reaction_record_exists_db(
         .await
 }
 
-
 pub async fn get_reaction_table_by_query_db(
     pool: &PgPool,
     query: Query<HashMap<String, String>>,
@@ -105,15 +104,15 @@ pub async fn get_reaction_table_by_query_db(
         to_id,
         "Like"
     )
-        .fetch_one(pool)
-        .await?;
+    .fetch_one(pool)
+    .await?;
     let dislike_count = sqlx::query_scalar!(
         "select count(*) from reactions where to_id = $1 and reaction_name = $2",
         to_id,
         "Dislike"
     )
-        .fetch_one(pool)
-        .await?;
+    .fetch_one(pool)
+    .await?;
     Ok(ReactionResponseTable {
         like: like_count.unwrap_or(0),
         dislike: dislike_count.unwrap_or(0),

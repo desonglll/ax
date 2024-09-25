@@ -13,9 +13,17 @@ use crate::{
 pub async fn insert_post_db(pool: &PgPool, create_post: CreatePost) -> Result<Post, AxError> {
     let post_row = sqlx::query_as!(
         Post,
-        "insert into posts (content, user_id, reply_to, user_name) values ($1, $2, $3, $4) returning id, content, created_at, updated_at, user_id, reply_to, user_name",
-        create_post.content, create_post.user_id, create_post.reply_to, create_post.user_name
-    ).fetch_one(pool).await?;
+        "insert into posts (content, user_id, reply_to, user_name)
+         values ($1, $2, $3, $4)
+         returning id, content, created_at, updated_at, user_id, reply_to, user_name, like_count, dislike_count",
+        create_post.content,
+        create_post.user_id,
+        create_post.reply_to,
+        create_post.user_name
+    )
+    .fetch_one(pool)
+    .await?;
+
     Ok(post_row)
 }
 
@@ -75,7 +83,7 @@ pub async fn get_post_list_db(
 pub async fn delete_post_db(pool: &PgPool, post_id: i32) -> Result<Post, AxError> {
     let post_row = sqlx::query_as!(
         Post,
-        "delete from posts where id = $1 returning id, content, created_at, updated_at, user_id, reply_to, user_name",
+        "delete from posts where id = $1 returning id, content, created_at, updated_at, user_id, reply_to, user_name, like_count, dislike_count",
         post_id
     ).fetch_one(pool).await?;
     Ok(post_row)
@@ -102,7 +110,7 @@ pub async fn update_post_db(
     // Prepare SQL statement
     let post_row = sqlx::query_as!(
         Post,
-        "update posts set content = $1 where id = $2 returning id, content, created_at, updated_at, user_id, reply_to, user_name",
+        "update posts set content = $1 where id = $2 returning id, content, created_at, updated_at, user_id, reply_to, user_name, like_count, dislike_count",
         content, post_id
     ).fetch_one(pool).await;
     if let Ok(post) = post_row {

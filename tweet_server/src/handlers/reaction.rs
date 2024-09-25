@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 
 use actix_session::Session;
-use actix_web::{HttpResponse, web};
+use actix_web::{web, HttpResponse};
 
-use crate::{errors::AxError, models::reaction::CreateReaction, state::AppState};
 use crate::dbaccess::reaction::*;
 use crate::libraries::resp::api_response::ApiResponse;
 use crate::libraries::resp::data::DataBuilder;
+use crate::{errors::AxError, models::reaction::CreateReaction, state::AppState};
 
 // Create
 /*
@@ -25,7 +25,11 @@ pub async fn insert_like_reaction(
         .unwrap_or(0);
     let to_type = query.get("toType").unwrap_or(&"post".to_string()).clone();
 
-    let new_reaction = CreateReaction { user_id, to_id, to_type };
+    let new_reaction = CreateReaction {
+        user_id,
+        to_id,
+        to_type,
+    };
     println!("{:#?}", new_reaction);
     insert_like_reaction_db(&app_state.db, new_reaction)
         .await
@@ -55,7 +59,11 @@ pub async fn insert_dislike_reaction(
         .unwrap_or(0);
     let to_type = query.get("toType").unwrap_or(&"post".to_string()).clone();
     println!("to_type: {:?}", to_type);
-    let new_reaction = CreateReaction { user_id, to_id, to_type };
+    let new_reaction = CreateReaction {
+        user_id,
+        to_id,
+        to_type,
+    };
     insert_dislike_reaction_db(&app_state.db, new_reaction)
         .await
         .map(|reaction| {
@@ -71,7 +79,7 @@ pub async fn insert_dislike_reaction(
 /*
 http://localhost:8000/api/reactions/get?postId=1
  */
-pub async fn get_reaction_table_by_query(
+pub async fn get_single_reaction_table_by_query(
     app_state: web::Data<AppState>,
     query: Option<web::Query<HashMap<String, String>>>,
 ) -> Result<HttpResponse, AxError> {
@@ -107,7 +115,6 @@ pub async fn get_reactions_by_query(
         })
 }
 
-
 // Delete
 pub async fn delete_reaction_by_id(
     _session: Session,
@@ -133,46 +140,39 @@ pub async fn delete_reaction_by_id(
 
 #[cfg(test)]
 mod tests {
-    use std::env;
 
-    use actix_session::SessionMiddleware;
     use actix_session::storage::RedisSessionStore;
-    use actix_web::{App, cookie::Key, http::StatusCode, test, web};
-    use dotenv::dotenv;
+    use actix_session::SessionMiddleware;
+    use actix_web::{cookie::Key, http::StatusCode, test, web, App};
     use serde_json::Value;
-    use sqlx::PgPool;
 
     use crate::{
         handlers::reaction::{insert_dislike_reaction, insert_like_reaction},
-        state::AppState,
+        state::{get_demo_state, AppState},
     };
 
     #[actix_rt::test]
     async fn test_insert_like_reaction() {
-        dotenv().ok();
-        let database_url = env::var("DATABASE_URL").expect("DATABASE_URL is not set in .env file");
-        let pool: PgPool = PgPool::connect(&database_url).await.unwrap();
-        let app_state: web::Data<AppState> = web::Data::new(AppState { db: pool });
+        let app_state: web::Data<AppState> = get_demo_state().await;
 
         // 模拟请求和会话
         let secret_key = Key::generate();
         let redis_connection_string = "redis://127.0.0.1:6379";
-        let store = RedisSessionStore::new(redis_connection_string).await.unwrap();
+        let store = RedisSessionStore::new(redis_connection_string)
+            .await
+            .unwrap();
 
         let app = test::init_service(
             App::new()
                 .app_data(app_state.clone())
                 .wrap(
-                    SessionMiddleware::builder(
-                        store,
-                        secret_key.clone(),
-                    )
+                    SessionMiddleware::builder(store, secret_key.clone())
                         .cookie_secure(false) // https://docs.rs/actix-session/latest/actix_session/config/struct.SessionMiddlewareBuilder.html#method.cookie_secure
                         .build(),
                 )
                 .route("/like", web::post().to(insert_like_reaction)),
         )
-            .await;
+        .await;
 
         // 构建请求，并模拟会话
         let req = test::TestRequest::post()
@@ -205,28 +205,24 @@ mod tests {
 
     #[actix_rt::test]
     async fn test_insert_dislike_reaction() {
-        dotenv().ok();
-        let database_url = env::var("DATABASE_URL").expect("DATABASE_URL is not set in .env file");
-        let pool: PgPool = PgPool::connect(&database_url).await.unwrap();
-        let app_state: web::Data<AppState> = web::Data::new(AppState { db: pool });
+        let app_state: web::Data<AppState> = get_demo_state().await;
         // 模拟请求和会话
         let secret_key = Key::generate();
         let redis_connection_string = "redis://127.0.0.1:6379";
-        let store = RedisSessionStore::new(redis_connection_string).await.unwrap();
+        let store = RedisSessionStore::new(redis_connection_string)
+            .await
+            .unwrap();
         let app = test::init_service(
             App::new()
                 .app_data(app_state.clone())
                 .wrap(
-                    SessionMiddleware::builder(
-                        store,
-                        secret_key.clone(),
-                    )
+                    SessionMiddleware::builder(store, secret_key.clone())
                         .cookie_secure(false) // https://docs.rs/actix-session/latest/actix_session/config/struct.SessionMiddlewareBuilder.html#method.cookie_secure
                         .build(),
                 )
                 .route("/dislike", web::post().to(insert_dislike_reaction)),
         )
-            .await;
+        .await;
 
         // 构建请求，并模拟会话
         let req = test::TestRequest::post()
