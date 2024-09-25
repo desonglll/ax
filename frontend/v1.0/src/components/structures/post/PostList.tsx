@@ -7,7 +7,7 @@ import {
     List,
     ListItem,
 } from "@mui/material";
-import PostItem from "./PostItem.tsx";
+import PostListItem from "./PostListItem.tsx";
 import type {Post} from "../../../models/post.ts";
 import {useEffect, useState} from "react";
 import getData from "../../../utils/data_fetch.ts";
@@ -109,7 +109,7 @@ export default function PostList() {
                                         timeout={(index + 1) * 500} // 每个组件的延迟时间增加1000ms
                                     >
                                         <ListItem key={post.id} sx={{justifyContent: "center"}}>
-                                            <PostItem post={post}/>
+                                            <PostListItem post={post}/>
                                         </ListItem>
                                     </Grow>
                                 ))}

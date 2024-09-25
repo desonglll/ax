@@ -26,6 +26,8 @@ export function PostDetail() {
         updatedAt: "",
         userId: 0,
         userName: "",
+        likeCount: 0,
+        dislikeCount: 0
     });
 
     const [loading, setLoading] = useState(true);
@@ -80,7 +82,8 @@ export function PostDetail() {
                         </div>
 
                         <div style={{display: "flex", justifyContent: "flex-end"}}>
-                            <ReactionItem toId={Number(id)} toType="post"/>
+                            <ReactionItem toId={Number(id)} toType="post" likeCount={post.likeCount}
+                                          dislikeCount={post.dislikeCount}/>
                         </div>
                         <Box sx={{display: "flex", justifyContent: "center"}}>
                             <CommentList reply_to={Number(id)}/>

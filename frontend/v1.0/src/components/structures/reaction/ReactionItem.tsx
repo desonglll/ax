@@ -12,7 +12,12 @@ import loginCheck from "../../../utils/login_check.ts";
 import {useNavigate} from "react-router-dom";
 import RouteEndpoint from "../../../config/endpoints/route_endpoint.ts";
 
-function ReactionItem({toId, toType}: { toId: number; toType: string }) {
+function ReactionItem({toId, toType, likeCount, dislikeCount}: {
+    toId: number;
+    toType: string,
+    likeCount: number | null,
+    dislikeCount: number | null
+}) {
     const [like, setLike] = useState<boolean>(false);
     const [dislike, setDislike] = useState<boolean>(false);
     const [reactionItem, setReactionItem] = useState<Reaction>();
@@ -49,16 +54,21 @@ function ReactionItem({toId, toType}: { toId: number; toType: string }) {
                     });
             })
             .then(() => {
-                // 用来查询like dislike总数
-                axios
-                    .get(
-                        `${AxiosEndpoint.GetReactionTable}?toId=${toId}&toType=${toType}`
-                    )
-                    .then((resp) => {
-                        if (resp.data.code == 200) {
-                            setReactionTable(resp.data.body.data);
-                        }
-                    });
+                if (likeCount !== null && dislikeCount !== null) {
+                    setReactionTable({like: likeCount, dislike: dislikeCount})
+                } else {
+                    console.log("查询like dislike总数")
+                    // 用来查询like dislike总数
+                    axios
+                        .get(
+                            `${AxiosEndpoint.GetReactionTable}?toId=${toId}&toType=${toType}`
+                        )
+                        .then((resp) => {
+                            if (resp.data.code == 200) {
+                                setReactionTable(resp.data.body.data);
+                            }
+                        });
+                }
             });
     }, []);
     const handleLike = () => {
@@ -120,7 +130,7 @@ function ReactionItem({toId, toType}: { toId: number; toType: string }) {
     };
     return (
         <>
-            <Box sx={{display: "flex", margin: "20px"}}>
+            <Box sx={{display: "flex"}}>
                 <div>
                     <Button size="small" onClick={() => handleLike()}>
                         {like ? <ThumbUpAltIcon/> : <ThumbUpOffAltIcon/>}

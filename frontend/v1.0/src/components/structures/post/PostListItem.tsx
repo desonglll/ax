@@ -17,7 +17,7 @@ const bull = (
     </Box>
 );
 
-export default function PostItem({post}: { post: Post }) {
+export default function PostListItem({post}: { post: Post }) {
     const navigate = useNavigate();
     const [postItem, _setPostItem] = useState<Post>(post);
 
@@ -32,6 +32,7 @@ export default function PostItem({post}: { post: Post }) {
             }
         ).then(_ => {
         });
+
     }, [post.id]);
     const handleDetail = (id: number) => {
         navigate(`${RouteEndpoint.PostDetail}/${id}`);
@@ -51,6 +52,9 @@ export default function PostItem({post}: { post: Post }) {
                     gap: 2,
                     borderRadius: "sm",
                     boxShadow: "md",
+                    paddingBottom: "0",
+                    paddingTop: "0",
+                    rowGap: '0'
                 }}
                 variant="outlined"
             >
@@ -59,20 +63,24 @@ export default function PostItem({post}: { post: Post }) {
                         maxHeight: "300px", // 设置最大高度
                         overflow: "hidden", // 隐藏溢出的内容
                         textOverflow: "ellipsis", // 添加省略号
+                        paddingBottom: '0'
                     }}
                 >
                     <Typography sx={{fontSize: 14}} color="text.secondary" gutterBottom>
                         {postItem.userName} {bull} {postItem.createdAt}
                     </Typography>
-                    <Button
-                        onClick={() => handleDetail(postItem.id)}
-                        sx={{color: "black"}}
-                    >
-                        <p id={`pre-${post.id}`}/>
-                    </Button>
+                    <div style={{display: 'flex', justifyContent: 'center', height: '150rpx'}}>
+                        <Button
+                            onClick={() => handleDetail(postItem.id)}
+                            sx={{color: "black"}}
+                        >
+                            <p id={`pre-${post.id}`}/>
+                        </Button>
+                    </div>
                 </CardContent>
                 <CardActions sx={{justifyContent: "flex-end"}}>
-                    <ReactionItem toId={post.id} toType={"post"}/>
+                    <ReactionItem toId={post.id} toType={"post"} likeCount={post.likeCount}
+                                  dislikeCount={post.dislikeCount}/>
                 </CardActions>
             </Sheet>
         </>
