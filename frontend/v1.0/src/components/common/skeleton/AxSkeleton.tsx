@@ -2,7 +2,7 @@ import {ReactNode, useState} from "react";
 import TopMenu from "../../structures/navigation/menu/TopMenu.tsx";
 import {SideDrawer} from "../../structures/navigation/sider/SideDrawer.tsx";
 import {Paper} from "@mui/material";
-import BottomNav from "../../structures/navigation/BottomNav.tsx";
+import BottomNav from "../../structures/navigation/bottom/BottomNav.tsx";
 import {Box} from "@mui/joy";
 
 export function AxSkeleton({children}: { children: ReactNode }) {

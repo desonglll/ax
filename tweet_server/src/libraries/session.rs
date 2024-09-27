@@ -4,6 +4,15 @@ use crate::{errors::AxError, models::user::User};
 
 use super::log::Log;
 
+pub struct SessionOperation;
+
+impl SessionOperation {
+    pub fn get_user_id(session: Session) -> Result<i32, AxError> {
+        let Ok(user_id) = session.get::<i32>("user_id") else { return Ok(0); };
+        Ok(user_id.unwrap())
+    }
+}
+
 pub async fn is_admin(session: Session) -> Result<bool, AxError> {
     match session.get::<bool>("is_admin") {
         Ok(is_admin) => Ok(is_admin.unwrap_or(false)),

@@ -4,7 +4,7 @@ import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
 import ListIcon from "@mui/icons-material/List";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
-import RouteEndpoint from "../../../config/endpoints/route_endpoint.ts";
+import RouteEndpoint from "../../../../config/endpoints/route_endpoint.ts";
 
 const getLocationPath = () => {
     // 获取当前浏览器的 URL

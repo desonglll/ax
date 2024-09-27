@@ -7,7 +7,7 @@ import IndexPage from "../pages/IndexPage";
 import TestPage from "../pages/TestPage";
 import PostRoutes from "./PostRoutes";
 import { UserRoutes } from "./UserRoutes";
-import BottomNav from "../components/structures/navigation/BottomNav";
+import BottomNav from "../components/structures/navigation/bottom/BottomNav.tsx";
 import RouteEndpoint from "../config/endpoints/route_endpoint.ts";
 
 function CommonRoutes() {
