@@ -1,3 +1,0 @@
-ALTER TABLE public.files
-ADD FOREIGN KEY("user_id") REFERENCES public.users("id")
-ON UPDATE NO ACTION ON DELETE CASCADE;
