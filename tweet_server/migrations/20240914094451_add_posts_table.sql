@@ -10,5 +10,6 @@ CREATE TABLE "posts" (
 	"user_name" VARCHAR NOT NULL,
 	"like_count" INTEGER DEFAULT 0,
 	"dislike_count" INTEGER DEFAULT 0,
+	"engagement_rate" FLOAT NOT NULL DEFAULT 0.0,
 	PRIMARY KEY("id")
 );

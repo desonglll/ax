@@ -1,9 +1,5 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{HttpResponse, web};
 
-use crate::handlers::comment::{delete_comment, get_comment_by_query, insert_comment};
-use crate::handlers::reaction::{
-    get_reactions_by_query, get_single_reaction_table_by_query, insert_dislike_reaction,
-};
 use crate::handlers::{
     auth::{index, login, logout},
     file::{
@@ -17,7 +13,13 @@ use crate::handlers::{
         update_user_details,
     },
 };
+use crate::handlers::comment::{delete_comment, get_comment_by_query, insert_comment};
+use crate::handlers::post::get_trending_posts;
+use crate::handlers::reaction::{
+    get_reactions_by_query, get_single_reaction_table_by_query, insert_dislike_reaction,
+};
 use crate::state::{AppState, AppStateResponse};
+
 pub async fn get_stats(app_state: web::Data<AppState>) -> HttpResponse {
     let request_count = *app_state.request_count.lock().unwrap();
     let response_times = app_state.response_times.lock().unwrap().clone();
@@ -74,6 +76,7 @@ pub fn file_routes(cfg: &mut web::ServiceConfig) {
 pub fn post_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/posts")
+            .route("/trending", web::get().to(get_trending_posts))
             // 新增推文
             .route("/post", web::post().to(insert_new_post))
             .route("/get", web::get().to(get_post_list))

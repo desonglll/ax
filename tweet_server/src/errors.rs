@@ -1,8 +1,9 @@
+use std::fmt;
+
 use actix_session::SessionGetError;
 use actix_web::{error, http::StatusCode, HttpResponse, Result};
 use serde::Serialize;
 use sqlx::error::Error as SQLxError;
-use std::fmt;
 
 #[derive(Debug, Serialize)]
 pub enum AxError {
@@ -12,11 +13,14 @@ pub enum AxError {
     InvalidInput(String),
     AuthenticationError(String),
     SessionGetError(String),
+    ModelPredictError(String),
 }
+
 #[derive(Debug, Serialize)]
 pub struct MyErrorResponse {
     error_message: String,
 }
+
 impl std::error::Error for AxError {}
 
 impl AxError {
@@ -46,6 +50,10 @@ impl AxError {
                 println!("Session get error occurred: {:?}", msg);
                 msg.into()
             }
+            AxError::ModelPredictError(msg) => {
+                println!("Model predict error occurred: {:?}", msg);
+                msg.into()
+            }
         }
     }
 }
@@ -58,6 +66,7 @@ impl error::ResponseError for AxError {
             AxError::NotFound(_msg) => StatusCode::NOT_FOUND,
             AxError::AuthenticationError(_msg) => StatusCode::BAD_REQUEST,
             AxError::SessionGetError(_msg) => StatusCode::BAD_REQUEST,
+            AxError::ModelPredictError(_msg) => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
     fn error_response(&self) -> HttpResponse {
@@ -76,6 +85,7 @@ impl fmt::Display for AxError {
             AxError::InvalidInput(msg) => write!(f, "Invalid input: {}", msg),
             AxError::AuthenticationError(msg) => write!(f, "Authentication error: {}", msg),
             AxError::SessionGetError(msg) => write!(f, "Session get error: {}", msg),
+            AxError::ModelPredictError(msg) => write!(f, "Model load error: {}", msg),
         }
     }
 }
@@ -95,5 +105,11 @@ impl From<SQLxError> for AxError {
 impl From<SessionGetError> for AxError {
     fn from(value: SessionGetError) -> Self {
         AxError::SessionGetError(value.to_string())
+    }
+}
+
+impl From<reqwest::Error> for AxError {
+    fn from(value: reqwest::Error) -> Self {
+        AxError::ModelPredictError(value.to_string())
     }
 }

@@ -1,14 +1,16 @@
 use std::collections::HashMap;
 
 use actix_session::Session;
-use actix_web::{web, HttpResponse};
+use actix_web::{HttpResponse, web};
 
 use crate::dbaccess::post::*;
 use crate::errors::AxError;
 use crate::handlers::auth::login_in_unauthentic;
 use crate::libraries::resp::api_response::ApiResponse;
 use crate::libraries::resp::data::DataBuilder;
+use crate::libraries::session::SessionOperation;
 use crate::models::post::{CreatePost, UpdatePost};
+use crate::services::recommend::post::recommend_posts;
 use crate::state::AppState;
 
 // Create
@@ -51,11 +53,11 @@ curl -X GET http://localhost:8000/api/posts/get/1
 pub async fn get_post_detail(
     session: Session,
     app_state: web::Data<AppState>,
-    path: web::Path<(i32,)>,
+    path: web::Path<(i32, )>,
 ) -> Result<HttpResponse, AxError> {
     app_state.add_request_count();
     let _ = login_in_unauthentic(&session).await;
-    let (post_id,) = path.into_inner();
+    let (post_id, ) = path.into_inner();
     get_post_detail_db(&app_state.db, post_id)
         .await
         .map(|resp| {
@@ -92,6 +94,36 @@ pub async fn get_post_list(
     })
 }
 
+pub async fn get_trending_posts(
+    session: Session,
+    app_state: web::Data<AppState>,
+    _query: Option<web::Query<HashMap<String, String>>>,
+) -> Result<HttpResponse, AxError> {
+    app_state.add_request_count();
+    let _ = login_in_unauthentic(&session).await;
+
+    // 获取用户ID或特征，用于推荐
+    let user_id = SessionOperation::get_user_id(session).unwrap();
+
+    // 调用深度学习模型进行推荐
+    let recommended_post_ids = recommend_posts(app_state.clone(), user_id).await?;
+
+    // 获取推荐的推文
+    let posts = get_posts_by_ids(&app_state.db, recommended_post_ids).await?;
+
+    let api_response = ApiResponse::new(
+        200,
+        "Success".to_string(),
+        Some(
+            DataBuilder::new()
+                .set_data(posts)
+                .build(),
+        ),
+    );
+
+    Ok(HttpResponse::Ok().json(api_response))
+}
+
 // Update
 /*
 curl -X PUT localhost:8000/api/posts/1 \
@@ -103,12 +135,12 @@ curl -X PUT localhost:8000/api/posts/1 \
 pub async fn update_post_details(
     session: Session,
     app_state: web::Data<AppState>,
-    path: web::Path<(i32,)>,
+    path: web::Path<(i32, )>,
     update_post: web::Json<UpdatePost>,
 ) -> Result<HttpResponse, AxError> {
     app_state.add_request_count();
     let _ = login_in_unauthentic(&session).await;
-    let (post_id,) = path.into_inner();
+    let (post_id, ) = path.into_inner();
     update_post_db(&app_state.db, post_id, update_post.into())
         .await
         .map(|post| {
@@ -127,11 +159,11 @@ curl -X DELETE http://localhost:8000/api/posts/1
 pub async fn delete_post(
     session: Session,
     app_state: web::Data<AppState>,
-    path: web::Path<(i32,)>,
+    path: web::Path<(i32, )>,
 ) -> Result<HttpResponse, AxError> {
     app_state.add_request_count();
     let _ = login_in_unauthentic(&session).await;
-    let (post_id,) = path.into_inner();
+    let (post_id, ) = path.into_inner();
     delete_post_db(&app_state.db, post_id).await.map(|post| {
         HttpResponse::Ok().json(ApiResponse::new(
             200,
@@ -143,9 +175,8 @@ pub async fn delete_post(
 
 #[cfg(test)]
 mod tests {
-
     use actix_session::SessionExt;
-    use actix_web::{http::StatusCode, test, web, ResponseError};
+    use actix_web::{http::StatusCode, ResponseError, test, web};
     use serde_json::Value;
 
     use crate::{
@@ -153,7 +184,7 @@ mod tests {
             delete_post, get_post_detail, insert_new_post, insert_post_db, update_post_details,
         },
         models::post::{CreatePost, UpdatePost},
-        state::{get_demo_state, AppState},
+        state::{AppState, get_demo_state},
     };
 
     #[actix_rt::test]
@@ -197,7 +228,7 @@ mod tests {
         let insert_result = insert_post_db(&app_state.db, post.clone()).await.unwrap();
         assert_eq!(post.content, insert_result.content);
         // Delete test post.
-        let delete_params: web::Path<(i32,)> = web::Path::from((insert_result.id,));
+        let delete_params: web::Path<(i32, )> = web::Path::from((insert_result.id, ));
         let resp = delete_post(session, app_state.clone(), delete_params)
             .await
             .unwrap();
@@ -214,7 +245,7 @@ mod tests {
         let update_post_msg = UpdatePost {
             content: Some(String::from("test_update_post_after")),
         };
-        let parameters: web::Path<(i32,)> = web::Path::from((insert_result.id,));
+        let parameters: web::Path<(i32, )> = web::Path::from((insert_result.id, ));
         let update_param = web::Json(update_post_msg);
         // 发送请求前设置 session 数据
         let session = test::TestRequest::put().to_http_request().get_session();
@@ -243,7 +274,7 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(&new_post_msg.content, &result.content);
-        let parameters: web::Path<(i32,)> = web::Path::from((result.id,));
+        let parameters: web::Path<(i32, )> = web::Path::from((result.id, ));
         let resp = get_post_detail(session, app_state.clone(), parameters).await;
         match resp {
             Ok(_) => println!("Something wrong"),

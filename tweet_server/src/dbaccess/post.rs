@@ -15,14 +15,14 @@ pub async fn insert_post_db(pool: &PgPool, create_post: CreatePost) -> Result<Po
         Post,
         "insert into posts (content, user_id, reply_to, user_name)
          values ($1, $2, $3, $4)
-         returning id, content, created_at, updated_at, user_id, reply_to, user_name, like_count, dislike_count",
+         returning id, content, created_at, updated_at, user_id, reply_to, user_name, like_count, dislike_count, engagement_rate",
         create_post.content,
         create_post.user_id,
         create_post.reply_to,
         create_post.user_name
     )
-    .fetch_one(pool)
-    .await?;
+        .fetch_one(pool)
+        .await?;
 
     Ok(post_row)
 }
@@ -79,11 +79,49 @@ pub async fn get_post_list_db(
     Ok((posts, pagination))
 }
 
+pub async fn get_posts_by_ids(pool: &PgPool, ids: Vec<i32>) -> Result<Vec<Post>, AxError> {
+    println!("ids: {:?}", ids);
+
+    // 创建用于 SQL 查询的占位符，例如 $1, $2, $3 ...
+    let placeholders = ids.iter()
+        .enumerate()
+        .map(|(i, _)| format!("${}", i + 1))  // 使用 $1, $2 这样的占位符
+        .collect::<Vec<_>>()
+        .join(", ");
+
+    // 动态生成 SQL 查询，并使用 ORDER BY CASE 来保证按 ids 的顺序返回
+    let sql = format!(
+        "SELECT * FROM posts WHERE id IN ({}) ORDER BY CASE id {} END",
+        placeholders,
+        ids.iter()
+            .enumerate()
+            .map(|(i, id)| format!("WHEN {} THEN {}", id, i))  // 保持顺序
+            .collect::<Vec<_>>()
+            .join(" ")
+    );
+    println!("SQL Query: {}", sql);
+
+    // 构建查询，并绑定每个 ID 参数
+    let mut query = sqlx::query_as::<_, Post>(&sql);
+
+    for id in ids {
+        query = query.bind(id);  // 绑定每个 ID
+    }
+
+    // 执行查询并获取结果
+    let posts = query
+        .fetch_all(pool)
+        .await
+        .map_err(|e| AxError::DBError(e.to_string()))?;
+
+    Ok(posts)
+}
+
 // Delete
 pub async fn delete_post_db(pool: &PgPool, post_id: i32) -> Result<Post, AxError> {
     let post_row = sqlx::query_as!(
         Post,
-        "delete from posts where id = $1 returning id, content, created_at, updated_at, user_id, reply_to, user_name, like_count, dislike_count",
+        "delete from posts where id = $1 returning id, content, created_at, updated_at, user_id, reply_to, user_name, like_count, dislike_count, engagement_rate",
         post_id
     ).fetch_one(pool).await?;
     Ok(post_row)
@@ -110,7 +148,7 @@ pub async fn update_post_db(
     // Prepare SQL statement
     let post_row = sqlx::query_as!(
         Post,
-        "update posts set content = $1 where id = $2 returning id, content, created_at, updated_at, user_id, reply_to, user_name, like_count, dislike_count",
+        "update posts set content = $1 where id = $2 returning id, content, created_at, updated_at, user_id, reply_to, user_name, like_count, dislike_count, engagement_rate",
         content, post_id
     ).fetch_one(pool).await;
     if let Ok(post) = post_row {

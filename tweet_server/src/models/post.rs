@@ -15,6 +15,7 @@ pub struct Post {
     pub user_name: String,
     pub like_count: Option<i32>,
     pub dislike_count: Option<i32>,
+    pub engagement_rate: Option<f64>,  // 新增字段
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

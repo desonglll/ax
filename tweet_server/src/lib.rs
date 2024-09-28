@@ -11,6 +11,7 @@ pub mod libraries;
 pub mod models;
 pub mod routes;
 pub mod state;
+pub mod services;
 pub mod utils;
 
 /// Simple program to greet a person
@@ -30,3 +31,10 @@ pub async fn preload() {
     let args = Args::parse();
     make_directory("uploads", args.rmfolder);
 }
+
+pub fn init_tracing() {
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG) // 设置最大日志级别
+        .init();
+}
+
