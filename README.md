@@ -3,16 +3,16 @@ title: ax system
 ---
 
 ## !!! This README is not updated for sqlx.
+
 ## !!! This README is not updated for distribute system.
 
 ## Apps
 
-An Chat And Post System based on Rust and Postgres.
+A Chat And Post System based on Rust and Postgres.
 
-![AX](./design/DALL·E%202024-08-13%2017.25.06%20-%20A%20cute-style%20illustration%20featuring%20Rust%20as%20the%20dominant%20element.%20The%20Rust%20programming%20language%20logo,%20a%20friendly,%20cartoonish,%20and%20slightly%20simplified%20.webp) 
+![AX](./design/DALL·E%202024-08-13%2017.25.06%20-%20A%20cute-style%20illustration%20featuring%20Rust%20as%20the%20dominant%20element.%20The%20Rust%20programming%20language%20logo,%20a%20friendly,%20cartoonish,%20and%20slightly%20simplified%20.webp)
 
 The previous project was [Crab Rocket](https://github.com/desonglll/crab_rocket)
-
 
 - [!!! This README is not updated for sqlx.](#-this-readme-is-not-updated-for-sqlx)
 - [!!! This README is not updated for distribute system.](#-this-readme-is-not-updated-for-distribute-system)
@@ -20,23 +20,22 @@ The previous project was [Crab Rocket](https://github.com/desonglll/crab_rocket)
 - [🧩 Project Dependencies](#-project-dependencies)
 - [Demo](#demo)
 - [⚙️ Requirements](#️-requirements)
-  - [Rust](#rust)
-  - [Postgres](#postgres)
-  - [Redis](#redis)
-  - [diesel](#diesel)
+    - [Rust](#rust)
+    - [Postgres](#postgres)
+    - [Redis](#redis)
+    - [diesel](#diesel)
 - [🎃 Quick Start](#-quick-start)
 - [Migrations](#migrations)
-  - [Create a .env file](#create-a-env-file)
-  - [Run sqlx-cli](#run-sqlx-cli)
-  - [Run server](#run-server)
+    - [Create a .env file](#create-a-env-file)
+    - [Run sqlx-cli](#run-sqlx-cli)
+    - [Run server](#run-server)
 - [🔧 Compile Release Version](#-compile-release-version)
-  - [Installation](#installation)
-  - [🚀 Running the Binary](#-running-the-binary)
-  - [Reset Database](#reset-database)
-  - [Run](#run)
+    - [Installation](#installation)
+    - [🚀 Running the Binary](#-running-the-binary)
+    - [Reset Database](#reset-database)
+    - [Run](#run)
 - [Design](#design)
-  - [Technical](#technical)
-
+    - [Technical](#technical)
 
 ## 🧩 Project Dependencies
 
@@ -47,9 +46,10 @@ The previous project was [Crab Rocket](https://github.com/desonglll/crab_rocket)
 
 ## Demo
 
-![Post Page](./design/Demo.png) 
+![Post Page](./design/Demo.png)
 
 ## ⚙️ Requirements
+
 ### Rust
 
 ```sh
@@ -85,9 +85,13 @@ diesel setup && diesel database reset
 cd ../..
 cargo run
 ```
+
 <!-- ## 🥰 Development -->
+
 ## Migrations
+
 <!-- https://crates.io/crates/sqlx-cli -->
+
 ### Create a .env file
 
 ```shell
@@ -116,7 +120,14 @@ sqlx migrate info --source ../relative/migrations
 sqlx migrate revert
 ```
 
+### Start Recommend Model using Machine Learning
+
+Run this project.
+
+See [ax-recommend-model](https://github.com/desonglll/ax-recommend-model)
+
 ### Run server
+
 ```shell
 # Run the server
 cd ax
@@ -177,6 +188,7 @@ diesel database reset
 ```shell
 ax
 ```
+
 ## Design
 
 ### Technical
