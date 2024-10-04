@@ -44,7 +44,7 @@ pub async fn get_user_features(pool: &PgPool, user_id: i32) -> Result<UserFeatur
     )
         .fetch_one(pool)
         .await
-        .map_err(|e| AxError::DBError(String::from("Error when fetching user stats.")))?;
+        .map_err(|_e| AxError::DBError(String::from("Error when fetching user stats.")))?;
 
     // 创建并返回 UserFeatures
     let user_features = UserFeatures {

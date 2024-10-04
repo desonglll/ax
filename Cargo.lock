@@ -1424,6 +1424,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "ez_stock"
+version = "0.1.0"
+
+[[package]]
 name = "fastrand"
 version = "2.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
