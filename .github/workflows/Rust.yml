@@ -8,7 +8,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  TWEET_SERVER_DATABASE_URL: postgres://postgres:password@localhost:5432/hello_rocket
+  DATABASE_URL: postgres://postgres:password@localhost:5432/hello_rocket
 
 jobs:
   check_system:
