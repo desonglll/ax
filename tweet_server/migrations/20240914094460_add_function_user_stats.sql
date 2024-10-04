@@ -10,7 +10,6 @@ CREATE TABLE user_stats (
     FOREIGN KEY(user_id) REFERENCES users(id)
 );
 
--- 创建普通函数用于更新 user_stats 表
 CREATE OR REPLACE FUNCTION manual_update_user_stats(uid INT)
 RETURNS VOID AS $$
 BEGIN
@@ -18,16 +17,19 @@ BEGIN
     UPDATE user_stats
     SET
         liked_posts_count = (SELECT COUNT(*) FROM posts WHERE posts.user_id = uid AND like_count > 0),
-        average_like_count = (SELECT AVG(like_count) FROM posts WHERE posts.user_id = uid),
---        TODO
+        average_like_count = (SELECT COALESCE(AVG(like_count), 0) FROM posts WHERE posts.user_id = uid),
         average_comment_count = (SELECT COALESCE(AVG(content_count), 0) FROM (
             SELECT COUNT(*) AS content_count FROM comments WHERE comments.user_id = uid GROUP BY reply_to
         ) subquery),
         recent_activity_score = (SELECT COUNT(*) FROM posts WHERE posts.user_id = uid AND created_at >= NOW() - INTERVAL '7 days'),
-        engagement_rate = (SELECT AVG(like_count::float / NULLIF(like_count + dislike_count, 0)) FROM posts WHERE posts.user_id = uid)
+        engagement_rate = COALESCE((
+            SELECT AVG(like_count::float / NULLIF(like_count + dislike_count, 0))
+            FROM posts WHERE posts.user_id = uid
+        ), 0)  -- 确保 engagement_rate 不为 null
     WHERE user_stats.user_id = uid;
 END;
 $$ LANGUAGE plpgsql;
+
 
 -- 初始化时，插入所有用户的统计信息
 DO $$
