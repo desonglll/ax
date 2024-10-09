@@ -1,9 +1,9 @@
 import type React from "react";
-import { useState } from "react";
+import {useState} from "react";
 import axios from "axios";
-import type { ApiResponse } from "../models/api_response";
+import type {ApiResponse} from "../models/api_response";
 import "./Upload.sass";
-import type { File } from "../models/file";
+import type {File} from "../models/file";
 
 function Upload() {
   const uploadFile = async (e: React.FormEvent<HTMLFormElement>) => {

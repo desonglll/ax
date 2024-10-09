@@ -1,13 +1,14 @@
-import { Box, Paper } from "@mui/material";
+import {Box, Paper} from "@mui/material";
 import AppMenu from "../components/Navigation/AppMenu";
-import { SideDrawer } from "../components/Navigation/SideDrawer";
-import { useState } from "react";
-import { Route, Routes } from "react-router-dom";
+import {SideDrawer} from "../components/Navigation/SideDrawer";
+import {useState} from "react";
+import {Route, Routes} from "react-router-dom";
 import IndexPage from "../pages/IndexPage";
 import TestPage from "../pages/TestPage";
 import PostRoutes from "./PostRoutes";
-import { UserRoutes } from "./UserRoutes";
+import {UserRoutes} from "./UserRoutes";
 import BottomNav from "../components/Navigation/BottomNav";
+
 function CommonRoutes() {
   const [drawerOpen, setDrawerOpen] = useState(false);
 

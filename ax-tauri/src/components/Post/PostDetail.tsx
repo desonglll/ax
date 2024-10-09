@@ -1,19 +1,19 @@
-import { useNavigate, useParams } from "react-router-dom";
-import { Button, Fade } from "@mui/material";
-import { useEffect, useState } from "react";
+import {useNavigate, useParams} from "react-router-dom";
+import {Button, Fade} from "@mui/material";
+import {useEffect, useState} from "react";
 import getData from "../../utils/data_fetch.ts";
-import type { Post } from "../../models/post.ts";
+import type {Post} from "../../models/post.ts";
 import Box from "@mui/material/Box";
 import ThumbUpAltIcon from "@mui/icons-material/ThumbUpAlt";
 import ThumbUpOffAltIcon from "@mui/icons-material/ThumbUpOffAlt";
 import ThumbDownAltIcon from "@mui/icons-material/ThumbDown";
 import ThumbDownOffAltIcon from "@mui/icons-material/ThumbDownOffAlt";
 import axios from "axios";
-import { PostComment } from "./PostComment.tsx";
+import {PostComment} from "./PostComment.tsx";
 import Vditor from "vditor";
 import BackButton from "../Navigation/BackButton.tsx";
-import type { ApiResponse } from "../../models/api_response.ts";
-import type { File } from "../../models/file.ts";
+import type {ApiResponse} from "../../models/api_response.ts";
+import type {File} from "../../models/file.ts";
 
 export function PostDetail() {
   const { id } = useParams(); // 获取路径参数 id

@@ -1,7 +1,7 @@
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import {useEffect} from "react";
+import {useNavigate} from "react-router-dom";
 import loginCheck from "../utils/login_check.ts";
-import { Typography } from "@mui/material";
+import {Typography} from "@mui/material";
 import Box from "@mui/material/Box";
 
 export default function IndexPage() {

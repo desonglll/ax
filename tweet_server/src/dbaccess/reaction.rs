@@ -21,7 +21,7 @@ pub async fn insert_like_reaction_db(
         String::from("Dislike"),
         create_reaction.to_type.clone(),
     )
-    .await
+        .await
     {
         Log::info(String::from("existed_dislike, deleting..."));
         let _ = delete_reaction_by_id_db(pool, existed_dislike.id).await;
@@ -49,7 +49,7 @@ pub async fn insert_dislike_reaction_db(
         String::from("Like"),
         create_reaction.to_type.clone(),
     )
-    .await
+        .await
     {
         let _ = delete_reaction_by_id_db(pool, existed_like.id).await;
     }
@@ -74,6 +74,7 @@ pub async fn delete_reaction_by_id_db(pool: &PgPool, id: i32) -> Result<Reaction
         id
     ).fetch_one(pool).await
 }
+
 
 pub async fn is_reaction_record_exists_db(
     pool: &PgPool,
@@ -104,15 +105,15 @@ pub async fn get_reaction_table_by_query_db(
         to_id,
         "Like"
     )
-    .fetch_one(pool)
-    .await?;
+        .fetch_one(pool)
+        .await?;
     let dislike_count = sqlx::query_scalar!(
         "select count(*) from reactions where to_id = $1 and reaction_name = $2",
         to_id,
         "Dislike"
     )
-    .fetch_one(pool)
-    .await?;
+        .fetch_one(pool)
+        .await?;
     Ok(ReactionResponseTable {
         like: like_count.unwrap_or(0),
         dislike: dislike_count.unwrap_or(0),
@@ -129,13 +130,16 @@ pub async fn get_reactions_by_query_db(
     let default_type = String::from("post");
     let to_type = query.get("toType").unwrap_or(&default_type);
     let user_id = query.get("userId").and_then(|s| s.parse::<i32>().ok());
+    let default_reaction_name = String::from("Like");
+    let reaction_name = query.get("reactionName").unwrap_or(&default_reaction_name);
     let row = sqlx::query_as!(
         Reaction,
-        "select * from reactions where to_id = $1 and to_type = $2 and ($3::int is null or user_id = $3) and ($4::int is null or id = $4)",
+        "select * from reactions where ($1::int is null or to_id = $1) and ($2::varchar is null or to_type = $2) and ($3::int is null or user_id = $3) and ($4::int is null or id = $4) and ($5::varchar is null or reaction_name = $5)",
         to_id,
         to_type,
         user_id,
-        id
+        id,
+        reaction_name
     ).fetch_all(pool).await?;
     Ok(row)
 }

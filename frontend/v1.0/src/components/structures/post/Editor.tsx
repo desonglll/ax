@@ -1,5 +1,4 @@
 import {useEffect} from "react";
-import getData from "../../../utils/data_fetch.ts";
 import {AxiosEndpoint} from "../../../config/endpoints/axios_endpoint.ts";
 import Vditor from "vditor";
 import {ApiResponse} from "../../../models/api_response.ts";

@@ -158,15 +158,11 @@ pub async fn delete_user(
 
 #[cfg(test)]
 mod user_dbaccess_tests {
-    
-
     use actix_web::{
         http::StatusCode,
         ResponseError,
         web::{self},
     };
-    
-    
     use uuid::Uuid;
 
     use crate::{

@@ -1,8 +1,8 @@
-import { Route, Routes } from "react-router-dom";
+import {Route, Routes} from "react-router-dom";
 import PostData from "../components/Post/PostData.tsx";
 import Box from "@mui/material/Box";
-import { PostDetail } from "../components/Post/PostDetail.tsx";
-import { ReleasePost } from "../components/Post/ReleasePost.tsx";
+import {PostDetail} from "../components/Post/PostDetail.tsx";
+import {ReleasePost} from "../components/Post/ReleasePost.tsx";
 
 export default function PostRoutes() {
   return (

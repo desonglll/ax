@@ -1,12 +1,12 @@
 import axios from "axios";
 import type React from "react";
-import { useEffect, useState } from "react";
+import {useEffect, useState} from "react";
 import "./SignIn.sass";
-import { useNavigate } from "react-router-dom";
-import { Button, FormControl, Input, Link, Sheet, Typography } from "@mui/joy";
-import { FormLabel } from "@mui/material";
+import {useNavigate} from "react-router-dom";
+import {Button, FormControl, Input, Link, Sheet, Typography} from "@mui/joy";
+import {FormLabel} from "@mui/material";
 import RouteEndpoint from "../../../config/endpoints/route_endpoint.ts";
-import { AxiosEndpoint } from "../../../config/endpoints/axios_endpoint.ts";
+import {AxiosEndpoint} from "../../../config/endpoints/axios_endpoint.ts";
 import loginCheck from "../../../utils/login_check.ts";
 
 function SignIn() {

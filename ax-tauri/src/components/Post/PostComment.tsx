@@ -1,12 +1,12 @@
-import { Textarea } from "@mui/joy";
+import {Textarea} from "@mui/joy";
 import Box from "@mui/material/Box";
 import Button from "@mui/joy/Button";
 import type React from "react";
+import {useEffect, useState} from "react";
 import axios from "axios";
-import type { Comment } from "../../models/post";
-import { useEffect, useState } from "react";
+import type {Comment} from "../../models/post";
 import getData from "../../utils/data_fetch";
-import { Fade, List, ListItem } from "@mui/material";
+import {Fade, List, ListItem} from "@mui/material";
 import PostCommentItem from "./PostCommentItem";
 
 export function PostComment({ reply_to }: { reply_to: number }) {

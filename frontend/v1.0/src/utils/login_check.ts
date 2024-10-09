@@ -1,5 +1,5 @@
 import axios from "axios";
-import { AxiosEndpoint } from "../config/endpoints/axios_endpoint.ts";
+import {AxiosEndpoint} from "../config/endpoints/axios_endpoint.ts";
 
 const loginCheck = async () => {
   try {

@@ -1,12 +1,13 @@
 use std::collections::HashMap;
 
 use actix_session::Session;
-use actix_web::{web, HttpResponse};
+use actix_web::{HttpResponse, web};
 
+use crate::{errors::AxError, models::reaction::CreateReaction, state::AppState};
 use crate::dbaccess::reaction::*;
+use crate::handlers::auth::login_in_unauthentic;
 use crate::libraries::resp::api_response::ApiResponse;
 use crate::libraries::resp::data::DataBuilder;
-use crate::{errors::AxError, models::reaction::CreateReaction, state::AppState};
 
 // Create
 /*
@@ -99,6 +100,9 @@ pub async fn get_reactions_by_query(
     app_state: web::Data<AppState>,
     query: Option<web::Query<HashMap<String, String>>>,
 ) -> Result<HttpResponse, AxError> {
+    if let Ok(resp) = login_in_unauthentic(&session).await {
+        return Ok(resp);
+    }
     let mut query = query.unwrap();
     if query.get("userId").is_none() {
         let user_id = session.get::<i32>("user_id").unwrap();
@@ -140,15 +144,14 @@ pub async fn delete_reaction_by_id(
 
 #[cfg(test)]
 mod tests {
-
-    use actix_session::storage::RedisSessionStore;
     use actix_session::SessionMiddleware;
-    use actix_web::{cookie::Key, http::StatusCode, test, web, App};
+    use actix_session::storage::RedisSessionStore;
+    use actix_web::{App, cookie::Key, http::StatusCode, test, web};
     use serde_json::Value;
 
     use crate::{
         handlers::reaction::{insert_dislike_reaction, insert_like_reaction},
-        state::{get_demo_state, AppState},
+        state::{AppState, get_demo_state},
     };
 
     #[actix_rt::test]
@@ -172,7 +175,7 @@ mod tests {
                 )
                 .route("/like", web::post().to(insert_like_reaction)),
         )
-        .await;
+            .await;
 
         // 构建请求，并模拟会话
         let req = test::TestRequest::post()
@@ -222,7 +225,7 @@ mod tests {
                 )
                 .route("/dislike", web::post().to(insert_dislike_reaction)),
         )
-        .await;
+            .await;
 
         // 构建请求，并模拟会话
         let req = test::TestRequest::post()

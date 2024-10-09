@@ -4,7 +4,6 @@ import loginCheck from "../utils/login_check.ts";
 import {Typography} from "@mui/material";
 import {AxSkeleton} from "../components/common/skeleton/AxSkeleton.tsx";
 import RouteEndpoint from "../config/endpoints/route_endpoint.ts";
-import axios from "axios";
 
 export default function IndexPage() {
     const navigate = useNavigate();

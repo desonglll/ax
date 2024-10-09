@@ -20,9 +20,9 @@ pub async fn is_admin(session: Session) -> Result<bool, AxError> {
     }
 }
 
-pub async fn is_login(session: &Session) -> Result<bool, AxError> {
-    match session.get::<bool>("is_login") {
-        Ok(is_login) => Ok(is_login.unwrap_or(false)),
+pub async fn is_active(session: &Session) -> Result<bool, AxError> {
+    match session.get::<bool>("is_active") {
+        Ok(is_active) => Ok(is_active.unwrap_or(false)),
         Err(e) => Err(e.into()),
     }
 }

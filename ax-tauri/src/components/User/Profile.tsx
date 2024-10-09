@@ -1,12 +1,12 @@
-import { Avatar, Box, CircularProgress, Fade, TextField } from "@mui/material";
+import {Avatar, Box, CircularProgress, Fade, TextField} from "@mui/material";
 import type React from "react";
-import { useEffect, useState } from "react";
+import {useEffect, useState} from "react";
 import getData from "../../utils/data_fetch";
-import type { UpdateUserRequest, User } from "../../models/user";
-import { LoadingOutlined, PlusOutlined } from "@ant-design/icons";
+import type {UpdateUserRequest, User} from "../../models/user";
+import {LoadingOutlined, PlusOutlined} from "@ant-design/icons";
 import axios from "axios";
-import { Upload } from "antd";
-import { Button } from "@mui/joy";
+import {Upload} from "antd";
+import {Button} from "@mui/joy";
 
 function Profile() {
   //希望 user 的初始状态是一个空对象，并且你不想提供所有字段

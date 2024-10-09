@@ -1,5 +1,5 @@
-import { Drawer } from "@mui/material";
-import { MenuList } from "./MenuList.tsx";
+import {Drawer} from "@mui/material";
+import {MenuList} from "./MenuList.tsx";
 
 export function SideDrawer({
   open,

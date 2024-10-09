@@ -1,4 +1,4 @@
-use bcrypt::{hash, verify, DEFAULT_COST};
+use bcrypt::{DEFAULT_COST, hash, verify};
 
 /// 密码哈希处理
 ///

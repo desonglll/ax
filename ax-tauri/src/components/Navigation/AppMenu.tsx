@@ -1,4 +1,5 @@
 import * as React from "react";
+import {useEffect, useState} from "react";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
@@ -8,11 +9,10 @@ import AccountCircle from "@mui/icons-material/AccountCircle";
 import MenuItem from "@mui/material/MenuItem";
 import Menu from "@mui/material/Menu";
 import axios from "axios";
-import { useEffect, useState } from "react";
 import loginCheck from "../../utils/login_check.ts";
-import { useNavigate } from "react-router-dom";
-import { Avatar, Fade } from "@mui/material";
-import type { User } from "../../models/user.ts";
+import {useNavigate} from "react-router-dom";
+import {Avatar, Fade} from "@mui/material";
+import type {User} from "../../models/user.ts";
 import getData from "../../utils/data_fetch.ts";
 
 export default function AppMenu({

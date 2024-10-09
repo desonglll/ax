@@ -1,14 +1,8 @@
-import {
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-} from "@mui/material";
-import { menu_items } from "./menu_items.ts";
+import {List, ListItem, ListItemButton, ListItemIcon, ListItemText,} from "@mui/material";
+import {menu_items} from "./menu_items.ts";
 import InboxIcon from "@mui/icons-material/Inbox";
 import Box from "@mui/material/Box";
-import { useNavigate } from "react-router-dom";
+import {useNavigate} from "react-router-dom";
 
 export function MenuList({
   toggleDrawer,

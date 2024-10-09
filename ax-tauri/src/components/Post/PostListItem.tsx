@@ -1,21 +1,15 @@
-import type { Post } from "../../models/post.ts";
+import type {Post} from "../../models/post.ts";
 import Box from "@mui/material/Box";
-import {
-  Button,
-  Card,
-  CardActions,
-  CardContent,
-  Typography,
-} from "@mui/material";
+import {Button, Card, CardActions, CardContent, Typography,} from "@mui/material";
 import axios from "axios";
 import ThumbUpOffAltIcon from "@mui/icons-material/ThumbUpOffAlt";
-import { useEffect, useState } from "react";
+import {useEffect, useState} from "react";
 import getData from "../../utils/data_fetch.ts";
 import ThumbUpAltIcon from "@mui/icons-material/ThumbUpAlt";
 import ThumbDownOffAltIcon from "@mui/icons-material/ThumbDownOffAlt";
 import ThumbDownAltIcon from "@mui/icons-material/ThumbDown";
 import CommentIcon from "@mui/icons-material/Comment";
-import { useNavigate } from "react-router-dom";
+import {useNavigate} from "react-router-dom";
 
 const bull = (
   <Box

@@ -1,5 +1,5 @@
 import Box from "@mui/material/Box";
-import { Route, Routes } from "react-router-dom";
+import {Route, Routes} from "react-router-dom";
 import Profile from "../components/User/Profile.tsx";
 
 export function UserRoutes() {

@@ -1,7 +1,6 @@
 [workspace]
 members = [
     "ax-tauri/src-tauri",
-    "ez_stock",
     "tweet_server",
 ]
 resolver = "2"

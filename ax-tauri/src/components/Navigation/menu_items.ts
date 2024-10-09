@@ -1,4 +1,4 @@
-import type { MenuItem } from "../../models/menu_item.ts";
+import type {MenuItem} from "../../models/menu_item.ts";
 
 export const menu_items: MenuItem[] = [
   {

@@ -1,5 +1,5 @@
-import { Button } from "@mui/joy";
-import { useNavigate } from "react-router-dom";
+import {Button} from "@mui/joy";
+import {useNavigate} from "react-router-dom";
 
 function BackButton() {
   const navigate = useNavigate();

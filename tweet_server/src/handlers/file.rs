@@ -2,7 +2,7 @@ use std::io::{Read, Seek, SeekFrom};
 
 use actix_multipart::Multipart;
 use actix_session::Session;
-use actix_web::{web, HttpResponse, Responder};
+use actix_web::{HttpResponse, Responder, web};
 use uuid::Uuid;
 
 use crate::{

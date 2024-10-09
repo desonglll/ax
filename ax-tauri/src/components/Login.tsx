@@ -1,9 +1,9 @@
 import axios from "axios";
 import type React from "react";
-import { useEffect, useState } from "react";
+import {useEffect, useState} from "react";
 import "./Login.sass";
-import { Button, TextField } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import {Button, TextField} from "@mui/material";
+import {useNavigate} from "react-router-dom";
 import Card from "@mui/joy/Card";
 
 function Login() {

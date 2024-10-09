@@ -1,10 +1,4 @@
-import {
-    Button,
-    Card,
-    CardActions,
-    CardContent,
-    Typography,
-} from "@mui/material";
+import {Button, Card, CardActions, CardContent, Typography,} from "@mui/material";
 import {useEffect} from "react";
 import ReactionItem from "../reaction/ReactionItem.tsx";
 import {Comment} from "../../../models/comment.ts";

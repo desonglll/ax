@@ -1,12 +1,5 @@
 import Box from "@mui/material/Box";
-import {
-    CircularProgress,
-    Fab,
-    Fade,
-    Grow,
-    List,
-    ListItem,
-} from "@mui/material";
+import {CircularProgress, Fab, Fade, Grow, List, ListItem,} from "@mui/material";
 import PostListItem from "./PostListItem.tsx";
 import type {Post} from "../../../models/post.ts";
 import {useEffect, useState} from "react";
@@ -18,10 +11,12 @@ import AddIcon from "@mui/icons-material/Add";
 import {Pagination} from "antd";
 import RouteEndpoint from "../../../config/endpoints/route_endpoint.ts";
 import {AxiosEndpoint} from "../../../config/endpoints/axios_endpoint.ts";
+import {Reaction} from "../../../models/reaction.ts";
 
 export default function PostList() {
     const [isLoading, setIsLoading] = useState(true);
     const [posts, setPosts] = useState<Post[]>([]);
+    const [reactions, setReactions] = useState<Reaction[]>([]);
     const [currentPage, setCurrentPage] = useState<number>(() => {
         // 从 localStorage 获取当前页码
         const savedPage = localStorage.getItem("currentPage");
@@ -47,6 +42,10 @@ export default function PostList() {
                 setIsLoading(false);
             }
         });
+        getData(`${AxiosEndpoint.GetReaction}`).then((resp) => {
+            setReactions(resp.data.body.data)
+            console.log(resp.data)
+        })
     }, [navigate, currentPage, pageSize]);
 
     const handleChangePagination = (page: number, newPageSize: number) => {
@@ -109,7 +108,7 @@ export default function PostList() {
                                         timeout={(index + 1) * 500} // 每个组件的延迟时间增加1000ms
                                     >
                                         <ListItem key={post.id} sx={{justifyContent: "center"}}>
-                                            <PostListItem post={post}/>
+                                            <PostListItem post={post} reactions={reactions}/>
                                         </ListItem>
                                     </Grow>
                                 ))}

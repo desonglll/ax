@@ -7,6 +7,7 @@ import {Sheet} from "@mui/joy";
 import Vditor from "vditor";
 import RouteEndpoint from "../../../config/endpoints/route_endpoint.ts";
 import ReactionItem from "../reaction/ReactionItem.tsx";
+import {Reaction} from "../../../models/reaction.ts";
 
 const bull = (
     <Box
@@ -17,9 +18,15 @@ const bull = (
     </Box>
 );
 
-export default function PostListItem({post}: { post: Post }) {
+export default function PostListItem({post, reactions}: {
+    post: Post,
+    reactions: Reaction[]
+}) {
     const navigate = useNavigate();
     const [postItem, _setPostItem] = useState<Post>(post);
+    const [isUserLike, setIsUserLike] = useState(false)
+    const [isUserDislike, setIsUserDislike] = useState(false)
+    const [loading, setLoading] = useState(true)
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
     useEffect(() => {
@@ -31,7 +38,20 @@ export default function PostListItem({post}: { post: Post }) {
                 mode: "light",
             }
         ).then(_ => {
+            reactions.map((reaction) => {
+                if (reaction.toId === post.id && reaction.reactionName === "Like") {
+                    console.log("Like")
+                    setIsUserLike(true)
+                }
+                if (reaction.toId === post.id && reaction.reactionName === "Dislike") {
+                    console.log("Dislike")
+                    setIsUserDislike(true)
+                }
+            })
+        }).finally(() => {
+            setLoading(!loading)
         });
+
 
     }, [post.id]);
     const handleDetail = (id: number) => {
@@ -78,10 +98,13 @@ export default function PostListItem({post}: { post: Post }) {
                         </Button>
                     </div>
                 </CardContent>
-                <CardActions sx={{justifyContent: "flex-end"}}>
-                    <ReactionItem toId={post.id} toType={"post"} likeCount={post.likeCount}
-                                  dislikeCount={post.dislikeCount}/>
-                </CardActions>
+                {!loading && (
+                    <CardActions sx={{justifyContent: "flex-end"}}>
+                        <ReactionItem toId={post.id} toType={"post"} likeCount={post.likeCount}
+                                      dislikeCount={post.dislikeCount} isUserLike={isUserLike}
+                                      isUserDislike={isUserDislike}/>
+                    </CardActions>
+                )}
             </Sheet>
         </>
     );

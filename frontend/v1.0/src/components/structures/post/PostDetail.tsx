@@ -5,15 +5,13 @@ import getData from "../../../utils/data_fetch.ts";
 import type {Post} from "../../../models/post.ts";
 import Box from "@mui/material/Box";
 import axios from "axios";
-import Vditor from "vditor";
 import BackButton from "../../common/button/BackButton.tsx";
-import type {ApiResponse} from "../../../models/api_response.ts";
-import type {File} from "../../../models/file.ts";
 import {AxiosEndpoint} from "../../../config/endpoints/axios_endpoint.ts";
 import {CommentList} from "../comment/CommentList.tsx";
 import ReactionItem from "../reaction/ReactionItem.tsx";
 import {Editor} from "./Editor.tsx";
 import {Previewer} from "./Previewer.tsx";
+import {Reaction} from "../../../models/reaction.ts";
 
 export function PostDetail() {
     const {id} = useParams(); // 获取路径参数 id
@@ -29,30 +27,49 @@ export function PostDetail() {
         likeCount: 0,
         dislikeCount: 0
     });
-
-    const [loading, setLoading] = useState(true);
+    const [isUserLike, setIsUserLike] = useState(false)
+    const [isUserDislike, setIsUserDislike] = useState(false)
+    const [pageLoading, setPageLoading] = useState(true);
     const [editing, setEditing] = useState(false);
     const navigate = useNavigate();
+    const [reactionLoading, setReactionLoading] = useState(true)
 
     useEffect(() => {
-        getData(`${AxiosEndpoint.PostDetail}/${id}`)
-            .then((resp) => {
-                if (resp.data.code === 200) {
-                    setPost(resp.data.body.data);
+        const fetchData = async () => {
+            try {
+                const postResp = await getData(`${AxiosEndpoint.PostDetail}/${id}`);
+                if (postResp.data.code === 200) {
+                    setPost(postResp.data.body.data);
                 }
-            })
-            .then(() => {
-            })
-            .finally(() => {
-                setLoading(false);
-            });
+
+                const reactionResp = await axios.get(`${AxiosEndpoint.GetReaction}?toId=${Number(id)}`);
+                const reactions_vec: [Reaction] = reactionResp.data.body.data;
+
+                if (reactions_vec.length > 0) {
+                    if (reactions_vec[0].reactionName === "Like") {
+                        setIsUserLike(true);
+                        setIsUserDislike(false);
+                    }
+                    if (reactions_vec[0].reactionName === "Dislike") {
+                        setIsUserLike(false);
+                        setIsUserDislike(true);
+                    }
+                }
+            } finally {
+                setReactionLoading(false);
+                setPageLoading(false);
+            }
+        };
+
+        fetchData();
     }, [id, navigate]);
+    ;
 
 
     return (
         <>
-            {!loading && (
-                <Fade in={!loading}>
+            {!pageLoading && (
+                <Fade in={!pageLoading}>
                     <Box
                         sx={{
                             marginTop: "50px",
@@ -81,10 +98,13 @@ export function PostDetail() {
                             </Box>
                         </div>
 
-                        <div style={{display: "flex", justifyContent: "flex-end"}}>
-                            <ReactionItem toId={Number(id)} toType="post" likeCount={post.likeCount}
-                                          dislikeCount={post.dislikeCount}/>
-                        </div>
+                        {!reactionLoading && (
+                            <div style={{display: "flex", justifyContent: "flex-end"}}>
+                                <ReactionItem toId={Number(id)} toType="post" likeCount={post.likeCount}
+                                              dislikeCount={post.dislikeCount} isUserLike={isUserLike}
+                                              isUserDislike={isUserDislike}/>
+                            </div>
+                        )}
                         <Box sx={{display: "flex", justifyContent: "center"}}>
                             <CommentList reply_to={Number(id)}/>
                         </Box>

@@ -6,9 +6,9 @@ use std::{
 
 use actix_multipart::{Field, Multipart};
 use actix_session::Session;
-use actix_web::{web, HttpResponse, Responder};
+use actix_web::{HttpResponse, Responder, web};
 use futures::StreamExt;
-use percent_encoding::{percent_encode, NON_ALPHANUMERIC};
+use percent_encoding::{NON_ALPHANUMERIC, percent_encode};
 use sha2::{Digest, Sha256};
 
 use crate::{

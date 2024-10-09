@@ -8,7 +8,7 @@ pub enum ReactionName {
     Dislike(i32),
 }
 
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Reaction {
     pub id: i32,

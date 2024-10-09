@@ -1,9 +1,8 @@
-import { Route, Routes } from "react-router-dom";
+import {BrowserRouter, Route, Routes} from "react-router-dom";
 import SignInPage from "../pages/SignInPage.tsx";
 import IndexPage from "../pages/IndexPage.tsx";
-import { BrowserRouter } from "react-router-dom";
 import PostRoutes from "./PostRoutes.tsx";
-import { UserRoutes } from "./UserRoutes.tsx";
+import {UserRoutes} from "./UserRoutes.tsx";
 import RouteEndpoint from "../config/endpoints/route_endpoint.ts";
 
 function AllRoutes() {

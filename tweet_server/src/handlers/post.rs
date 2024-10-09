@@ -7,7 +7,7 @@ use crate::dbaccess::post::*;
 use crate::errors::AxError;
 use crate::handlers::auth::login_in_unauthentic;
 use crate::libraries::resp::api_response::ApiResponse;
-use crate::libraries::resp::data::DataBuilder;
+use crate::libraries::resp::data::{DataBuilder, PostListDataBuilder};
 use crate::libraries::session::SessionOperation;
 use crate::models::post::{CreatePost, UpdatePost};
 use crate::services::recommend::post::recommend_posts;
@@ -78,13 +78,16 @@ pub async fn get_post_list(
     query: Option<web::Query<HashMap<String, String>>>,
 ) -> Result<HttpResponse, AxError> {
     app_state.add_request_count();
-    let _ = login_in_unauthentic(&session).await;
+    if let Ok(resp) = login_in_unauthentic(&session).await {
+        return Ok(resp);
+    }
+
     get_post_list_db(&app_state.db, query).await.map(|resp| {
         let api_response = ApiResponse::new(
             200,
             "Success".to_string(),
             Some(
-                DataBuilder::new()
+                PostListDataBuilder::new()
                     .set_data(resp.0)
                     .set_pagination(resp.1)
                     .build(),

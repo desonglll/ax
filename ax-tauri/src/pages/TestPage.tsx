@@ -1,5 +1,5 @@
 import Box from "@mui/material/Box";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
+import {DataGrid, type GridColDef} from "@mui/x-data-grid";
 
 const columns: GridColDef<(typeof rows)[number]>[] = [
   { field: "id", headerName: "ID", width: 90 },

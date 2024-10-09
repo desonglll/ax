@@ -1,4 +1,4 @@
-import axios, { type AxiosRequestConfig } from "axios";
+import axios, {type AxiosRequestConfig} from "axios";
 
 const getData = async (
   endpoint: string,

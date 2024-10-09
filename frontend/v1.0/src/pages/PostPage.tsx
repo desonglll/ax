@@ -1,6 +1,6 @@
-import { useEffect } from "react";
+import {useEffect} from "react";
 import loginCheck from "../utils/login_check";
-import { useNavigate } from "react-router-dom";
+import {useNavigate} from "react-router-dom";
 import RouteEndpoint from "../config/endpoints/route_endpoint.ts";
 import PostList from "../components/structures/post/PostList.tsx";
 

@@ -1,21 +1,14 @@
 import Box from "@mui/material/Box";
-import {
-  CircularProgress,
-  Fab,
-  Fade,
-  Grow,
-  List,
-  ListItem,
-} from "@mui/material";
+import {CircularProgress, Fab, Fade, Grow, List, ListItem,} from "@mui/material";
 import PostListItem from "./PostListItem.tsx";
-import type { Post } from "../../models/post.ts";
-import { useEffect, useState } from "react";
+import type {Post} from "../../models/post.ts";
+import {useEffect, useState} from "react";
 import getData from "../../utils/data_fetch.ts";
-import axios, { type AxiosResponse } from "axios";
-import type { ApiResponse } from "../../models/api_response.ts";
-import { useNavigate } from "react-router-dom";
+import axios, {type AxiosResponse} from "axios";
+import type {ApiResponse} from "../../models/api_response.ts";
+import {useNavigate} from "react-router-dom";
 import AddIcon from "@mui/icons-material/Add";
-import { Pagination } from "antd";
+import {Pagination} from "antd";
 
 export default function PostData() {
   const [isLoading, setIsLoading] = useState(true);

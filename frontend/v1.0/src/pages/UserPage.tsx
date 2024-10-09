@@ -1,7 +1,7 @@
-import { useEffect } from "react";
+import {useEffect} from "react";
 import Profile from "../components/structures/user/Profile";
 import loginCheck from "../utils/login_check";
-import { useNavigate } from "react-router-dom";
+import {useNavigate} from "react-router-dom";
 import RouteEndpoint from "../config/endpoints/route_endpoint.ts";
 
 function UserPage() {

@@ -1,10 +1,4 @@
-import {
-    List,
-    ListItem,
-    ListItemButton,
-    ListItemIcon,
-    ListItemText,
-} from "@mui/material";
+import {List, ListItem, ListItemButton, ListItemIcon, ListItemText,} from "@mui/material";
 import {menu_items} from "../menu_items.ts";
 import InboxIcon from "@mui/icons-material/Inbox";
 import Box from "@mui/material/Box";

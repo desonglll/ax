@@ -1,20 +1,14 @@
-import {
-  Box,
-  Button,
-  Card,
-  CardActions,
-  CardContent,
-  Typography,
-} from "@mui/material";
-import type { Comment } from "../../models/post";
+import {Box, Button, Card, CardActions, CardContent, Typography,} from "@mui/material";
+import type {Comment} from "../../models/post";
 import ThumbUpAltIcon from "@mui/icons-material/ThumbUpAlt";
 import ThumbDownOffAltIcon from "@mui/icons-material/ThumbDownOffAlt";
 import ThumbDownAltIcon from "@mui/icons-material/ThumbDown";
 import CommentIcon from "@mui/icons-material/Comment";
 import ThumbUpOffAltIcon from "@mui/icons-material/ThumbUpOffAlt";
-import { useEffect, useState } from "react";
+import {useEffect, useState} from "react";
 import getData from "../../utils/data_fetch";
 import axios from "axios";
+
 function PostCommentItem({ comment }: { comment: Comment }) {
   const [like, setLike] = useState<boolean>(false);
   const [dislike, setDislike] = useState<boolean>(false);
