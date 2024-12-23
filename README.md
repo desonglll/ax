@@ -68,92 +68,94 @@ brew install postgresql@16
 brew install redis
 ```
 
-### diesel
-
-```sh
-cargo install diesel_cli --no-default-features --features postgres
-```
-
 ## 🎃 Quick Start
 
-```sh
-git clone git@github.com:desonglll/ax.git && cd ax
-cargo install
-cd backend/query
-export DATABASE_URL=postgres://localhost:5432/hello_rocket
-diesel setup && diesel database reset
-cd ../..
-cargo run
-```
-
-<!-- ## 🥰 Development -->
-
-## Migrations
-
-<!-- https://crates.io/crates/sqlx-cli -->
-
-### Create a .env file
-
 ```shell
-export DATABASE_URL=postgres://localhost:5432/hello_rocket
+# make sure you are in root directory of project.
+cp .env.example .env
+sudo chmod 777 ./scripts/init_db.sh
+./scripts/init_db.sh
 ```
 
-### Run sqlx-cli
+docker run redis service.
 
-```shell
-brew install sqlx-cli
-source .env
+[//]: # (## Migrations)
 
-cd tweet_server
+[//]: # ()
 
-sqlx database create
-sqlx database drop
+[//]: # (<!-- https://crates.io/crates/sqlx-cli -->)
 
-# Creates a new file in `migrations/<timestamp>-<name>.sql`.
-# Add your database schema changes to this new file.
-sqlx migrate add -r <name>
+[//]: # ()
 
-sqlx migrate run
+[//]: # (### Run sqlx-cli)
 
-sqlx migrate info --source ../relative/migrations
+[//]: # ()
 
-sqlx migrate revert
-```
+[//]: # (```shell)
 
-### Start Recommend Model using Machine Learning
+[//]: # (brew install sqlx-cli)
 
-Run this project.
+[//]: # (source .env)
 
-See [ax-recommend-model](https://github.com/desonglll/ax-recommend-model)
+[//]: # ()
 
-### Run server
+[//]: # (cd tweet_server)
 
-```shell
-# Run the server
-cd ax
-cargo run --bin tweet_service
-```
+[//]: # ()
 
-<!-- ### Database Migration
+[//]: # (sqlx database create)
 
-```shell
-# Install Diesel CLI
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/diesel-rs/diesel/releases/download/v2.2.1/diesel_cli-installer.sh | sh
+[//]: # (sqlx database drop)
 
-cd ./backend/query
+[//]: # ()
 
-# Setup Diesel
-diesel setup
+[//]: # (# Creates a new file in `migrations/<timestamp>-<name>.sql`.)
 
-# Redo and run migrations
-# diesel migration redo
-diesel migration run
+[//]: # (# Add your database schema changes to this new file.)
 
-# Run the server
-cargo run
-```
+[//]: # (sqlx migrate add -r <name>)
 
-!!! Run `diesel database reset` before run `cargo test` . -->
+[//]: # ()
+
+[//]: # (sqlx migrate run)
+
+[//]: # ()
+
+[//]: # (sqlx migrate info --source ../relative/migrations)
+
+[//]: # ()
+
+[//]: # (sqlx migrate revert)
+
+[//]: # (```)
+
+[//]: # ()
+
+[//]: # (### Start Recommend Model using Machine Learning)
+
+[//]: # ()
+
+[//]: # (Run this project.)
+
+[//]: # ()
+
+[//]: # (See [ax-recommend-model]&#40;https://github.com/desonglll/ax-recommend-model&#41;)
+
+[//]: # ()
+
+[//]: # (### Run server)
+
+[//]: # ()
+
+[//]: # (```shell)
+
+[//]: # (# Run the server)
+
+[//]: # (cd ax)
+
+[//]: # (cargo run --bin tweet_service)
+
+[//]: # (```)
 
 ## 🔧 Compile Release Version
 
@@ -161,33 +163,47 @@ cargo run
 cargo build --release
 ```
 
-### Installation
+[//]: # (### Installation)
 
-```shell
-cargo install --path .
-```
+[//]: # ()
 
-### 🚀 Running the Binary
+[//]: # (```shell)
 
-Set the environment variable:
+[//]: # (cargo install --path .)
 
-```shell
-export DATABASE_URL=postgres://@localhost/hello_rocket
-```
+[//]: # (```)
 
-Alternatively, update the `.env` file in the project root.
+[//]: # ()
 
-### Reset Database
+[//]: # (### 🚀 Running the Binary)
 
-```shell
-diesel database reset
-```
+[//]: # ()
 
-### Run
+[//]: # (Set the environment variable:)
 
-```shell
-ax
-```
+[//]: # ()
+
+[//]: # (```shell)
+
+[//]: # (export DATABASE_URL=postgres://@localhost/hello_rocket)
+
+[//]: # (```)
+
+[//]: # ()
+
+[//]: # (Alternatively, update the `.env` file in the project root.)
+
+[//]: # ()
+
+[//]: # (### Run)
+
+[//]: # ()
+
+[//]: # (```shell)
+
+[//]: # (ax)
+
+[//]: # (```)
 
 ## Design
 

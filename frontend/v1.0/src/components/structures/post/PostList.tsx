@@ -1,5 +1,5 @@
 import Box from "@mui/material/Box";
-import {CircularProgress, Fab, Fade, Grow, List, ListItem,} from "@mui/material";
+import {CircularProgress, Fab, Fade, List, ListItem,} from "@mui/material";
 import PostListItem from "./PostListItem.tsx";
 import type {Post} from "../../../models/post.ts";
 import {useEffect, useState} from "react";
@@ -100,17 +100,18 @@ export default function PostList() {
                             }}
                         >
                             <List sx={{width: "100%"}}>
-                                {posts.map((post, index) => (
-                                    <Grow
-                                        key={post.id}
-                                        in={!isLoading}
-                                        style={{transformOrigin: "0 0 0"}}
-                                        timeout={(index + 1) * 500} // 每个组件的延迟时间增加1000ms
-                                    >
-                                        <ListItem key={post.id} sx={{justifyContent: "center"}}>
-                                            <PostListItem post={post} reactions={reactions}/>
-                                        </ListItem>
-                                    </Grow>
+                                {/* eslint-disable-next-line @typescript-eslint/no-unused-vars */}
+                                {posts.map((post, _index) => (
+                                    // <Grow
+                                    //     key={post.id}
+                                    //     in={!isLoading}
+                                    //     style={{transformOrigin: "0 0 0"}}
+                                    //     timeout={(index + 1) * 500} // 每个组件的延迟时间增加1000ms
+                                    // >
+                                    <ListItem key={post.id} sx={{justifyContent: "center"}}>
+                                        <PostListItem post={post} reactions={reactions}/>
+                                    </ListItem>
+                                    // </Grow>
                                 ))}
                             </List>
 
