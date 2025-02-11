@@ -2,18 +2,18 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 
 use actix_cors::Cors;
-use actix_session::SessionMiddleware;
 use actix_session::storage::RedisSessionStore;
-use actix_web::{App, HttpServer};
+use actix_session::SessionMiddleware;
 use actix_web::cookie::Key;
 use actix_web::middleware::Logger;
 use actix_web::web::{self, PayloadConfig};
+use actix_web::{App, HttpServer};
 use dotenv::dotenv;
 
-use tweet_server::{init_tracing, preload};
 use tweet_server::libraries::dbop::get_db_pool;
 use tweet_server::routes::general::{api_routes, get_stats};
 use tweet_server::state::AppState;
+use tweet_server::{init_tracing, preload};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -60,9 +60,9 @@ async fn main() -> std::io::Result<()> {
             .route("/stats", web::get().to(get_stats))
         // 将最大负载大小设置为 300MB
     })
-        .client_request_timeout(std::time::Duration::from_secs(60)) // 设置请求超时为 60 秒
-        .keep_alive(std::time::Duration::from_secs(75)) // 设置连接保活时间为 75 秒
-        .bind(("0.0.0.0", 8000))?
-        .run()
-        .await
+    .client_request_timeout(std::time::Duration::from_secs(60)) // 设置请求超时为 60 秒
+    .keep_alive(std::time::Duration::from_secs(75)) // 设置连接保活时间为 75 秒
+    .bind(("0.0.0.0", 8000))?
+    .run()
+    .await
 }

@@ -1,5 +1,10 @@
-use actix_web::{HttpResponse, web};
+use actix_web::{web, HttpResponse};
 
+use crate::handlers::comment::{delete_comment, get_comment_by_query, insert_comment};
+use crate::handlers::post::get_trending_posts;
+use crate::handlers::reaction::{
+    get_reactions_by_query, get_single_reaction_table_by_query, insert_dislike_reaction,
+};
 use crate::handlers::{
     auth::{index, login, logout},
     file::{
@@ -12,11 +17,6 @@ use crate::handlers::{
         delete_user, get_user_detail, get_user_list, get_user_profile, post_new_user,
         update_user_details,
     },
-};
-use crate::handlers::comment::{delete_comment, get_comment_by_query, insert_comment};
-use crate::handlers::post::get_trending_posts;
-use crate::handlers::reaction::{
-    get_reactions_by_query, get_single_reaction_table_by_query, insert_dislike_reaction,
 };
 use crate::state::{AppState, AppStateResponse};
 
