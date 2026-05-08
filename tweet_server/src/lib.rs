@@ -1,6 +1,6 @@
 // use libraries::mkdir::make_directory;
 
-use clap::{arg, command, Parser};
+use clap::Parser;
 
 use libraries::mkdir::make_directory;
 
