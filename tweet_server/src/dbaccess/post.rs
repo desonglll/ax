@@ -5,7 +5,7 @@ use sqlx::PgPool;
 
 use crate::{
     errors::AxError,
-    libraries::resp::pagination::{Pagination, PaginationBuilder},
+    extractors::response_pagination::{Pagination, PaginationBuilder},
     models::post::{CreatePost, Post, UpdatePost},
 };
 

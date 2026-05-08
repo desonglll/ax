@@ -18,10 +18,8 @@ use crate::{
     state::AppState,
 };
 
-use super::{
-    log::Log,
-    resp::{api_response::ApiResponse, data::DataBuilder},
-};
+use crate::extractors::{api_response::ApiResponse, data::DataBuilder};
+use crate::infra::log::Log;
 
 static LAST_LOGGED_SIZE_MB: AtomicUsize = AtomicUsize::new(0);
 
@@ -249,7 +247,7 @@ async fn process_text_field(field: &mut Field) -> String {
 ///
 /// # 示例
 /// ```
-/// use tweet_server::libraries::fileop::get_base_url;
+/// use tweet_server::handlers::file_ops::get_base_url;
 /// let base_url = get_base_url();
 /// println!("Base URL: {}", base_url);
 /// ```
@@ -274,7 +272,7 @@ pub fn get_base_url() -> String {
 ///
 /// # 示例
 /// ```
-/// use tweet_server::libraries::fileop::get_path;
+/// use tweet_server::handlers::file_ops::get_path;
 /// let path = get_path("example.txt".to_string());
 /// println!("File Path: {}", path);
 /// ```

@@ -3,7 +3,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::libraries::hash::Hash;
+use crate::infra::hash::Hash;
 
 /// 用户数据模型
 ///
@@ -89,4 +89,12 @@ impl User {
             last_login: Some(Utc::now().to_utc()),
         }
     }
+}
+
+/// 用户登录请求
+#[derive(Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct LoginRequest {
+    pub user_name: String,
+    pub password: String,
 }

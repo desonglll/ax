@@ -1,8 +1,8 @@
 use actix_web::web;
 
 use crate::errors::AxError;
-use crate::services::features::user::get_user_features;
-use crate::services::ml::predict::predict;
+use crate::services::features::get_user_features;
+use crate::services::ml_predict::predict;
 use crate::state::AppState;
 
 /// 推荐推文

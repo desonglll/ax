@@ -3,7 +3,7 @@ use uuid::Uuid;
 
 use crate::{
     errors::AxError,
-    libraries::hash::Hash,
+    infra::hash::Hash,
     models::user::{CreateUser, UpdateUser, User},
 };
 

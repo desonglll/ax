@@ -5,7 +5,7 @@ use sqlx::PgPool;
 
 use crate::{
     errors::AxError,
-    libraries::log::Log,
+    infra::log::Log,
     models::reaction::{CreateReaction, Reaction, ReactionResponseTable},
 };
 

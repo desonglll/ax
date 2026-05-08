@@ -1,3 +1,3 @@
 pub mod features;
-pub mod ml;
+pub mod ml_predict;
 pub mod recommend;

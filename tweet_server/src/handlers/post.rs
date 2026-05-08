@@ -6,11 +6,11 @@ use actix_web::{web, HttpResponse};
 use crate::dbaccess::post::*;
 use crate::errors::AxError;
 use crate::handlers::auth::login_in_unauthentic;
-use crate::libraries::resp::api_response::ApiResponse;
-use crate::libraries::resp::data::{DataBuilder, PostListDataBuilder};
-use crate::libraries::session::SessionOperation;
+use crate::extractors::api_response::ApiResponse;
+use crate::extractors::data::{DataBuilder, PostListDataBuilder};
+use crate::extractors::session::SessionOperation;
 use crate::models::post::{CreatePost, UpdatePost};
-use crate::services::recommend::post::recommend_posts;
+use crate::services::recommend::recommend_posts;
 use crate::state::AppState;
 
 // Create
@@ -349,7 +349,7 @@ mod tests {
             .unwrap();
         assert_eq!(&new_post_msg.content, &result.content);
         let parameters: web::Path<(i32,)> = web::Path::from((result.id,));
-        let resp = get_post_detail(session, app_state.clone(), parameters).await;
+        let resp = get_post_detail(app_state.clone(), parameters).await;
         match resp {
             Ok(_) => println!("Something wrong"),
             Err(err) => assert_eq!(err.status_code(), StatusCode::NOT_FOUND),
@@ -373,7 +373,7 @@ mod tests {
         query_map.insert("limit".to_string(), "5".to_string());
         query_map.insert("offset".to_string(), "0".to_string());
         let query = Some(web::Query(query_map));
-        let resp = get_post_list(session, app_state, query).await.unwrap();
+        let resp = get_post_list(app_state, query).await.unwrap();
         assert_eq!(resp.status(), StatusCode::OK);
     }
 }

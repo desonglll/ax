@@ -2,7 +2,7 @@ use actix_session::Session;
 
 use crate::{errors::AxError, models::user::User};
 
-use super::log::Log;
+use crate::infra::log::Log;
 
 /// Session 操作工具结构体
 ///

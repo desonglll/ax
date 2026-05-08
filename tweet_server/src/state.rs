@@ -4,7 +4,7 @@ use actix_web::web;
 use serde::Serialize;
 use sqlx::PgPool;
 
-use crate::libraries::dbop::get_db_pool;
+use crate::infra::db::get_db_pool;
 
 /// 应用全局状态
 ///

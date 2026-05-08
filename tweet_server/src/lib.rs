@@ -1,13 +1,14 @@
-// use libraries::mkdir::make_directory;
+// use infra::mkdir::make_directory;
 
 use clap::Parser;
 
-use libraries::mkdir::make_directory;
+use infra::mkdir::make_directory;
 
 pub mod dbaccess;
 pub mod errors;
+pub mod extractors;
 pub mod handlers;
-pub mod libraries;
+pub mod infra;
 pub mod models;
 pub mod routes;
 pub mod services;

@@ -3,19 +3,17 @@ use actix_web::{web, HttpResponse, Responder};
 use chrono::{Local, Timelike};
 use serde_json::{json, Value};
 
-use crate::libraries::session::is_active;
+use crate::extractors::session::is_active;
 use crate::{
     dbaccess::user::{check_password_correct_db, get_user_detail_by_name_db},
     errors::AxError,
-    libraries::{
-        log::Log,
-        resp::{
-            api_response::ApiResponse,
-            data::{Data, DataBuilder},
-        },
+    extractors::{
+        api_response::ApiResponse,
+        data::{Data, DataBuilder},
         session::insert_user_to_redis,
     },
-    models::{auth::LoginRequest, user::User},
+    infra::log::Log,
+    models::user::{LoginRequest, User},
     state::AppState,
 };
 
@@ -230,7 +228,7 @@ mod tests {
 
     use crate::{
         handlers::auth::{check_login, index, login, logout},
-        models::auth::LoginRequest,
+        models::user::LoginRequest,
         state::get_demo_state,
     };
 

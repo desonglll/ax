@@ -7,8 +7,8 @@ use crate::dbaccess::comment::{
     delete_comment_by_id_db, get_comment_by_query_db, insert_comment_db,
 };
 use crate::handlers::auth::login_in_unauthentic;
-use crate::libraries::resp::api_response::ApiResponse;
-use crate::libraries::resp::data::DataBuilder;
+use crate::extractors::api_response::ApiResponse;
+use crate::extractors::data::DataBuilder;
 use crate::{errors::AxError, models::comment::CreateComment, state::AppState};
 
 /*
@@ -187,7 +187,7 @@ mod tests {
         query.insert("commentId".to_string(), comment_id.to_string());
 
         // Test get comment by id.
-        let get_resp = get_comment_by_query(session.clone(), app_state.clone(), Query(query))
+        let get_resp = get_comment_by_query(app_state.clone(), Query(query))
             .await
             .unwrap();
         let get_body_json: Value = http_response_to_json(get_resp).await;

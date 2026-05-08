@@ -3,7 +3,7 @@ use serde::Deserialize;
 use serde_json::json;
 
 use crate::errors::AxError;
-use crate::services::features::user::UserFeatures;
+use crate::services::features::UserFeatures;
 
 /// 调用 ML 模型进行推荐预测
 ///
@@ -46,7 +46,7 @@ struct ModelApiResponse {
 
 #[cfg(test)]
 mod tests {
-    use crate::services::features::user::UserFeatures;
+    use crate::services::features::UserFeatures;
 
     use super::*;
 

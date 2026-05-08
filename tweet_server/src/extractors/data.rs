@@ -2,7 +2,7 @@ use serde::Serialize;
 
 use crate::models::reaction::Reaction;
 
-use super::pagination::Pagination;
+use super::response_pagination::Pagination;
 
 /// 通用响应体数据结构
 ///
