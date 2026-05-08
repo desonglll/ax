@@ -1,19 +1,28 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
+import { ConfigProvider, App as AntApp } from "antd";
+import { AuthProvider } from "./contexts/AuthContext.tsx";
 import App from "./App.tsx";
 import "./index.css";
-import axios from "axios";
-import "bootstrap/dist/css/bootstrap.css";
-import "bootstrap/dist/js/bootstrap.bundle.min.js";
 
-const host = window.location.hostname;
-axios.defaults.withCredentials = true;
-console.log(host);
-
-axios.defaults.baseURL = `http://${host}:8000/api`;
-// biome-ignore lint/style/noNonNullAssertion: <explanation>
 ReactDOM.createRoot(document.getElementById("root")!).render(
-    <React.StrictMode>
-        <App/>
-    </React.StrictMode>
+  <React.StrictMode>
+    <ConfigProvider
+      theme={{
+        token: {
+          colorPrimary: "#1677ff",
+          borderRadius: 6,
+        },
+      }}
+    >
+      <AntApp>
+        <BrowserRouter>
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+        </BrowserRouter>
+      </AntApp>
+    </ConfigProvider>
+  </React.StrictMode>,
 );

@@ -20,6 +20,17 @@ pub struct ApiResponse<T> {
 }
 
 impl<T: Default> ApiResponse<T> {
+    /// 创建新的 API 响应实例
+    ///
+    /// # 参数
+    ///
+    /// - `code`: 响应状态码
+    /// - `message`: 响应消息
+    /// - `body`: 可选的响应体
+    ///
+    /// # 返回值
+    ///
+    /// 返回新的 [`ApiResponse`] 实例。
     pub fn new(code: u16, message: String, body: Option<T>) -> Self {
         Self {
             code,
@@ -28,6 +39,16 @@ impl<T: Default> ApiResponse<T> {
         }
     }
 
+    /// 创建成功的 API 响应（状态码 200）
+    ///
+    /// # 参数
+    ///
+    /// - `message`: 响应消息
+    /// - `body`: 可选的响应体
+    ///
+    /// # 返回值
+    ///
+    /// 返回状态码为 200 的 [`ApiResponse`] 实例。
     pub fn success(message: String, body: Option<T>) -> Self {
         Self {
             code: 200,

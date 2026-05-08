@@ -1,15 +1,12 @@
-import {Route, Routes} from "react-router-dom";
-import {AxSkeleton} from "../components/common/skeleton/AxSkeleton.tsx";
-import UserPage from "../pages/UserPage.tsx";
+import { Routes, Route } from "react-router-dom";
+import UserPage from "@/pages/UserPage";
 
-export function UserRoutes() {
+function UserRoutes() {
   return (
-    <>
-      <AxSkeleton>
-        <Routes>
-          <Route path={"profile"} element={<UserPage />} />
-        </Routes>
-      </AxSkeleton>
-    </>
+    <Routes>
+      <Route index element={<UserPage />} />
+    </Routes>
   );
 }
+
+export default UserRoutes;

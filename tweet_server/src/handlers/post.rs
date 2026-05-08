@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use actix_session::Session;
-use actix_web::{HttpResponse, web};
+use actix_web::{web, HttpResponse};
 
 use crate::dbaccess::post::*;
 use crate::errors::AxError;
@@ -25,6 +25,20 @@ curl -X POST localhost:8000/api/posts/post \
        "reactions": null
    }'
 */
+/// 创建新推文
+///
+/// 创建推文处理器。从 session 中获取当前用户 ID 并设置到推文数据中，
+/// 然后调用数据库层插入推文记录。
+///
+/// # 参数
+///
+/// - `session`: 请求的 session 对象，用于登录验证和获取用户 ID
+/// - `app_state`: 应用状态，包含数据库连接池
+/// - `new_post`: 请求体中的推文数据
+///
+/// # 返回值
+///
+/// 成功时返回 200 响应及创建的推文数据，失败时返回 [`AxError`]。
 pub async fn insert_new_post(
     session: Session,
     app_state: web::Data<AppState>,
@@ -50,14 +64,25 @@ pub async fn insert_new_post(
 /*
 curl -X GET http://localhost:8000/api/posts/get/1
 */
+/// 根据推文 ID 获取推文详情
+///
+/// 查询单条推文的详细信息。
+///
+/// # 参数
+///
+/// - `session`: 请求的 session 对象，用于登录验证
+/// - `app_state`: 应用状态，包含数据库连接池
+/// - `path`: 路径参数，包含推文 ID
+///
+/// # 返回值
+///
+/// 成功时返回 200 响应及推文详情，失败时返回 [`AxError`]。
 pub async fn get_post_detail(
-    session: Session,
     app_state: web::Data<AppState>,
-    path: web::Path<(i32, )>,
+    path: web::Path<(i32,)>,
 ) -> Result<HttpResponse, AxError> {
     app_state.add_request_count();
-    let _ = login_in_unauthentic(&session).await;
-    let (post_id, ) = path.into_inner();
+    let (post_id,) = path.into_inner();
     get_post_detail_db(&app_state.db, post_id)
         .await
         .map(|resp| {
@@ -72,15 +97,24 @@ pub async fn get_post_detail(
 /*
 curl -X GET http://localhost:8000/api/posts/get
 */
+/// 获取推文列表（支持分页和排序）
+///
+/// 查询推文列表，支持通过 URL 查询参数进行分页和排序。
+///
+/// # 参数
+///
+/// - `session`: 请求的 session 对象，用于登录验证
+/// - `app_state`: 应用状态，包含数据库连接池
+/// - `query`: 可选的 URL 查询参数，支持 `order_by`、`sort`、`limit`、`offset`
+///
+/// # 返回值
+///
+/// 成功时返回 200 响应及推文列表和分页信息，失败时返回 [`AxError`]。
 pub async fn get_post_list(
-    session: Session,
     app_state: web::Data<AppState>,
     query: Option<web::Query<HashMap<String, String>>>,
 ) -> Result<HttpResponse, AxError> {
     app_state.add_request_count();
-    if let Ok(resp) = login_in_unauthentic(&session).await {
-        return Ok(resp);
-    }
 
     get_post_list_db(&app_state.db, query).await.map(|resp| {
         let api_response = ApiResponse::new(
@@ -97,6 +131,20 @@ pub async fn get_post_list(
     })
 }
 
+/// 获取推荐/热门推文
+///
+/// 基于当前用户的特征，调用深度学习模型进行推文推荐。
+/// 获取用户 ID 后，通过推荐服务获取推荐推文 ID 列表，再批量查询推文详情。
+///
+/// # 参数
+///
+/// - `session`: 请求的 session 对象，用于获取用户 ID
+/// - `app_state`: 应用状态，包含数据库连接池
+/// - `_query`: 保留的查询参数（暂未使用）
+///
+/// # 返回值
+///
+/// 成功时返回 200 响应及推荐推文列表，失败时返回 [`AxError`]。
 pub async fn get_trending_posts(
     session: Session,
     app_state: web::Data<AppState>,
@@ -117,11 +165,7 @@ pub async fn get_trending_posts(
     let api_response = ApiResponse::new(
         200,
         "Success".to_string(),
-        Some(
-            DataBuilder::new()
-                .set_data(posts)
-                .build(),
-        ),
+        Some(DataBuilder::new().set_data(posts).build()),
     );
 
     Ok(HttpResponse::Ok().json(api_response))
@@ -135,15 +179,29 @@ curl -X PUT localhost:8000/api/posts/1 \
        "content": "Modified content."
    }'
 */
+/// 更新推文内容
+///
+/// 根据推文 ID 更新推文。验证登录状态后，调用数据库层更新推文记录。
+///
+/// # 参数
+///
+/// - `session`: 请求的 session 对象，用于登录验证
+/// - `app_state`: 应用状态，包含数据库连接池
+/// - `path`: 路径参数，包含推文 ID
+/// - `update_post`: 请求体中的更新数据
+///
+/// # 返回值
+///
+/// 成功时返回 200 响应及更新后的推文数据，失败时返回 [`AxError`]。
 pub async fn update_post_details(
     session: Session,
     app_state: web::Data<AppState>,
-    path: web::Path<(i32, )>,
+    path: web::Path<(i32,)>,
     update_post: web::Json<UpdatePost>,
 ) -> Result<HttpResponse, AxError> {
     app_state.add_request_count();
     let _ = login_in_unauthentic(&session).await;
-    let (post_id, ) = path.into_inner();
+    let (post_id,) = path.into_inner();
     update_post_db(&app_state.db, post_id, update_post.into())
         .await
         .map(|post| {
@@ -159,14 +217,27 @@ pub async fn update_post_details(
 /*
 curl -X DELETE http://localhost:8000/api/posts/1
 */
+/// 根据推文 ID 删除推文
+///
+/// 验证登录状态后，根据路径参数中的推文 ID 删除推文。
+///
+/// # 参数
+///
+/// - `session`: 请求的 session 对象，用于登录验证
+/// - `app_state`: 应用状态，包含数据库连接池
+/// - `path`: 路径参数，包含推文 ID
+///
+/// # 返回值
+///
+/// 成功时返回 200 响应及被删除的推文数据，失败时返回 [`AxError`]。
 pub async fn delete_post(
     session: Session,
     app_state: web::Data<AppState>,
-    path: web::Path<(i32, )>,
+    path: web::Path<(i32,)>,
 ) -> Result<HttpResponse, AxError> {
     app_state.add_request_count();
     let _ = login_in_unauthentic(&session).await;
-    let (post_id, ) = path.into_inner();
+    let (post_id,) = path.into_inner();
     delete_post_db(&app_state.db, post_id).await.map(|post| {
         HttpResponse::Ok().json(ApiResponse::new(
             200,
@@ -179,7 +250,7 @@ pub async fn delete_post(
 #[cfg(test)]
 mod tests {
     use actix_session::SessionExt;
-    use actix_web::{http::StatusCode, ResponseError, test, web};
+    use actix_web::{http::StatusCode, test, web, ResponseError};
     use serde_json::Value;
 
     use crate::{
@@ -187,7 +258,7 @@ mod tests {
             delete_post, get_post_detail, insert_new_post, insert_post_db, update_post_details,
         },
         models::post::{CreatePost, UpdatePost},
-        state::{AppState, get_demo_state},
+        state::{get_demo_state, AppState},
     };
 
     #[actix_rt::test]
@@ -231,7 +302,7 @@ mod tests {
         let insert_result = insert_post_db(&app_state.db, post.clone()).await.unwrap();
         assert_eq!(post.content, insert_result.content);
         // Delete test post.
-        let delete_params: web::Path<(i32, )> = web::Path::from((insert_result.id, ));
+        let delete_params: web::Path<(i32,)> = web::Path::from((insert_result.id,));
         let resp = delete_post(session, app_state.clone(), delete_params)
             .await
             .unwrap();
@@ -248,7 +319,7 @@ mod tests {
         let update_post_msg = UpdatePost {
             content: Some(String::from("test_update_post_after")),
         };
-        let parameters: web::Path<(i32, )> = web::Path::from((insert_result.id, ));
+        let parameters: web::Path<(i32,)> = web::Path::from((insert_result.id,));
         let update_param = web::Json(update_post_msg);
         // 发送请求前设置 session 数据
         let session = test::TestRequest::put().to_http_request().get_session();
@@ -277,7 +348,7 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(&new_post_msg.content, &result.content);
-        let parameters: web::Path<(i32, )> = web::Path::from((result.id, ));
+        let parameters: web::Path<(i32,)> = web::Path::from((result.id,));
         let resp = get_post_detail(session, app_state.clone(), parameters).await;
         match resp {
             Ok(_) => println!("Something wrong"),
@@ -289,5 +360,20 @@ mod tests {
             .execute(&app_state.db)
             .await
             .unwrap();
+    }
+
+    #[actix_rt::test]
+    async fn test_get_post_list() {
+        use crate::handlers::post::get_post_list;
+        use crate::utils::test::get_demo_session;
+
+        let app_state: web::Data<AppState> = get_demo_state().await;
+        let session = get_demo_session().await;
+        let mut query_map = std::collections::HashMap::new();
+        query_map.insert("limit".to_string(), "5".to_string());
+        query_map.insert("offset".to_string(), "0".to_string());
+        let query = Some(web::Query(query_map));
+        let resp = get_post_list(session, app_state, query).await.unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
     }
 }

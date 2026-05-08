@@ -5,9 +5,22 @@ use serde_json::json;
 use crate::errors::AxError;
 use crate::services::features::user::UserFeatures;
 
+/// 调用 ML 模型进行推荐预测
+///
+/// 将用户特征数据发送到本地预测服务（`http://127.0.0.1:8001/predict`），
+/// 获取推荐的推文 ID 列表。
+///
+/// # 参数
+///
+/// - `user_features`: 用户特征数据
+///
+/// # 返回值
+///
+/// 成功时返回推荐的推文 ID 列表，失败时返回 [`AxError`]。
 pub async fn predict(user_features: UserFeatures) -> Result<Vec<i32>, AxError> {
     let client = Client::builder().no_proxy().build()?;
-    let response = client.post("http://127.0.0.1:8001/predict")
+    let response = client
+        .post("http://127.0.0.1:8001/predict")
         .json(&json!({
             "liked_posts_count": user_features.liked_posts_count,
             "average_comment_count": user_features.average_comment_count,
@@ -30,7 +43,6 @@ struct ModelApiResponse {
     message: String,
     data: Vec<i32>,
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -55,7 +67,10 @@ mod tests {
         match predict(user_features).await {
             Ok(recommended_ids) => {
                 // 测试返回的推荐ID是否有效（假设至少有一个推荐结果）
-                assert!(!recommended_ids.is_empty(), "Recommended IDs list should not be empty");
+                assert!(
+                    !recommended_ids.is_empty(),
+                    "Recommended IDs list should not be empty"
+                );
             }
             Err(e) => {
                 eprintln!("Prediction failed with error: {:?}", e);

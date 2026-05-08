@@ -1,24 +1,17 @@
 export interface ApiResponse<T> {
     code: number;
     message: string;
-    body: Data<T>;
+    body: Data<T> | null;
 }
 
-interface Data<T> {
-    data: T[];
+export interface Data<T> {
+    data: T | T[] | null;
     pagination?: Pagination;
 }
 
-interface Pagination {
-    /// 当前页码
+export interface Pagination {
     page: number;
-
-    /// 每页的条目数
     per_page: number;
-
-    /// 总页数
     total_pages: number;
-
-    /// 当前页的条目数
     count: number;
 }

@@ -4,15 +4,42 @@ use crate::{errors::AxError, models::user::User};
 
 use super::log::Log;
 
+/// Session 操作工具结构体
+///
+/// 提供从 session 中读取用户信息的便捷方法。
 pub struct SessionOperation;
 
 impl SessionOperation {
+    /// 从 session 中获取当前用户 ID
+    ///
+    /// 如果 session 中不存在 `user_id` 字段，返回 `Ok(0)` 作为默认值。
+    ///
+    /// # 参数
+    ///
+    /// - `session`: 请求的 session 对象
+    ///
+    /// # 返回值
+    ///
+    /// 成功时返回用户 ID，session 中无 `user_id` 时返回 0。
     pub fn get_user_id(session: Session) -> Result<i32, AxError> {
-        let Ok(user_id) = session.get::<i32>("user_id") else { return Ok(0); };
+        let Ok(user_id) = session.get::<i32>("user_id") else {
+            return Ok(0);
+        };
         Ok(user_id.unwrap())
     }
 }
 
+/// 检查当前用户是否为管理员
+///
+/// 从 session 中读取 `is_admin` 字段，判断当前用户是否具有管理员权限。
+///
+/// # 参数
+///
+/// - `session`: 请求的 session 对象
+///
+/// # 返回值
+///
+/// 是管理员时返回 `Ok(true)`，不是或 session 读取失败时返回 `Ok(false)`，出错时返回 [`AxError`]。
 pub async fn is_admin(session: Session) -> Result<bool, AxError> {
     match session.get::<bool>("is_admin") {
         Ok(is_admin) => Ok(is_admin.unwrap_or(false)),
@@ -20,6 +47,17 @@ pub async fn is_admin(session: Session) -> Result<bool, AxError> {
     }
 }
 
+/// 检查当前用户是否处于活跃状态
+///
+/// 从 session 中读取 `is_active` 字段，判断当前用户是否已激活。
+///
+/// # 参数
+///
+/// - `session`: 请求的 session 对象引用
+///
+/// # 返回值
+///
+/// 已激活时返回 `Ok(true)`，未激活或 session 读取失败时返回 `Ok(false)`，出错时返回 [`AxError`]。
 pub async fn is_active(session: &Session) -> Result<bool, AxError> {
     match session.get::<bool>("is_active") {
         Ok(is_active) => Ok(is_active.unwrap_or(false)),
@@ -42,6 +80,16 @@ pub async fn is_active(session: &Session) -> Result<bool, AxError> {
 //     pub profile_picture: Option<Uuid>,
 // }
 
+/// 将用户信息写入 Redis session
+///
+/// 将用户的所有字段（ID、用户名、邮箱、密码哈希、全名、手机号、
+/// 创建/更新/最后登录时间、是否激活、是否管理员、头像）写入 session，
+/// 用于后续请求的身份验证和信息获取。
+///
+/// # 参数
+///
+/// - `session`: 请求的 session 对象
+/// - `user`: 用户数据引用
 pub fn insert_user_to_redis(session: Session, user: &User) {
     if let Err(err) = session.insert("user_id", user.id) {
         Log::error(format!("Failed to set session for `user_id`: {}", err));

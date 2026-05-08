@@ -9,6 +9,19 @@ use crate::{
     models::reaction::{CreateReaction, Reaction, ReactionResponseTable},
 };
 
+/// 插入一条点赞记录
+///
+/// 在 `reactions` 表中插入一条 "Like" 记录。如果该用户之前对同一目标存在 "Dislike" 记录，
+/// 则先删除该 Dislike 记录。使用 `ON CONFLICT` 实现幂等插入（重复点赞会更新时间戳）。
+///
+/// # 参数
+///
+/// - `pool`: PostgreSQL 连接池引用
+/// - `create_reaction`: 待插入的互动数据
+///
+/// # 返回值
+///
+/// 成功时返回插入的 [`Reaction`] 记录，失败时返回 [`AxError`]。
 pub async fn insert_like_reaction_db(
     pool: &PgPool,
     create_reaction: CreateReaction,
@@ -21,7 +34,7 @@ pub async fn insert_like_reaction_db(
         String::from("Dislike"),
         create_reaction.to_type.clone(),
     )
-        .await
+    .await
     {
         Log::info(String::from("existed_dislike, deleting..."));
         let _ = delete_reaction_by_id_db(pool, existed_dislike.id).await;
@@ -38,6 +51,19 @@ pub async fn insert_like_reaction_db(
     Ok(reaction_row)
 }
 
+/// 插入一条点踩记录
+///
+/// 在 `reactions` 表中插入一条 "Dislike" 记录。如果该用户之前对同一目标存在 "Like" 记录，
+/// 则先删除该 Like 记录。使用 `ON CONFLICT` 实现幂等插入。
+///
+/// # 参数
+///
+/// - `pool`: PostgreSQL 连接池引用
+/// - `create_reaction`: 待插入的互动数据
+///
+/// # 返回值
+///
+/// 成功时返回插入的 [`Reaction`] 记录，失败时返回 [`AxError`]。
 pub async fn insert_dislike_reaction_db(
     pool: &PgPool,
     create_reaction: CreateReaction,
@@ -49,7 +75,7 @@ pub async fn insert_dislike_reaction_db(
         String::from("Like"),
         create_reaction.to_type.clone(),
     )
-        .await
+    .await
     {
         let _ = delete_reaction_by_id_db(pool, existed_like.id).await;
     }
@@ -66,6 +92,18 @@ pub async fn insert_dislike_reaction_db(
     Ok(reaction_row)
 }
 
+/// 根据 ID 从数据库删除互动记录
+///
+/// 从 `reactions` 表中删除指定 ID 的互动记录，返回被删除的记录。
+///
+/// # 参数
+///
+/// - `pool`: PostgreSQL 连接池引用
+/// - `id`: 待删除互动记录的 ID
+///
+/// # 返回值
+///
+/// 成功时返回被删除的 [`Reaction`] 记录，失败时返回 [`sqlx::Error`]。
 pub async fn delete_reaction_by_id_db(pool: &PgPool, id: i32) -> Result<Reaction, sqlx::Error> {
     println!("{:?}", id);
     sqlx::query_as!(
@@ -75,7 +113,21 @@ pub async fn delete_reaction_by_id_db(pool: &PgPool, id: i32) -> Result<Reaction
     ).fetch_one(pool).await
 }
 
-
+/// 检查指定互动记录是否已存在
+///
+/// 在 `reactions` 表中查询是否存在匹配指定条件的记录，用于在插入相反类型的互动时先删除旧记录。
+///
+/// # 参数
+///
+/// - `pool`: PostgreSQL 连接池引用
+/// - `to_id`: 互动目标 ID
+/// - `user_id`: 用户 ID
+/// - `reaction_name`: 互动类型名称（如 "Like" 或 "Dislike"）
+/// - `to_type`: 互动目标类型（如 "post" 或 "comment"）
+///
+/// # 返回值
+///
+/// 成功时返回匹配的 [`Reaction`] 记录，失败时返回 [`sqlx::Error`]。
 pub async fn is_reaction_record_exists_db(
     pool: &PgPool,
     to_id: i32,
@@ -95,6 +147,18 @@ pub async fn is_reaction_record_exists_db(
         .await
 }
 
+/// 根据查询参数获取互动统计表
+///
+/// 查询指定目标的点赞和点踩数量，返回统计结果。
+///
+/// # 参数
+///
+/// - `pool`: PostgreSQL 连接池引用
+/// - `query`: URL 查询参数，支持 `toId` 字段
+///
+/// # 返回值
+///
+/// 成功时返回 [`ReactionResponseTable`]（包含 like 和 dislike 计数），失败时返回 [`AxError`]。
 pub async fn get_reaction_table_by_query_db(
     pool: &PgPool,
     query: Query<HashMap<String, String>>,
@@ -105,21 +169,34 @@ pub async fn get_reaction_table_by_query_db(
         to_id,
         "Like"
     )
-        .fetch_one(pool)
-        .await?;
+    .fetch_one(pool)
+    .await?;
     let dislike_count = sqlx::query_scalar!(
         "select count(*) from reactions where to_id = $1 and reaction_name = $2",
         to_id,
         "Dislike"
     )
-        .fetch_one(pool)
-        .await?;
+    .fetch_one(pool)
+    .await?;
     Ok(ReactionResponseTable {
         like: like_count.unwrap_or(0),
         dislike: dislike_count.unwrap_or(0),
     })
 }
 
+/// 根据查询参数获取互动记录列表
+///
+/// 支持按 ID、目标 ID、目标类型、用户 ID、互动类型进行筛选。
+/// 未指定条件的参数将被忽略。
+///
+/// # 参数
+///
+/// - `pool`: PostgreSQL 连接池引用
+/// - `query`: URL 查询参数，支持 `id`、`toId`、`toType`、`userId`、`reactionName` 字段
+///
+/// # 返回值
+///
+/// 成功时返回匹配的 [`Vec<Reaction>`] 列表，失败时返回 [`AxError`]。
 pub async fn get_reactions_by_query_db(
     pool: &PgPool,
     query: Query<HashMap<String, String>>,

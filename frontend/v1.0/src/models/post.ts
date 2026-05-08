@@ -4,10 +4,9 @@ export interface Post {
     createdAt: string;
     updatedAt: string;
     userId: number;
+    replyTo: number | null;
     userName: string;
-    replyTo?: number;
-    likeCount: number,
-    dislikeCount: number
-
+    likeCount: number | null;
+    dislikeCount: number | null;
+    engagementRate: number | null;
 }
-

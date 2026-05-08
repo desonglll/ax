@@ -1,21 +1,7 @@
-import {Box} from "@mui/joy";
-import SignIn from "../components/structures/auth/SignIn.tsx";
+import SignIn from "@/components/structures/auth/SignIn";
 
 function SignInPage() {
-  return (
-    <>
-      <Box
-        sx={{
-          height: "100vh",
-          display: "flex",
-          justifyContent: "center", // 水平方向居中
-          alignItems: "center",
-        }}
-      >
-        <SignIn />
-      </Box>
-    </>
-  );
+  return <SignIn />;
 }
 
 export default SignInPage;

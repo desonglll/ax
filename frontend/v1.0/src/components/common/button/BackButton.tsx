@@ -1,15 +1,13 @@
-import {Button} from "@mui/joy";
-import {useNavigate} from "react-router-dom";
+import { Button } from "antd";
+import { ArrowLeftOutlined } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
 
 function BackButton() {
   const navigate = useNavigate();
-  const handleBack = () => {
-    navigate(-1);
-  };
   return (
-    <>
-      <Button onClick={() => handleBack()}>Back</Button>
-    </>
+    <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>
+      Back
+    </Button>
   );
 }
 

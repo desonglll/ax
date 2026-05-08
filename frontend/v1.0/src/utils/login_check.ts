@@ -1,16 +1,12 @@
-import axios from "axios";
-import {AxiosEndpoint} from "../config/endpoints/axios_endpoint.ts";
+import { AxiosEndpoint } from "@/config/endpoints/axios_endpoint";
+import getData from "@/utils/data_fetch";
 
 const loginCheck = async () => {
   try {
-    const resp = await axios.get(AxiosEndpoint.LoginCheck);
-    if (resp.data.code === 200) {
-      return true;
-    }
+    const data = await getData(AxiosEndpoint.LoginCheck);
+    return data?.code === 200;
+  } catch {
     return false;
-  } catch (error) {
-    console.error("Error fetching data:", error);
-    throw error; // 可以选择抛出错误以便在调用时处理
   }
 };
 

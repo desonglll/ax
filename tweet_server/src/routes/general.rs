@@ -20,6 +20,17 @@ use crate::handlers::{
 };
 use crate::state::{AppState, AppStateResponse};
 
+/// 获取应用状态统计信息
+///
+/// 返回请求计数和各路由的响应时间记录。
+///
+/// # 参数
+///
+/// - `app_state`: 应用状态
+///
+/// # 返回值
+///
+/// 返回包含 `request_count` 和 `response_times` 的 JSON 响应。
 pub async fn get_stats(app_state: web::Data<AppState>) -> HttpResponse {
     let request_count = *app_state.request_count.lock().unwrap();
     let response_times = app_state.response_times.lock().unwrap().clone();
@@ -32,34 +43,36 @@ pub async fn get_stats(app_state: web::Data<AppState>) -> HttpResponse {
     HttpResponse::Ok().json(stats)
 }
 
+/// 配置用户相关路由
+///
+/// 在 `/users` scope 下注册用户 CRUD 路由。
 pub fn user_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/users")
-            // 新增用户
             .route("/post", web::post().to(post_new_user))
-            // 获取用户列表
             .route("/get", web::get().to(get_user_list))
-            // 获取用户详情
             .route("/get/{user_id}", web::get().to(get_user_detail))
-            // 根据用户id删除用户
             .route("/delete/{user_id}", web::delete().to(delete_user))
-            // 更新用户
             .route("/put/{user_id}", web::put().to(update_user_details))
             .route("/profile", web::get().to(get_user_profile)),
     );
 }
 
+/// 配置认证相关路由
+///
+/// 在 `/auth` scope 下注册登录、登出和登录检查路由。
 pub fn auth_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/auth")
             .route("/login-check", web::get().to(index))
-            // For user login
             .route("/login", web::post().to(login))
-            // For user logout
             .route("/logout", web::post().to(logout)),
     );
 }
 
+/// 配置文件相关路由
+///
+/// 在 `/files` scope 下注册文件上传、下载、流式传输和列表查询路由。
 pub fn file_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/files")
@@ -73,11 +86,13 @@ pub fn file_routes(cfg: &mut web::ServiceConfig) {
     );
 }
 
+/// 配置推文相关路由
+///
+/// 在 `/posts` scope 下注册推文 CRUD 和热门推荐路由。
 pub fn post_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/posts")
             .route("/trending", web::get().to(get_trending_posts))
-            // 新增推文
             .route("/post", web::post().to(insert_new_post))
             .route("/get", web::get().to(get_post_list))
             .route("/delete/{post_id}", web::delete().to(delete_post))
@@ -86,6 +101,9 @@ pub fn post_routes(cfg: &mut web::ServiceConfig) {
     );
 }
 
+/// 配置互动相关路由
+///
+/// 在 `/reactions` scope 下注册点赞、点踩、查询和删除路由。
 pub fn reaction_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/reactions")
@@ -100,6 +118,9 @@ pub fn reaction_routes(cfg: &mut web::ServiceConfig) {
     );
 }
 
+/// 配置评论相关路由
+///
+/// 在 `/comments` scope 下注册评论创建、删除和查询路由。
 pub fn comment_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/comments")
@@ -109,14 +130,16 @@ pub fn comment_routes(cfg: &mut web::ServiceConfig) {
     );
 }
 
-// 添加共同的 /api scope
+/// 配置所有 API 路由
+///
+/// 在 `/api` scope 下注册所有子模块路由（用户、认证、文件、推文、互动、评论）。
 pub fn api_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/api")
-            .configure(user_routes) // 配置用户路由
-            .configure(auth_routes) // 配置认证路由
-            .configure(file_routes) // 配置文件路由
-            .configure(post_routes) // 配置推文路由
+            .configure(user_routes)
+            .configure(auth_routes)
+            .configure(file_routes)
+            .configure(post_routes)
             .configure(reaction_routes)
             .configure(comment_routes),
     );

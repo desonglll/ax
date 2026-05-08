@@ -3,11 +3,6 @@ export interface Reaction {
     userId: number;
     toId: number;
     createdAt: string;
-    reactionName: string;
-    toType: string;
-}
-
-export interface ReactionTable {
-    like: number;
-    dislike: number;
+    reactionName: "like" | "dislike";
+    toType: "post" | "comment";
 }

@@ -3,11 +3,12 @@ export interface File {
     name: string;
     path: string;
     size: number;
-    content_type: string;
-    created_at: string;
-    updated_at: string;
-    user_id: number;
-    description?: string;
+    contentType: string;
+    createdAt: string | null;
+    updatedAt: string | null;
+    userId: number;
+    description: string | null;
     checksum: string;
-    is_deleted: boolean;
+    isDeleted: boolean;
+    isPub: boolean;
 }

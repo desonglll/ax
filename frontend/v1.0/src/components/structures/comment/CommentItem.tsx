@@ -1,43 +1,24 @@
-import {Button, Card, CardActions, CardContent, Typography,} from "@mui/material";
-import {useEffect} from "react";
-import ReactionItem from "../reaction/ReactionItem.tsx";
-import {Comment} from "../../../models/comment.ts";
+import { Typography } from "antd";
+import { UserOutlined } from "@ant-design/icons";
+import type { Comment } from "@/models/comment";
 
-function CommentItem({comment}: { comment: Comment }) {
-    useEffect(() => {
-    }, [comment.id]);
+interface CommentItemProps {
+  comment: Comment;
+}
 
-    return (
-        <>
-            <Card sx={{width: "100%"}}>
-                <CardContent>
-                    <Typography sx={{fontSize: 14}} color="text.secondary" gutterBottom>
-                        {comment.userName}
-                    </Typography>
-                    <Button sx={{color: "black"}}>
-                        <Typography
-                            variant="body1"
-                            sx={{
-                                whiteSpace: "pre-line", // Preserve whitespace and line breaks
-                                textAlign: "left",
-                                overflow: "hidden", // Hide overflowed content
-                                textOverflow: "ellipsis", // Display ellipsis for overflowed content
-                                display: "-webkit-box",
-                                WebkitBoxOrient: "vertical",
-                                WebkitLineClamp: 3, // Number of lines to show before truncating
-                                lineClamp: 3, // Number of lines to show before truncating
-                            }}
-                        >
-                            {comment.content}
-                        </Typography>
-                    </Button>
-                </CardContent>
-                <CardActions sx={{justifyContent: "space-between"}}>
-                    <ReactionItem toId={comment.id} toType="comment"/>
-                </CardActions>
-            </Card>
-        </>
-    );
+function CommentItem({ comment }: CommentItemProps) {
+  return (
+    <div style={{ padding: "8px 0", borderBottom: "1px solid #f0f0f0" }}>
+      <Typography.Text strong>
+        <UserOutlined style={{ marginRight: 4 }} />
+        {comment.userName}
+      </Typography.Text>
+      <Typography.Text type="secondary" style={{ marginLeft: 8 }}>
+        {comment.createdAt}
+      </Typography.Text>
+      <Typography.Paragraph style={{ margin: "4px 0 0" }}>{comment.content}</Typography.Paragraph>
+    </div>
+  );
 }
 
 export default CommentItem;

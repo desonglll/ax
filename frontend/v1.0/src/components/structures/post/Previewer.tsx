@@ -1,27 +1,15 @@
-import {useEffect} from "react";
-import Vditor from "vditor";
-import {Post} from "../../../models/post.ts";
+import { Typography } from "antd";
 
-export function Previewer({post}: { post: Post }) {
-    useEffect(() => {
-        Vditor.preview(
-            document.getElementById("pre") as HTMLDivElement,
-            post.content,
-            {
-                cdn: "https://unpkg.com/vditor@3.10.5",
-                mode:
-                    "light",
-            }
-        ).then(_ => {
-        });
-
-    }, []);
-
-    return (
-        <>
-            <div>
-                <div id="pre"/>
-            </div>
-        </>
-    );
+interface PreviewerProps {
+  content: string;
 }
+
+function Previewer({ content }: PreviewerProps) {
+  return (
+    <div style={{ whiteSpace: "pre-wrap", padding: 16 }}>
+      {content || <Typography.Text type="secondary">Nothing to preview</Typography.Text>}
+    </div>
+  );
+}
+
+export default Previewer;

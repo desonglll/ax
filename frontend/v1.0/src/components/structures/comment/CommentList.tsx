@@ -1,74 +1,97 @@
-import {Textarea} from "@mui/joy";
-import Box from "@mui/material/Box";
-import Button from "@mui/joy/Button";
-import type React from "react";
-import {useEffect, useState} from "react";
-import axios from "axios";
-import type {Comment} from "../../../models/post.ts";
-import getData from "../../../utils/data_fetch.ts";
-import {Fade, List, ListItem} from "@mui/material";
-import CommentItem from "./CommentItem.tsx";
-import {AxiosEndpoint} from "../../../config/endpoints/axios_endpoint.ts";
+import { useEffect, useState } from "react";
+import { Input, Button, List, Spin, Empty, App, Typography } from "antd";
+import { SendOutlined } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
+import { AxiosEndpoint } from "@/config/endpoints/axios_endpoint";
+import getData from "@/utils/data_fetch";
+import { useAuth } from "@/contexts/AuthContext";
+import type { Comment } from "@/models/comment";
+import CommentItem from "./CommentItem";
 
-export function CommentList({reply_to}: { reply_to: number }) {
-    const [comments, setComments] = useState<Comment[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
-    useEffect(() => {
-        getData(`${AxiosEndpoint.GetComment}?replyTo=${reply_to}&replyToType=post`)
-            .then((resp) => {
-                if (resp.data.code === 200) {
-                    setComments(resp.data.body.data);
-                }
-            })
-            .finally(() => {
-                setLoading(false);
-            });
-    }, [reply_to]);
-
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        const formData = new FormData(e.currentTarget);
-        const data = {
-            replyTo: Number(reply_to),
-            content: formData.get("content"),
-            replyToType: "post",
-        };
-        axios.post(`${AxiosEndpoint.CreateComment}`, data).then((resp) => {
-            console.log(resp.data);
-        });
-    };
-    return (
-        <>
-            <Box sx={{width: "80%"}}>
-                <form onSubmit={handleSubmit}>
-                    <Textarea
-                        minRows={4}
-                        size="md"
-                        variant="outlined"
-                        placeholder={"Leave your comment!"}
-                        name={"content"}
-                        required
-                    />
-                    <Box
-                        sx={{
-                            display: "flex",
-                            marginTop: "10px",
-                            justifyContent: "flex-end",
-                        }}
-                    >
-                        <Button type={"submit"}>Submit</Button>
-                    </Box>
-                </form>
-                <Fade in={!loading}>
-                    <List>
-                        {comments.map((comment) => (
-                            <ListItem key={comment.id}>
-                                <CommentItem comment={comment}/>
-                            </ListItem>
-                        ))}
-                    </List>
-                </Fade>
-            </Box>
-        </>
-    );
+interface CommentListProps {
+  postId: number;
 }
+
+function CommentList({ postId }: CommentListProps) {
+  const navigate = useNavigate();
+  const { loggedIn } = useAuth();
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [content, setContent] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const { message } = App.useApp();
+
+  const fetchComments = async () => {
+    setLoading(true);
+    try {
+      const res = await getData(AxiosEndpoint.GetComment, "GET", undefined, { replyTo: postId, replyToType: "post" });
+      const rawData = res?.body?.data ?? [];
+      const list = Array.isArray(rawData) ? rawData : rawData ? [rawData] : [];
+      setComments(list);
+    } catch {
+      setComments([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchComments();
+  }, [postId]);
+
+  const handleSubmit = async () => {
+    if (!content.trim()) return;
+    setSubmitting(true);
+    try {
+      await getData(AxiosEndpoint.CreateComment, "POST", {
+        content,
+        replyTo: postId,
+        replyToType: "post",
+      });
+      setContent("");
+      message.success("Comment posted");
+      fetchComments();
+    } catch {
+      message.error("Failed to post comment");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div>
+      <h3>Comments</h3>
+      {loggedIn ? (
+        <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+          <Input
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="Write a comment..."
+            onPressEnter={handleSubmit}
+          />
+          <Button type="primary" icon={<SendOutlined />} loading={submitting} onClick={handleSubmit}>
+            Send
+          </Button>
+        </div>
+      ) : (
+        <div style={{ marginBottom: 16 }}>
+          <Typography.Text type="secondary">
+            <Typography.Link onClick={() => navigate("/signin")}>Sign in</Typography.Link> to post a comment
+          </Typography.Text>
+        </div>
+      )}
+      {loading ? (
+        <Spin />
+      ) : comments.length === 0 ? (
+        <Empty description="No comments yet" />
+      ) : (
+        <List
+          dataSource={comments}
+          renderItem={(comment) => <CommentItem key={comment.id} comment={comment} />}
+        />
+      )}
+    </div>
+  );
+}
+
+export default CommentList;

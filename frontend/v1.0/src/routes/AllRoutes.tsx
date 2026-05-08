@@ -1,23 +1,20 @@
-import {BrowserRouter, Route, Routes} from "react-router-dom";
-import SignInPage from "../pages/SignInPage.tsx";
-import IndexPage from "../pages/IndexPage.tsx";
-import PostRoutes from "./PostRoutes.tsx";
-import {UserRoutes} from "./UserRoutes.tsx";
-import RouteEndpoint from "../config/endpoints/route_endpoint.ts";
+import { Routes, Route } from "react-router-dom";
+import CommonRoutes from "./CommonRoutes";
+import PostRoutes from "./PostRoutes";
+import UserRoutes from "./UserRoutes";
+import IndexPage from "@/pages/IndexPage";
+import SignInPage from "@/pages/SignInPage";
 
 function AllRoutes() {
   return (
-    <>
-      <BrowserRouter>
-        <Routes>
-          <Route path={"/"} element={<IndexPage />} />
-          <Route path={"/index"} element={<IndexPage />} />
-          <Route path={RouteEndpoint.SignIn} element={<SignInPage />} />
-          <Route path={RouteEndpoint.Post} element={<PostRoutes />} />
-          <Route path={RouteEndpoint.User} element={<UserRoutes />} />
-        </Routes>
-      </BrowserRouter>
-    </>
+    <Routes>
+      <Route element={<CommonRoutes />}>
+        <Route path="/" element={<IndexPage />} />
+        <Route path="/signin" element={<SignInPage />} />
+        <Route path="/posts/*" element={<PostRoutes />} />
+        <Route path="/user/*" element={<UserRoutes />} />
+      </Route>
+    </Routes>
   );
 }
 

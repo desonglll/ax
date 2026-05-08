@@ -6,9 +6,9 @@ use std::{
 
 use actix_multipart::{Field, Multipart};
 use actix_session::Session;
-use actix_web::{HttpResponse, Responder, web};
+use actix_web::{web, HttpResponse, Responder};
 use futures::StreamExt;
-use percent_encoding::{NON_ALPHANUMERIC, percent_encode};
+use percent_encoding::{percent_encode, NON_ALPHANUMERIC};
 use sha2::{Digest, Sha256};
 
 use crate::{
@@ -25,6 +25,22 @@ use super::{
 
 static LAST_LOGGED_SIZE_MB: AtomicUsize = AtomicUsize::new(0);
 
+/// 处理文件上传
+///
+/// 验证用户登录状态后，遍历 Multipart 请求中的所有字段，
+/// 将文件字段保存到磁盘并在数据库中创建记录，文本字段则打印日志。
+/// 如果上传的文件与已有文件校验和相同，会先软删除旧记录。
+///
+/// # 参数
+///
+/// - `session`: 请求的 session 对象，用于登录验证
+/// - `app_state`: 应用状态，包含数据库连接池
+/// - `is_pub`: 文件是否公开
+/// - `payload`: Multipart 上传数据
+///
+/// # 返回值
+///
+/// 登录时返回 200 及上传的文件信息列表，未登录时返回 401。
 pub async fn upload(
     session: Session,
     app_state: web::Data<AppState>,
@@ -73,6 +89,23 @@ pub async fn upload(
     }
 }
 
+/// 处理 Multipart 中的文件字段
+///
+/// 将上传的文件数据写入临时文件，完成后重命名为正式文件名。
+/// 计算文件的 SHA-256 校验和，如果数据库中已存在相同校验和的文件，先软删除旧记录，
+/// 然后插入新文件记录到数据库。
+///
+/// # 参数
+///
+/// - `field`: Multipart 文件字段
+/// - `file_name`: 文件名
+/// - `is_pub`: 文件是否公开
+/// - `session`: 请求的 session 对象，用于获取用户信息
+/// - `app_state`: 应用状态，包含数据库连接池
+///
+/// # 返回值
+///
+/// 成功时返回插入的 [`File`] 记录，失败时返回 [`AxError`]。
 async fn process_file_field(
     field: &mut Field,
     file_name: &str,
@@ -115,6 +148,20 @@ async fn process_file_field(
     insert_file_db(&app_state.db, new_file).await
 }
 
+/// 将 MultipartFile 字段的数据块写入文件
+///
+/// 逐块读取上传数据并写入文件，同时计算 SHA-256 校验和。
+/// 每上传 10MB 输出一次日志。
+///
+/// # 参数
+///
+/// - `field`: MultipartFile 字段
+/// - `file`: 目标文件句柄
+///
+/// # 返回值
+///
+/// 成功时返回 `(文件大小, SHA-256 校验和十六进制字符串)` 的元组，
+/// 失败时返回 [`actix_web::Error`]。
 async fn write_chunks_to_file(
     field: &mut Field,
     file: &mut StdFile,
@@ -149,6 +196,18 @@ async fn write_chunks_to_file(
     Ok((size, hash_hex))
 }
 
+/// 重命名文件
+///
+/// 将文件从旧路径重命名为新路径，用于将临时上传文件重命名为正式文件名。
+///
+/// # 参数
+///
+/// - `old_path`: 旧文件路径
+/// - `new_path`: 新文件路径
+///
+/// # 返回值
+///
+/// 成功时返回 `Ok(())`，失败时返回 [`actix_web::Error`]。
 fn rename_file(old_path: String, new_path: String) -> Result<(), actix_web::Error> {
     std::fs::rename(old_path.clone(), new_path.clone())
         .map_err(|e| {
@@ -160,6 +219,17 @@ fn rename_file(old_path: String, new_path: String) -> Result<(), actix_web::Erro
     Ok(())
 }
 
+/// 处理 MultipartFile 中的文本字段
+///
+/// 读取文本字段的所有数据块并拼接为字符串。
+///
+/// # 参数
+///
+/// - `field`: MultipartFile 文本字段
+///
+/// # 返回值
+///
+/// 返回文本字段的字符串值，如果数据不是有效 UTF-8 则返回固定错误提示。
 async fn process_text_field(field: &mut Field) -> String {
     let mut value = Vec::new();
     while let Some(chunk) = field.next().await {

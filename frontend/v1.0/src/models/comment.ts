@@ -6,5 +6,5 @@ export interface Comment {
     userName: string;
     createdAt: string;
     updatedAt: string;
-    replyToType: string
+    replyToType: string;
 }

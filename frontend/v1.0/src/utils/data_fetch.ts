@@ -1,15 +1,27 @@
-import axios, {type AxiosRequestConfig} from "axios";
+import axios from "axios";
+
+const api = axios.create({
+  baseURL: "/api",
+  withCredentials: true,
+});
 
 const getData = async (
   endpoint: string,
-  config?: AxiosRequestConfig<never>
+  method: string = "GET",
+  data?: unknown,
+  params?: Record<string, string | number>,
 ) => {
   try {
-    const response = await axios.get(endpoint, config);
-    return response; // 确保返回响应数据
+    const response = await api({
+      url: endpoint,
+      method,
+      data,
+      params,
+    });
+    return response.data;
   } catch (error) {
     console.error("Error fetching data:", error);
-    throw error; // 可以选择抛出错误以便在调用时处理
+    throw error;
   }
 };
 

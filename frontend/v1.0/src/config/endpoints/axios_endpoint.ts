@@ -8,6 +8,7 @@ export enum AxiosEndpoint {
   PostDetail = "posts/get",
   CreatePost = "posts/post",
   UpdatePost = "posts/put",
+  DeletePost = "posts/delete",
   UploadPubFile = "files/upload-public",
   StreamFile = "files/stream",
   GetReactionTable = "reactions/get-table",

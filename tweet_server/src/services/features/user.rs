@@ -3,17 +3,33 @@ use sqlx::PgPool;
 
 use crate::errors::AxError;
 
+/// 用户特征数据结构
+///
+/// 用于推荐模型的输入特征，包含用户行为统计信息。
 #[derive(Debug, Serialize)]
 pub struct UserFeatures {
     pub user_id: i32,
     pub name: String,
     pub liked_posts_count: i64,
-    pub average_like_count: f64,           // 用户发布内容的平均点赞数
-    pub average_comment_count: f64,        // 用户发布内容的平均评论数
-    pub recent_activity_score: f64,        // 用户近期活跃度得分
-    pub engagement_rate: f64,              // 用户参与率
+    pub average_like_count: f64,
+    pub average_comment_count: f64,
+    pub recent_activity_score: f64,
+    pub engagement_rate: f64,
 }
 
+/// 获取用户特征数据
+///
+/// 从数据库中查询用户基础信息和行为统计（点赞数、平均点赞/评论数、
+/// 活跃度得分、参与率），组装为 [`UserFeatures`] 用于推荐模型输入。
+///
+/// # 参数
+///
+/// - `pool`: PostgreSQL 连接池引用
+/// - `user_id`: 用户 ID
+///
+/// # 返回值
+///
+/// 成功时返回 [`UserFeatures`]，失败时返回 [`AxError`]。
 pub async fn get_user_features(pool: &PgPool, user_id: i32) -> Result<UserFeatures, AxError> {
     // 查询用户的基础信息
     let user = sqlx::query!(
@@ -24,9 +40,9 @@ pub async fn get_user_features(pool: &PgPool, user_id: i32) -> Result<UserFeatur
         "#,
         user_id
     )
-        .fetch_one(pool)
-        .await
-        .map_err(|e| AxError::DBError(e.to_string()))?;
+    .fetch_one(pool)
+    .await
+    .map_err(|e| AxError::DBError(e.to_string()))?;
 
     // 查询用户的其他特征统计
     let stats = sqlx::query!(
@@ -42,9 +58,9 @@ pub async fn get_user_features(pool: &PgPool, user_id: i32) -> Result<UserFeatur
         "#,
         user_id
     )
-        .fetch_one(pool)
-        .await
-        .map_err(|_e| AxError::DBError(String::from("Error when fetching user stats.")))?;
+    .fetch_one(pool)
+    .await
+    .map_err(|_e| AxError::DBError(String::from("Error when fetching user stats.")))?;
 
     // 创建并返回 UserFeatures
     let user_features = UserFeatures {

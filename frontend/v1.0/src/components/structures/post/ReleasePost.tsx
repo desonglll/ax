@@ -1,91 +1,54 @@
-import Box from "@mui/material/Box";
-import axios from "axios";
-import {useEffect} from "react";
-import {useNavigate} from "react-router-dom";
-import Vditor from "vditor";
-import "vditor/dist/index.css";
-import {AxiosEndpoint} from "../../../config/endpoints/axios_endpoint.ts";
-import type {ApiResponse} from "../../../models/api_response.ts";
-import type {File} from "../../../models/file.ts";
+import { useState } from "react";
+import { Card, Input, Button, App } from "antd";
+import { ArrowLeftOutlined } from "@ant-design/icons";
+import { AxiosEndpoint } from "@/config/endpoints/axios_endpoint";
+import getData from "@/utils/data_fetch";
 
-export function ReleasePost() {
-    const navigate = useNavigate();
-    useEffect(() => {
-        const vditor = new Vditor("vditor", {
-            typewriterMode: true,
-            after: () => {
-                console.log(vditor.getValue());
-            },
-            ctrlEnter: (value) => {
-                console.log("hello", value);
-                const data = {
-                    content: value,
-                };
-                axios.post(`${AxiosEndpoint.CreatePost}`, data).then((resp) => {
-                    if (resp.data.code === 200) {
-                        console.log("Success");
-                        navigate(-1);
-                    }
-                });
-            },
-            upload: {
-                accept: "image/*,.mp3, .wav, .rar",
-                url: `${axios.defaults.baseURL}/${AxiosEndpoint.UploadPubFile}`,
-                filename(name) {
-                    return name
-                        .replace(/[^(a-zA-Z0-9\u4e00-\u9fa5.)]/g, "")
-                        .replace(/[?\\/:|<>*\[\]()$%{}@~]/g, "")
-                        .replace("/\\s/g", "");
-                },
-                withCredentials: true,
-                format(files, responseText) {
-                    const response: ApiResponse<File> = JSON.parse(responseText);
-                    console.log(response);
-                    console.log(files);
-
-                    const result = {
-                        msg: "",
-                        code: 0,
-                        data: {
-                            errFiles: [] as string[],
-                            succMap: {} as { [key: string]: string }, // 这里定义键为字符串，值也为字符串的对象
-                        },
-                    };
-
-                    if (response.code === 200) {
-                        console.log("Success!");
-
-                        const data = response.body.data;
-                        data.map((file) => {
-                            result.data.succMap[
-                                file.name
-                                ] = `${axios.defaults.baseURL}/${AxiosEndpoint.StreamFile}/${file.id}`;
-                        });
-                    } else {
-                        // 如果上传不成功，可以在 msg 中返回服务器的错误信息
-                        result.msg = response.message || "Upload failed!";
-                    }
-
-                    return JSON.stringify(result);
-                },
-            },
-        });
-    }, [navigate]);
-
-    return (
-        <>
-            <Box
-                sx={{
-                    width: "100%",
-                    display: "flex",
-                    alignItems: "center",
-                    flexDirection: "column",
-                }}
-            >
-                <Box sx={{width: "80%", marginTop: "60px"}}>
-                    <div id="vditor" className="vditor"/>
-                </Box>
-            </Box>
-        </>
-    );
+interface ReleasePostProps {
+  onDone: () => void;
 }
+
+function ReleasePost({ onDone }: ReleasePostProps) {
+  const [content, setContent] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { message } = App.useApp();
+
+  const handleSubmit = async () => {
+    if (!content.trim()) {
+      message.warning("Please enter content");
+      return;
+    }
+    setLoading(true);
+    try {
+      await getData(AxiosEndpoint.CreatePost, "POST", { content });
+      message.success("Post published");
+      onDone();
+    } catch {
+      message.error("Failed to publish");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Card>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
+        <Button icon={<ArrowLeftOutlined />} onClick={onDone}>
+          Cancel
+        </Button>
+        <Button type="primary" loading={loading} onClick={handleSubmit}>
+          Publish
+        </Button>
+      </div>
+      <Input.TextArea
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        placeholder="Write your post..."
+        rows={8}
+        style={{ fontSize: 16 }}
+      />
+    </Card>
+  );
+}
+
+export default ReleasePost;

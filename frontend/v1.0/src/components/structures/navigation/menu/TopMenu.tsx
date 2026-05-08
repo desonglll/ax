@@ -1,154 +1,54 @@
-import * as React from "react";
-import {useEffect, useState} from "react";
-import AppBar from "@mui/material/AppBar";
-import Toolbar from "@mui/material/Toolbar";
-import Typography from "@mui/material/Typography";
-import IconButton from "@mui/material/IconButton";
-import MenuIcon from "@mui/icons-material/Menu";
-import AccountCircle from "@mui/icons-material/AccountCircle";
-import MenuItem from "@mui/material/MenuItem";
-import Menu from "@mui/material/Menu";
-import axios from "axios";
-import loginCheck from "../../../../utils/login_check.ts";
-import {useNavigate} from "react-router-dom";
-import {Avatar, Fade} from "@mui/material";
-import type {User} from "../../../../models/user.ts";
-import getData from "../../../../utils/data_fetch.ts";
-import RouteEndpoint from "../../../../config/endpoints/route_endpoint.ts";
-import {AxiosEndpoint} from "../../../../config/endpoints/axios_endpoint.ts";
+import { Menu, App } from "antd";
+import {
+  HomeOutlined,
+  UserOutlined,
+  LoginOutlined,
+  LogoutOutlined,
+} from "@ant-design/icons";
+import { useNavigate, useLocation } from "react-router-dom";
+import RouteEndpoint from "@/config/endpoints/route_endpoint";
+import { AxiosEndpoint } from "@/config/endpoints/axios_endpoint";
+import { useAuth } from "@/contexts/AuthContext";
+import getData from "@/utils/data_fetch";
 
-export default function TopMenu({
-                                    drawerOpen,
-                                    setDrawerOpen,
-                                }: {
-    drawerOpen: boolean;
-    setDrawerOpen: (arg0: boolean) => void;
-}) {
-    const [auth, setAuth] = useState(true);
-    const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-    const [loading, setLoading] = useState(true);
-    const [profile, setProfile] = useState<Partial<User>>();
-    const navigate = useNavigate();
+function TopMenu() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { message } = App.useApp();
+  const { loggedIn, refresh } = useAuth();
 
-    const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
-        setAnchorEl(event.currentTarget);
-    };
+  const handleLogout = async () => {
+    try {
+      await getData(AxiosEndpoint.LogOut, "POST");
+      message.success("Logged out");
+      refresh();
+      navigate(RouteEndpoint.SignIn);
+    } catch {
+      message.error("Logout failed");
+    }
+  };
 
-    const handleClose = () => {
-        setAnchorEl(null);
-    };
-    const handleLogout = () => {
-        axios
-            .post(`${AxiosEndpoint.LogOut}`)
-            .then((r) => {
-                if (r.data.code === "Success") {
-                    setAuth(false);
-                    setAnchorEl(null);
-                }
-            })
-            .finally(() => {
-                navigate(RouteEndpoint.SignIn);
-            });
-    };
-    const handleLogin = () => {
-        navigate(RouteEndpoint.SignIn);
-    };
-    useEffect(() => {
-        loginCheck()
-            .then((result) => {
-                if (!result) {
-                    setAuth(false);
-                    navigate(RouteEndpoint.SignIn);
-                }
-            })
-            .then(() => {
-                getData(AxiosEndpoint.Profile).then((resp) => {
-                    if (resp.data.code === 200) {
-                        setProfile(resp.data.body.data);
-                    }
-                });
-            })
-            .finally(() => {
-                setLoading(false);
-            });
-    }, [navigate]);
+  const authItem = loggedIn
+    ? { key: "logout", icon: <LogoutOutlined />, label: "Sign Out", onClick: handleLogout }
+    : { key: RouteEndpoint.SignIn, icon: <LoginOutlined />, label: "Sign In" };
 
-    return (
-        <>
-            {loading ? (
-                <></>
-            ) : (
-                <Fade in={!loading}>
-                    <AppBar position="fixed">
-                        <Toolbar>
-                            <IconButton
-                                size="large"
-                                edge="start"
-                                color="inherit"
-                                aria-label="menu"
-                                sx={{mr: 2}}
-                                onClick={() => {
-                                    setDrawerOpen(!drawerOpen);
-                                }}
-                            >
-                                <MenuIcon/>
-                            </IconButton>
-                            <Typography variant="h6" component="div" sx={{flexGrow: 1}}>
-                                Posts
-                            </Typography>
+  const items = [
+    { key: RouteEndpoint.Index, icon: <HomeOutlined />, label: "Home" },
+    ...(loggedIn ? [{ key: RouteEndpoint.User, icon: <UserOutlined />, label: "Profile" }] : []),
+    authItem,
+  ];
 
-                            <div>
-                                <IconButton
-                                    size="large"
-                                    aria-label="account of current user"
-                                    aria-controls="menu-appbar"
-                                    aria-haspopup="true"
-                                    onClick={handleMenu}
-                                    color="inherit"
-                                >
-                                    {profile?.profilePicture ? (
-                                        <Avatar
-                                            src={`${axios.defaults.baseURL}/${AxiosEndpoint.StreamFile}/${profile.profilePicture}`}
-                                        />
-                                    ) : (
-                                        <AccountCircle/>
-                                    )}
-                                </IconButton>
-                                <Menu
-                                    id="menu-appbar"
-                                    anchorEl={anchorEl}
-                                    anchorOrigin={{
-                                        vertical: "top",
-                                        horizontal: "right",
-                                    }}
-                                    keepMounted
-                                    transformOrigin={{
-                                        vertical: "top",
-                                        horizontal: "right",
-                                    }}
-                                    open={Boolean(anchorEl)}
-                                    onClose={handleClose}
-                                >
-                                    {auth ? (
-                                        <div>
-                                            <MenuItem
-                                                onClick={() => {
-                                                    navigate(`${RouteEndpoint.Profile}`);
-                                                }}
-                                            >
-                                                Profile
-                                            </MenuItem>
-                                            <MenuItem onClick={handleLogout}>Logout</MenuItem>
-                                        </div>
-                                    ) : (
-                                        <MenuItem onClick={handleLogin}>Login</MenuItem>
-                                    )}
-                                </Menu>
-                            </div>
-                        </Toolbar>
-                    </AppBar>
-                </Fade>
-            )}
-        </>
-    );
+  return (
+    <Menu
+      mode="horizontal"
+      selectedKeys={[location.pathname]}
+      items={items}
+      onClick={({ key }) => {
+        if (key !== "logout") navigate(key);
+      }}
+      style={{ flex: 1, border: "none" }}
+    />
+  );
 }
+
+export default TopMenu;

@@ -1,16 +1,10 @@
 enum RouteEndpoint {
-    SignIn = "/sign-in",
-    SignUp = "/sign-up",
-    Index = "/index",
-    List = "list-all",
-    New = "new",
-    Detail = "detail",
-    Post = "/post/*",
-    User = "/user/*",
-    Profile = "/user/profile",
-    PostList = "/post/list-all",
-    PostNew = "/post/new",
-    PostDetail = "/post/detail",
+  SignIn = "/signin",
+  Index = "/",
+  User = "/user",
+  Profile = "/user/profile",
+  Posts = "/posts",
+  PostDetail = "/posts/:id",
 }
 
 export default RouteEndpoint;

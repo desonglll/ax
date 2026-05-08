@@ -5,6 +5,9 @@ use uuid::Uuid;
 
 use crate::libraries::hash::Hash;
 
+/// 用户数据模型
+///
+/// 对应数据库 `users` 表的记录，表示一个用户。
 #[derive(Deserialize, Serialize, Debug, Default, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct User {
@@ -22,6 +25,9 @@ pub struct User {
     pub profile_picture: Option<Uuid>,
 }
 
+/// 创建用户请求结构
+///
+/// 用于接收注册用户时的请求数据，密码为明文（服务器端哈希后存储）。
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateUser {
@@ -35,6 +41,9 @@ pub struct CreateUser {
     pub profile_picture: Option<Uuid>,
 }
 
+/// 更新用户请求结构
+///
+/// 用于接收更新用户信息时的请求数据，所有字段均为可选，仅更新提供的字段。
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateUser {
@@ -50,21 +59,20 @@ pub struct UpdateUser {
 
 impl From<web::Json<CreateUser>> for CreateUser {
     fn from(value: web::Json<CreateUser>) -> Self {
-        CreateUser {
-            ..value.clone()
-        }
+        CreateUser { ..value.clone() }
     }
 }
 
 impl From<web::Json<UpdateUser>> for UpdateUser {
     fn from(value: web::Json<UpdateUser>) -> Self {
-        UpdateUser {
-            ..value.clone()
-        }
+        UpdateUser { ..value.clone() }
     }
 }
 
 impl User {
+    /// 创建测试用的超级用户
+    ///
+    /// 生成一个 ID 为 999 的测试用户，密码为 "070011"，用于测试环境。
     pub fn test_super_user() -> Self {
         User {
             id: 999,

@@ -8,25 +8,46 @@ use crate::{
     models::comment::{Comment, CreateComment},
 };
 
+/// 插入一条新评论到数据库
+///
+/// 将评论数据写入 `comments` 表，返回插入后的完整评论记录。
+///
+/// # 参数
+///
+/// - `pool`: PostgreSQL 连接池引用
+/// - `create_comment`: 待插入的评论数据
+///
+/// # 返回值
+///
+/// 成功时返回插入的 [`Comment`] 记录，失败时返回 [`AxError`]。
 pub async fn insert_comment_db(
     pool: &PgPool,
     create_comment: CreateComment,
 ) -> Result<Comment, AxError> {
     let row = sqlx::query_as!(
     Comment,
-        "insert into comments (content, reply_to, user_id, reply_to_type) values ($1, $2, $3, $4) returning id, content, reply_to, user_id, user_name, created_at, updated_at, reply_to_type",
-        create_comment.content(),
-        create_comment.reply_to(),
-        create_comment.user_id(),
-        create_comment.reply_to_type(),
+    "insert into comments (content, reply_to, user_id, reply_to_type) values ($1, $2, $3, $4) returning id, content, reply_to, user_id, user_name, created_at, updated_at, reply_to_type",
+    create_comment.content(),
+    create_comment.reply_to(),
+    create_comment.user_id(),
+    create_comment.reply_to_type(),
     ).fetch_one(pool).await?;
     Ok(row)
 }
 
-pub async fn delete_comment_by_id_db(
-    pool: &PgPool,
-    id: i32,
-) -> Result<Comment, AxError> {
+/// 根据 ID 从数据库删除评论
+///
+/// 从 `comments` 表中删除指定 ID 的评论，返回被删除的评论记录。
+///
+/// # 参数
+///
+/// - `pool`: PostgreSQL 连接池引用
+/// - `id`: 待删除评论的 ID
+///
+/// # 返回值
+///
+/// 成功时返回被删除的 [`Comment`] 记录，失败时返回 [`AxError`]。
+pub async fn delete_comment_by_id_db(pool: &PgPool, id: i32) -> Result<Comment, AxError> {
     let row = sqlx::query_as!(
         Comment,
         "delete from comments where id = $1 returning id, content, reply_to, user_id, user_name, created_at, updated_at, reply_to_type",
@@ -35,6 +56,18 @@ pub async fn delete_comment_by_id_db(
     Ok(row)
 }
 
+/// 根据查询条件从数据库获取评论列表
+///
+/// 支持按评论 ID、回复目标 ID、回复类型进行筛选。未指定条件的参数将被忽略。
+///
+/// # 参数
+///
+/// - `pool`: PostgreSQL 连接池引用
+/// - `query`: URL 查询参数，支持 `commentId`、`replyTo`、`replyToType` 字段
+///
+/// # 返回值
+///
+/// 成功时返回匹配的 [`Vec<Comment>`] 列表，失败时返回 [`AxError`]。
 pub async fn get_comment_by_query_db(
     pool: &PgPool,
     query: web::Query<HashMap<String, String>>,

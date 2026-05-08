@@ -5,6 +5,19 @@ use actix_web::{error, http::StatusCode, HttpResponse, Result};
 use serde::Serialize;
 use sqlx::error::Error as SQLxError;
 
+/// 应用全局错误枚举
+///
+/// 定义了应用中所有可能出现的错误类型，每种变体携带描述消息。
+///
+/// # 变体
+///
+/// - `DBError`: 数据库操作错误
+/// - `ActixError`: Actix-web 框架错误
+/// - `NotFound`: 资源未找到
+/// - `InvalidInput`: 无效的输入参数
+/// - `AuthenticationError`: 认证/鉴权错误
+/// - `SessionGetError`: Session 读取错误
+/// - `ModelPredictError`: 模型预测服务错误
 #[derive(Debug, Serialize)]
 pub enum AxError {
     DBError(String),
@@ -16,6 +29,9 @@ pub enum AxError {
     ModelPredictError(String),
 }
 
+/// 错误响应体结构
+///
+/// 用于将错误信息序列化为 JSON 响应。
 #[derive(Debug, Serialize)]
 pub struct MyErrorResponse {
     error_message: String,
@@ -24,6 +40,10 @@ pub struct MyErrorResponse {
 impl std::error::Error for AxError {}
 
 impl AxError {
+    /// 根据错误类型生成错误消息
+    ///
+    /// 数据库错误和 Actix 错误返回通用消息（不暴露内部细节），
+    /// 其他类型直接返回原始消息。
     fn error_response(&self) -> String {
         match self {
             AxError::DBError(msg) => {
@@ -59,6 +79,7 @@ impl AxError {
 }
 
 impl error::ResponseError for AxError {
+    /// 根据错误类型返回对应的 HTTP 状态码
     fn status_code(&self) -> StatusCode {
         match self {
             AxError::DBError(_msg) | AxError::ActixError(_msg) => StatusCode::INTERNAL_SERVER_ERROR,

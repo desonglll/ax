@@ -18,10 +18,27 @@ pub struct RequestPagination {
 
 #[allow(dead_code)]
 impl RequestPagination {
+    /// 创建新的分页参数实例
+    ///
+    /// # 参数
+    ///
+    /// - `limit`: 每页条目数
+    /// - `offset`: 偏移量
+    ///
+    /// # 返回值
+    ///
+    /// 返回新的 [`RequestPagination`] 实例。
     pub fn new(limit: Option<i32>, offset: Option<i32>) -> Self {
         Self { limit, offset }
     }
 
+    /// 创建演示用的分页参数
+    ///
+    /// 返回 `limit=10, offset=0` 的分页参数。
+    ///
+    /// # 返回值
+    ///
+    /// 返回默认演示分页参数实例。
     pub fn demo() -> Self {
         Self {
             limit: Some(10),
