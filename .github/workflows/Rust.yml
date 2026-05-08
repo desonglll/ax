@@ -49,7 +49,7 @@ jobs:
       - name: Check
         run: cargo check -p tweet_server
       - name: Build
-        run: cargo build --bin tweet_server --release
+        run: cargo build --release
       - name: Check status of release binaries
         run: stat ./target/release/tweet_server
 
@@ -96,4 +96,4 @@ jobs:
         run: cd ./tweet_server && sqlx database create && sqlx migrate run
 
       - name: Run tests
-        run: cargo test -p tweet_server
+        run: cargo test
