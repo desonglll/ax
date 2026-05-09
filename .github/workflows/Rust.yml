@@ -93,7 +93,7 @@ jobs:
         run: cargo install sqlx-cli
 
       - name: Database initialization
-        run: cd ./tweet_server && sqlx database create && sqlx migrate run
+        run: sqlx database create && sqlx migrate run
 
       - name: Run tests
         run: cargo test
