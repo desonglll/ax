@@ -22,6 +22,7 @@ This document logs the development history and version alterations of Project Ax
 - Fixed a trigger logic error where reactions on comments updated the reaction counts of posts containing the same numerical ID.
 - Fixed a trigger logic error where `average_comment_count` was calculated using post dislikes instead of comment count statistics.
 - Fixed user stats updates to properly trigger and calculate metrics when posts are deleted.
+- Fixed GitHub Actions CI workflow to target the correct database name (`ax`), install development tools via precompiled binaries (`taiki-e/install-action`), utilize dependency caching (`swatinem/rust-cache`), and execute validation tasks using `just` recipes.
 
 ### Removed
 - Deleted obsolete Bash script `scripts/init_db.sh`.

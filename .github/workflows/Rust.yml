@@ -8,58 +8,16 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  DATABASE_URL: postgres://postgres:password@localhost:5432/hello_rocket
+  DATABASE_URL: postgres://postgres:password@localhost:5432/ax
 
 jobs:
-  check_system:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Show info of system
-        run: free -h && lscpu && lshw
-
-  build:
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:latest
-        env:
-          POSTGRES_DB: hello_rocket
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: password
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -U postgres"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
-    steps:
-      - uses: actions/checkout@v3
-      - name: Wait for PostgreSQL to be ready
-        run: |
-          until pg_isready -h localhost -p 5432 -U postgres; do
-            echo "Waiting for postgres..."
-            sleep 1
-          done
-      - name: Install SQLX CLI
-        run: cargo install sqlx-cli
-      - name: Database initialization
-        run: cd ./tweet_server && sqlx database create && sqlx migrate run
-      - name: Check
-        run: cargo check -p tweet_server
-      - name: Build
-        run: cargo build --release
-      - name: Check status of release binaries
-        run: stat ./target/release/tweet_server
-
   test:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:latest
+        image: postgres:16
         env:
-          POSTGRES_DB: hello_rocket
+          POSTGRES_DB: ax
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: password
         ports:
@@ -70,7 +28,7 @@ jobs:
           --health-timeout=5s
           --health-retries=5
       redis:
-        image: redis:latest
+        image: redis:7-alpine
         ports:
           - 6379:6379
         options: >-
@@ -79,7 +37,18 @@ jobs:
           --health-timeout=5s
           --health-retries=5
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust Cache
+        uses: swatinem/rust-cache@v2
+
+      - name: Install Development Tools
+        uses: taiki-e/install-action@v2
+        with:
+          tool: sqlx-cli,cargo-nextest,mdbook,just
 
       - name: Wait for PostgreSQL to be ready
         run: |
@@ -87,13 +56,61 @@ jobs:
             echo "Waiting for postgres..."
             sleep 1
           done
-      # - name: Install Diesel CLI
-      #   run: curl --proto '=https' --tlsv1.2 -LsSf https://github.com/diesel-rs/diesel/releases/download/v2.2.1/diesel_cli-installer.sh | sh
-      - name: Install SQLX CLI
-        run: cargo install sqlx-cli
 
-      - name: Database initialization
-        run: sqlx database create && sqlx migrate run
+      - name: Initialize Database
+        run: just init-db
 
-      - name: Run tests
-        run: cargo test
+      - name: Cargo Check
+        run: just check
+
+      - name: Run Tests
+        run: just test
+
+      - name: Build Documentation
+        run: just doc-build
+
+  build:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: ax
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust Cache
+        uses: swatinem/rust-cache@v2
+
+      - name: Install Development Tools
+        uses: taiki-e/install-action@v2
+        with:
+          tool: sqlx-cli,just
+
+      - name: Wait for PostgreSQL to be ready
+        run: |
+          until pg_isready -h localhost -p 5432 -U postgres; do
+            echo "Waiting for postgres..."
+            sleep 1
+          done
+
+      - name: Initialize Database
+        run: just init-db
+
+      - name: Build Release Binary
+        run: cargo build --release --manifest-path tweet_server/Cargo.toml
+
+      - name: Check status of release binaries
+        run: stat ./target/release/tweet_server
