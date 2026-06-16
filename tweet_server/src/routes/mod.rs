@@ -13,7 +13,7 @@ use self::{
     reaction::reaction_routes, user::user_routes,
 };
 
-/// 配置所有 API 路由
+/// Configure all API scope routes.
 pub fn api_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/api")

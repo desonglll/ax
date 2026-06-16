@@ -1,36 +1,37 @@
 use serde::{Deserialize, Serialize};
 
-/// 通用的 API 响应结构
+/// Universal API response structure.
 ///
-/// 该结构体用于表示 API 响应的通用格式，包括状态码、消息和响应体。可以用于成功响应或错误响应。
+/// This structure represents a standardized format for API responses, encompassing
+/// a status code, a message, and an optional response body.
 ///
-/// - `code`：响应的状态码，类型为 `StatusCode`。
-/// - `message`：响应的消息，类型为 `String`。
-/// - `body`：可选的响应体，类型为 `Option<T>`，如果存在响应体则为 `Some(T)`，否则为 `None`。
+/// - `code`: The response status code.
+/// - `message`: The response message.
+/// - `body`: The optional response body.
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ApiResponse<T> {
-    /// 响应的状态码
+    /// The response status code.
     pub code: u16,
 
-    /// 响应的消息
+    /// The response message.
     pub message: String,
 
-    /// 可选的响应体
+    /// The optional response body.
     pub body: Option<T>,
 }
 
 impl<T: Default> ApiResponse<T> {
-    /// 创建新的 API 响应实例
+    /// Create a new API response instance.
     ///
-    /// # 参数
+    /// # Parameters
     ///
-    /// - `code`: 响应状态码
-    /// - `message`: 响应消息
-    /// - `body`: 可选的响应体
+    /// - `code`: The response status code.
+    /// - `message`: The response message string.
+    /// - `body`: The optional response body data.
     ///
-    /// # 返回值
+    /// # Returns
     ///
-    /// 返回新的 [`ApiResponse`] 实例。
+    /// A new [`ApiResponse`] instance populated with the provided values.
     pub fn new(code: u16, message: String, body: Option<T>) -> Self {
         Self {
             code,
@@ -39,16 +40,16 @@ impl<T: Default> ApiResponse<T> {
         }
     }
 
-    /// 创建成功的 API 响应（状态码 200）
+    /// Create a successful API response with status code 200.
     ///
-    /// # 参数
+    /// # Parameters
     ///
-    /// - `message`: 响应消息
-    /// - `body`: 可选的响应体
+    /// - `message`: The response message string.
+    /// - `body`: The optional response body data.
     ///
-    /// # 返回值
+    /// # Returns
     ///
-    /// 返回状态码为 200 的 [`ApiResponse`] 实例。
+    /// An [`ApiResponse`] instance with the code set to 200.
     pub fn success(message: String, body: Option<T>) -> Self {
         Self {
             code: 200,

@@ -2,46 +2,45 @@ use serde::Deserialize;
 
 use super::pagination::RequestPagination;
 
-/// 列表请求参数
+/// Query parameters for listing requests.
 ///
-/// 该结构体用于表示一个通用的列表请求，支持过滤、分页和排序选项。
+/// This structure represents a standardized database list request supporting
+/// filtering, pagination, and sorting parameters.
 ///
-/// - `filters`：用于筛选数据的过滤条件，类型为 `Option<F>`。
-/// - `pagination`：分页参数，类型为 `Option<RequestPagination>`。
-/// - `sort`：用于排序数据的条件，类型为 `Option<S>`。
+/// - `filters`: Filters applied to restrict the query results.
+/// - `pagination`: Pagination limits and offsets.
+/// - `sort`: Sorting parameters.
 ///
 /// # Type Parameters
 ///
-/// - `F`：表示过滤条件的类型。
-/// - `S`：表示排序条件的类型。
-
+/// - `F`: The type representing the filtering criteria.
+/// - `S`: The type representing the sorting criteria.
 #[derive(Debug, Deserialize, Default)]
 pub struct ListRequest<F, S> {
     pub user_id: Option<i32>,
-    /// 用于筛选数据的过滤条件
+    /// Optional filters applied to restrict the query results.
     pub filters: Option<F>,
 
-    /// 分页参数
+    /// Optional pagination limits and offsets.
     pub pagination: Option<RequestPagination>,
 
-    /// 用于排序数据的条件
+    /// Optional sorting options.
     pub sort: Option<S>,
 }
 
 impl<F, S> ListRequest<F, S> {
-    /// 创建一个新的 `ListRequest` 实例
-    ///
-    /// 该方法用于创建一个新的 `ListRequest` 实例，并初始化过滤条件、分页参数和排序条件。
+    /// Create a new `ListRequest` instance.
     ///
     /// # Parameters
     ///
-    /// - `filters`：用于筛选数据的过滤条件。
-    /// - `pagination`：分页参数。
-    /// - `sort`：用于排序数据的条件。
+    /// - `filters`: Optional filter parameters.
+    /// - `user_id`: Optional identifier of the user making the request.
+    /// - `pagination`: Optional pagination specifications.
+    /// - `sort`: Optional sorting options.
     ///
     /// # Returns
     ///
-    /// 返回一个新的 `ListRequest` 实例。
+    /// A new `ListRequest` instance populated with the parameters.
     pub fn new(
         filters: Option<F>,
         user_id: Option<i32>,

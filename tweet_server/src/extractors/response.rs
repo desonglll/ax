@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-/// 错误消息包装结构
+/// Wrapper structure for error messages.
 ///
-/// 用于将错误消息字符串包装为可序列化的 JSON 响应体。
+/// This structure encapsulates an error message string to facilitate serialization
+/// into JSON response bodies.
 #[derive(Serialize, Deserialize)]
 pub struct ErrorMsg(pub String);

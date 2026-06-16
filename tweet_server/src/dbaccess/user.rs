@@ -7,19 +7,21 @@ use crate::{
     models::user::{CreateUser, UpdateUser, User},
 };
 
-/// 验证用户密码是否正确
+/// Validate user credentials.
 ///
-/// 根据用户名从数据库查询用户记录，然后使用 bcrypt 算法验证密码哈希是否匹配。
+/// This function retrieves a user record from the database using USER_NAME
+/// and verifies if the provided plain-text PASSWORD matches the stored bcrypt hash.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `pool`: PostgreSQL 连接池引用
-/// - `user_name`: 用户名
-/// - `password`: 待验证的明文密码
+/// - `pool`: Reference to the PostgreSQL connection pool.
+/// - `user_name`: The username string.
+/// - `password`: The plain-text password to verify.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 密码匹配时返回 `Ok(true)`，不匹配时返回 `Ok(false)`，验证过程出错时返回 [`AxError`]。
+/// A boolean indicating whether credentials are valid on success,
+/// or an [`AxError`] if validation fails.
 pub async fn check_password_correct_db(
     pool: &PgPool,
     user_name: String,
@@ -36,19 +38,19 @@ pub async fn check_password_correct_db(
     }
 }
 
-/// 插入一条新用户记录到数据库
+/// Insert a new user record into the database.
 ///
-/// 将用户数据写入 `users` 表，密码会先经过 bcrypt 哈希处理后再存储。
-/// 返回插入后的完整用户记录。
+/// This function hashes the PASSWORD inside CREATE_USER and inserts the user
+/// metadata into the `users` table, returning the fully populated [`User`] record.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `pool`: PostgreSQL 连接池引用
-/// - `create_user`: 待插入的用户数据
+/// - `pool`: Reference to the PostgreSQL connection pool.
+/// - `create_user`: The user record specifications to insert.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回插入的 [`User`] 记录，失败时返回 [`AxError`]。
+/// The inserted [`User`] record on success, or an [`AxError`] on failure.
 pub async fn insert_user_db(pool: &PgPool, create_user: CreateUser) -> Result<User, AxError> {
     let password_hash = Hash::create_password_hash(create_user.password).unwrap();
     let user_row = sqlx::query_as!(
@@ -59,18 +61,18 @@ pub async fn insert_user_db(pool: &PgPool, create_user: CreateUser) -> Result<Us
     Ok(user_row)
 }
 
-/// 根据用户 ID 获取用户详情
+/// Retrieve user details by identifier.
 ///
-/// 从 `users` 表中查询指定 ID 的用户记录。
+/// This function queries the `users` table for a record matching the USER_ID parameter.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `pool`: PostgreSQL 连接池引用
-/// - `user_id`: 用户 ID
+/// - `pool`: Reference to the PostgreSQL connection pool.
+/// - `user_id`: The identifier of the user to retrieve.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回 [`User`] 记录，失败时返回 [`AxError`]。
+/// The matching [`User`] record on success, or an [`AxError`] on database failure.
 pub async fn get_user_detail_db(pool: &PgPool, user_id: i32) -> Result<User, AxError> {
     let user_row = sqlx::query_as!(User, "select * from users where id = $1", user_id)
         .fetch_one(pool)
@@ -78,18 +80,18 @@ pub async fn get_user_detail_db(pool: &PgPool, user_id: i32) -> Result<User, AxE
     Ok(user_row)
 }
 
-/// 根据用户名获取用户详情
+/// Retrieve user details by username.
 ///
-/// 从 `users` 表中查询指定用户名的用户记录。
+/// This function queries the `users` table for a record matching the USER_NAME string.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `pool`: PostgreSQL 连接池引用
-/// - `user_name`: 用户名
+/// - `pool`: Reference to the PostgreSQL connection pool.
+/// - `user_name`: The username of the target user.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回 [`User`] 记录，失败时返回 [`AxError`]。
+/// The matching [`User`] record on success, or an [`AxError`] on database failure.
 pub async fn get_user_detail_by_name_db(pool: &PgPool, user_name: String) -> Result<User, AxError> {
     let user_row = sqlx::query_as!(User, "select * from users where user_name = $1", user_name)
         .fetch_one(pool)
@@ -97,17 +99,17 @@ pub async fn get_user_detail_by_name_db(pool: &PgPool, user_name: String) -> Res
     Ok(user_row)
 }
 
-/// 获取所有用户列表
+/// Retrieve all user records from the database.
 ///
-/// 从 `users` 表中查询全部用户记录。
+/// This function queries the `users` table for all records.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `pool`: PostgreSQL 连接池引用
+/// - `pool`: Reference to the PostgreSQL connection pool.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回 [`Vec<User>`] 列表，失败时返回 [`AxError`]。
+/// A vector containing all [`User`] records on success, or an [`AxError`] on database failure.
 pub async fn get_user_list_db(pool: &PgPool) -> Result<Vec<User>, AxError> {
     let users = sqlx::query_as!(User, "select * from users")
         .fetch_all(pool)
@@ -115,20 +117,21 @@ pub async fn get_user_list_db(pool: &PgPool) -> Result<Vec<User>, AxError> {
     Ok(users)
 }
 
-/// 更新用户信息
+/// Update user details in the database.
 ///
-/// 根据 ID 更新 `users` 表中的用户记录。仅更新 `update_user` 中提供的字段，
-/// 未提供的字段保留原值。如果提供了新密码，会先进行 bcrypt 哈希处理。
+/// This function modifies the user record matching USER_ID with the fields
+/// provided in UPDATE_USER. If a new password is provided, it is hashed before saving.
+/// Existing values are preserved for fields omitted in the update payload.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `pool`: PostgreSQL 连接池引用
-/// - `user_id`: 待更新用户的 ID
-/// - `update_user`: 更新数据
+/// - `pool`: Reference to the PostgreSQL connection pool.
+/// - `user_id`: The identifier of the user to update.
+/// - `update_user`: The update payload containing the fields to modify.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回更新后的 [`User`] 记录，失败时返回 [`AxError`]。
+/// The updated [`User`] record on success, or an [`AxError`] on failure.
 pub async fn update_user_db(
     pool: &PgPool,
     user_id: i32,
@@ -204,18 +207,19 @@ pub async fn update_user_db(
     }
 }
 
-/// 根据用户 ID 从数据库删除用户
+/// Delete a user record from the database by its identifier.
 ///
-/// 从 `users` 表中删除指定 ID 的用户，返回被删除的用户记录。
+/// This function removes the user matching USER_ID from the `users` table
+/// and returns the deleted record.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `pool`: PostgreSQL 连接池引用
-/// - `user_id`: 待删除用户的 ID
+/// - `POOL`: Reference to the PostgreSQL connection pool.
+/// - `USER_ID`: The identifier of the user to delete.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回被删除的 [`User`] 记录，失败时返回 [`AxError`]。
+/// The deleted [`User`] record on success, or an [`AxError`] on failure.
 pub async fn delete_user_db(pool: &PgPool, user_id: i32) -> Result<User, AxError> {
     let user_row = sqlx::query_as!(
         User,

@@ -9,19 +9,20 @@ use crate::{
     models::reaction::{CreateReaction, Reaction, ReactionResponseTable},
 };
 
-/// 插入一条点赞记录
+/// Insert a like reaction record into the database.
 ///
-/// 在 `reactions` 表中插入一条 "Like" 记录。如果该用户之前对同一目标存在 "Dislike" 记录，
-/// 则先删除该 Dislike 记录。使用 `ON CONFLICT` 实现幂等插入（重复点赞会更新时间戳）。
+/// This function records a "Like" reaction in the `reactions` table. If a corresponding
+/// "Dislike" record exists for the same target, it is removed prior to insertion.
+/// An `ON CONFLICT` clause ensures idempotence by updating the timestamp on duplicate entries.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `pool`: PostgreSQL 连接池引用
-/// - `create_reaction`: 待插入的互动数据
+/// - `pool`: Reference to the PostgreSQL connection pool.
+/// - `create_reaction`: The reaction details to insert.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回插入的 [`Reaction`] 记录，失败时返回 [`AxError`]。
+/// The inserted [`Reaction`] record on success, or an [`AxError`] on database failure.
 pub async fn insert_like_reaction_db(
     pool: &PgPool,
     create_reaction: CreateReaction,
@@ -51,19 +52,20 @@ pub async fn insert_like_reaction_db(
     Ok(reaction_row)
 }
 
-/// 插入一条点踩记录
+/// Insert a dislike reaction record into the database.
 ///
-/// 在 `reactions` 表中插入一条 "Dislike" 记录。如果该用户之前对同一目标存在 "Like" 记录，
-/// 则先删除该 Like 记录。使用 `ON CONFLICT` 实现幂等插入。
+/// This function records a "Dislike" reaction in the `reactions` table. If a corresponding
+/// "Like" record exists for the same target, it is removed prior to insertion.
+/// An `ON CONFLICT` clause ensures idempotence.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `pool`: PostgreSQL 连接池引用
-/// - `create_reaction`: 待插入的互动数据
+/// - `pool`: Reference to the PostgreSQL connection pool.
+/// - `create_reaction`: The reaction details to insert.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回插入的 [`Reaction`] 记录，失败时返回 [`AxError`]。
+/// The inserted [`Reaction`] record on success, or an [`AxError`] on database failure.
 pub async fn insert_dislike_reaction_db(
     pool: &PgPool,
     create_reaction: CreateReaction,
@@ -92,18 +94,19 @@ pub async fn insert_dislike_reaction_db(
     Ok(reaction_row)
 }
 
-/// 根据 ID 从数据库删除互动记录
+/// Delete a reaction record from the database by its identifier.
 ///
-/// 从 `reactions` 表中删除指定 ID 的互动记录，返回被删除的记录。
+/// This function deletes the reaction matching ID from the `reactions` table
+/// and returns the deleted record.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `pool`: PostgreSQL 连接池引用
-/// - `id`: 待删除互动记录的 ID
+/// - `pool`: Reference to the PostgreSQL connection pool.
+/// - `id`: The identifier of the reaction record.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回被删除的 [`Reaction`] 记录，失败时返回 [`sqlx::Error`]。
+/// The deleted [`Reaction`] record on success, or a [`sqlx::Error`] on database failure.
 pub async fn delete_reaction_by_id_db(pool: &PgPool, id: i32) -> Result<Reaction, sqlx::Error> {
     println!("{:?}", id);
     sqlx::query_as!(
@@ -113,21 +116,22 @@ pub async fn delete_reaction_by_id_db(pool: &PgPool, id: i32) -> Result<Reaction
     ).fetch_one(pool).await
 }
 
-/// 检查指定互动记录是否已存在
+/// Verify if a specific reaction record exists.
 ///
-/// 在 `reactions` 表中查询是否存在匹配指定条件的记录，用于在插入相反类型的互动时先删除旧记录。
+/// This function queries the `reactions` table for a record matching the target ID,
+/// user ID, reaction name, and target type. This is used to clear conflicting reaction types.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `pool`: PostgreSQL 连接池引用
-/// - `to_id`: 互动目标 ID
-/// - `user_id`: 用户 ID
-/// - `reaction_name`: 互动类型名称（如 "Like" 或 "Dislike"）
-/// - `to_type`: 互动目标类型（如 "post" 或 "comment"）
+/// - `pool`: Reference to the PostgreSQL connection pool.
+/// - `to_id`: The identifier of the reaction target.
+/// - `user_id`: The identifier of the user who reacted.
+/// - `reaction_name`: The type of reaction (e.g. "Like" or "Dislike").
+/// - `to_type`: The category of the target (e.g. "post" or "comment").
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回匹配的 [`Reaction`] 记录，失败时返回 [`sqlx::Error`]。
+/// The matching [`Reaction`] record on success, or a [`sqlx::Error`] on database failure.
 pub async fn is_reaction_record_exists_db(
     pool: &PgPool,
     to_id: i32,
@@ -147,18 +151,18 @@ pub async fn is_reaction_record_exists_db(
         .await
 }
 
-/// 根据查询参数获取互动统计表
+/// Retrieve the reaction statistics table matching the query parameter.
 ///
-/// 查询指定目标的点赞和点踩数量，返回统计结果。
+/// This function queries the counts of likes and dislikes for the target specified in QUERY.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `pool`: PostgreSQL 连接池引用
-/// - `query`: URL 查询参数，支持 `toId` 字段
+/// - `pool`: Reference to the PostgreSQL connection pool.
+/// - `query`: URL query mapping containing `toId`.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回 [`ReactionResponseTable`]（包含 like 和 dislike 计数），失败时返回 [`AxError`]。
+/// A [`ReactionResponseTable`] containing counts on success, or an [`AxError`] on failure.
 pub async fn get_reaction_table_by_query_db(
     pool: &PgPool,
     query: Query<HashMap<String, String>>,
@@ -184,19 +188,19 @@ pub async fn get_reaction_table_by_query_db(
     })
 }
 
-/// 根据查询参数获取互动记录列表
+/// Retrieve a list of reaction records filtered by query parameters.
 ///
-/// 支持按 ID、目标 ID、目标类型、用户 ID、互动类型进行筛选。
-/// 未指定条件的参数将被忽略。
+/// This function filters reaction records based on optional fields such as record ID,
+/// target ID, target type, user ID, and reaction name. Unspecified parameters are ignored.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `pool`: PostgreSQL 连接池引用
-/// - `query`: URL 查询参数，支持 `id`、`toId`、`toType`、`userId`、`reactionName` 字段
+/// - `pool`: Reference to the PostgreSQL connection pool.
+/// - `query`: URL query mapping containing optional search criteria.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回匹配的 [`Vec<Reaction>`] 列表，失败时返回 [`AxError`]。
+/// A vector of matching [`Reaction`] records on success, or an [`AxError`] on failure.
 pub async fn get_reactions_by_query_db(
     pool: &PgPool,
     query: Query<HashMap<String, String>>,

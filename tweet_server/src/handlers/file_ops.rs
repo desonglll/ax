@@ -23,22 +23,22 @@ use crate::infra::log::Log;
 
 static LAST_LOGGED_SIZE_MB: AtomicUsize = AtomicUsize::new(0);
 
-/// 处理文件上传
+/// Process multipart file upload requests.
 ///
-/// 验证用户登录状态后，遍历 Multipart 请求中的所有字段，
-/// 将文件字段保存到磁盘并在数据库中创建记录，文本字段则打印日志。
-/// 如果上传的文件与已有文件校验和相同，会先软删除旧记录。
+/// This function verifies active session status, parses multipart fields, saves file fields
+/// to disk, and records metadata in the database. If a file with a matching checksum exists,
+/// it soft-deletes the older record prior to writing.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `session`: 请求的 session 对象，用于登录验证
-/// - `app_state`: 应用状态，包含数据库连接池
-/// - `is_pub`: 文件是否公开
-/// - `payload`: Multipart 上传数据
+/// - `session`: The session object of the incoming request.
+/// - `app_state`: Reference to the shared state of the application.
+/// - `is_pub`: Boolean indicating whether the file is public.
+/// - `payload`: The multipart data stream.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 登录时返回 200 及上传的文件信息列表，未登录时返回 401。
+/// An HTTP response enclosing the uploaded file details on success, or an authentication error.
 pub async fn upload(
     session: Session,
     app_state: web::Data<AppState>,
@@ -87,23 +87,23 @@ pub async fn upload(
     }
 }
 
-/// 处理 Multipart 中的文件字段
+/// Process a file field from a multipart request.
 ///
-/// 将上传的文件数据写入临时文件，完成后重命名为正式文件名。
-/// 计算文件的 SHA-256 校验和，如果数据库中已存在相同校验和的文件，先软删除旧记录，
-/// 然后插入新文件记录到数据库。
+/// This helper writes file content to a temporary location, renames it upon successful write,
+/// calculates its SHA-256 checksum, soft-deletes older duplicates, and inserts the metadata
+/// record into the database.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `field`: Multipart 文件字段
-/// - `file_name`: 文件名
-/// - `is_pub`: 文件是否公开
-/// - `session`: 请求的 session 对象，用于获取用户信息
-/// - `app_state`: 应用状态，包含数据库连接池
+/// - `field`: Reference to the multipart field object.
+/// - `file_name`: The name of the file.
+/// - `is_pub`: Boolean indicating if the file is public.
+/// - `session`: Reference to the request session.
+/// - `app_state`: Reference to the shared state.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回插入的 [`File`] 记录，失败时返回 [`AxError`]。
+/// The inserted [`File`] record on success, or an [`AxError`] on failure.
 async fn process_file_field(
     field: &mut Field,
     file_name: &str,
@@ -146,20 +146,19 @@ async fn process_file_field(
     insert_file_db(&app_state.db, new_file).await
 }
 
-/// 将 MultipartFile 字段的数据块写入文件
+/// Write multipart data chunks to a file.
 ///
-/// 逐块读取上传数据并写入文件，同时计算 SHA-256 校验和。
-/// 每上传 10MB 输出一次日志。
+/// This function reads chunks from FIELD, writes them into FILE, and updates
+/// a SHA-256 hasher. It logs upload progress at 10MB intervals.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `field`: MultipartFile 字段
-/// - `file`: 目标文件句柄
+/// - `FIELD`: Reference to the multipart field.
+/// - `FILE`: Reference to the target standard file handle.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回 `(文件大小, SHA-256 校验和十六进制字符串)` 的元组，
-/// 失败时返回 [`actix_web::Error`]。
+/// A tuple containing size and hash hex string on success, or an `actix_web::Error`.
 async fn write_chunks_to_file(
     field: &mut Field,
     file: &mut StdFile,
@@ -194,18 +193,18 @@ async fn write_chunks_to_file(
     Ok((size, hash_hex))
 }
 
-/// 重命名文件
+/// Rename a file on disk.
 ///
-/// 将文件从旧路径重命名为新路径，用于将临时上传文件重命名为正式文件名。
+/// This helper renames a file from OLD_PATH to NEW_PATH.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `old_path`: 旧文件路径
-/// - `new_path`: 新文件路径
+/// - `old_path`: The current file path.
+/// - `new_path`: The target file path.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回 `Ok(())`，失败时返回 [`actix_web::Error`]。
+/// `Ok(())` on success, or an `actix_web::Error`.
 fn rename_file(old_path: String, new_path: String) -> Result<(), actix_web::Error> {
     std::fs::rename(old_path.clone(), new_path.clone())
         .map_err(|e| {
@@ -217,17 +216,17 @@ fn rename_file(old_path: String, new_path: String) -> Result<(), actix_web::Erro
     Ok(())
 }
 
-/// 处理 MultipartFile 中的文本字段
+/// Read text data from a multipart field.
 ///
-/// 读取文本字段的所有数据块并拼接为字符串。
+/// This function collects all chunks from FIELD and reconstructs them into a string.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `field`: MultipartFile 文本字段
+/// - `field`: Reference to the multipart field.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 返回文本字段的字符串值，如果数据不是有效 UTF-8 则返回固定错误提示。
+/// A string representing the text content of the field.
 async fn process_text_field(field: &mut Field) -> String {
     let mut value = Vec::new();
     while let Some(chunk) = field.next().await {
@@ -238,14 +237,15 @@ async fn process_text_field(field: &mut Field) -> String {
     String::from_utf8(value).unwrap_or_else(|_| "Invalid UTF-8 data".to_string())
 }
 
-/// 获取当前工作目录的路径。
+/// Retrieve the path of the current working directory.
 ///
-/// 此函数返回当前运行程序的工作目录的完整路径，以字符串形式返回。
+/// This function returns the absolute path of the directory from which the application was started.
 ///
-/// # 返回值
-/// 返回当前工作目录的路径字符串。
+/// # Returns
 ///
-/// # 示例
+/// A string representing the base working directory.
+///
+/// # Examples
 /// ```
 /// use tweet_server::handlers::file_ops::get_base_url;
 /// let base_url = get_base_url();
@@ -260,17 +260,19 @@ pub fn get_base_url() -> String {
     base_url
 }
 
-/// 根据文件名生成完整的文件保存路径。
+/// Generate the absolute storage path for a file.
 ///
-/// 此函数使用当前工作目录路径和提供的文件名生成完整的文件保存路径。
+/// This function constructs a target path under the uploads folder using the NAME parameter.
 ///
-/// # 参数
-/// - `name`: 文件名，以字符串形式传入。
+/// # Parameters
 ///
-/// # 返回值
-/// 返回完整的文件保存路径。
+/// - `name`: The name of the file.
 ///
-/// # 示例
+/// # Returns
+///
+/// The absolute file path string.
+///
+/// # Examples
 /// ```
 /// use tweet_server::handlers::file_ops::get_path;
 /// let path = get_path("example.txt".to_string());
@@ -282,7 +284,7 @@ pub fn get_path(name: String) -> String {
     path
 }
 
-// 编码中文文件名的函数
+// Encode filename using percent-encoding to support non-ASCII characters.
 pub fn encode_filename(filename: &str) -> String {
     percent_encode(filename.as_bytes(), NON_ALPHANUMERIC).to_string()
 }

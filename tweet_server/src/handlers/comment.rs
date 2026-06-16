@@ -19,26 +19,27 @@ use crate::{errors::AxError, models::comment::CreateComment, state::AppState};
     "reply_type": "post"
 }
  */
-/// 插入一条新评论
+/// Insert a new comment record.
 ///
-/// 创建评论处理器。从 session 中获取当前用户 ID 并设置到评论数据中，
-/// 然后调用数据库层插入评论记录。
+/// This handler processes request payloads to insert a new comment. It retrieves
+/// the active user's identifier from the SESSION and delegates the database insert
+/// to the persistence layer.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `session`: 请求的 session 对象，用于登录验证和获取用户 ID
-/// - `app_state`: 应用状态，包含数据库连接池
-/// - `create_comment`: 请求体中的评论数据
+/// - `session`: The session object of the incoming request.
+/// - `app_state`: Reference to the shared state of the application.
+/// - `create_comment`: JSON payload representing the comment details.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回 200 响应及创建的评论数据，失败时返回 [`AxError`]。
+/// An HTTP response enclosing the created comment on success, or an [`AxError`] on failure.
 pub async fn insert_comment(
     session: Session,
     app_state: web::Data<AppState>,
     create_comment: web::Json<CreateComment>,
 ) -> Result<HttpResponse, AxError> {
-    // Login check
+    // Perform authentication check.
     if let Ok(resp) = login_in_unauthentic(&session).await {
         return Ok(resp);
     }
@@ -57,31 +58,32 @@ pub async fn insert_comment(
         })
 }
 
-/// 根据 ID 删除评论
+/// Delete a comment record by its identifier.
 ///
-/// 删除评论处理器。验证登录状态后，根据路径参数中的评论 ID 删除评论。
+/// This handler processes request payloads to delete a comment. It verifies the login
+/// status, checks ownership or administrator privileges, and performs the deletion.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `session`: 请求的 session 对象，用于登录验证
-/// - `app_state`: 应用状态，包含数据库连接池
-/// - `params`: 路径参数，包含评论 ID
+/// - `session`: The session object of the incoming request.
+/// - `app_state`: Reference to the shared state of the application.
+/// - `params`: Path parameters containing the comment identifier.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回 200 响应及被删除的评论数据，失败时返回 [`AxError`]。
+/// An HTTP response enclosing the deleted comment on success, or an [`AxError`] on failure.
 pub async fn delete_comment(
     session: Session,
     app_state: web::Data<AppState>,
     params: web::Path<(i32,)>,
 ) -> Result<HttpResponse, AxError> {
-    // Login check
+    // Perform authentication check.
     if let Ok(resp) = login_in_unauthentic(&session).await {
         return Ok(resp);
     }
     let (id,) = params.into_inner();
 
-    // Owner check
+    // Verify commenter ownership.
     let comment = sqlx::query!("select user_id from comments where id = $1", id)
         .fetch_one(&app_state.db)
         .await
@@ -108,19 +110,18 @@ pub async fn delete_comment(
         })
 }
 
-/// 根据查询条件获取评论列表
+/// Retrieve a list of comments matching the query.
 ///
-/// 查询评论处理器。验证登录状态后，根据 URL 查询参数（如评论 ID、回复目标等）筛选评论。
+/// This handler returns a list of comment records filtered by query parameters.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `session`: 请求的 session 对象，用于登录验证
-/// - `app_state`: 应用状态，包含数据库连接池
-/// - `query`: URL 查询参数
+/// - `app_state`: Reference to the shared state of the application.
+/// - `query`: URL query mapping representing comment filters.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回 200 响应及评论列表，失败时返回 [`AxError`]。
+/// An HTTP response enclosing matching comment records on success, or an [`AxError`] on failure.
 pub async fn get_comment_by_query(
     app_state: web::Data<AppState>,
     query: web::Query<HashMap<String, String>>,
@@ -168,7 +169,7 @@ mod tests {
         let comment_id = body_json["body"]["data"]["id"]
             .as_i64()
             .expect("id not found or not an integer") as i32;
-        // 删除测试插入的 post
+        // Clean up the comment inserted for testing.
         sqlx::query!("DELETE FROM comments WHERE id = $1", comment_id)
             .execute(&app_state.db)
             .await
@@ -222,7 +223,7 @@ mod tests {
             .expect("id not found or not an integer") as i32;
         assert_eq!(comment_id, get_comment_id);
 
-        // 删除测试插入的 post
+        // Clean up the comment inserted for testing.
         sqlx::query!("DELETE FROM comments WHERE id = $1", comment_id)
             .execute(&app_state.db)
             .await

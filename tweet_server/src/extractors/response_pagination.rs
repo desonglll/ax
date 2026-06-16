@@ -1,8 +1,9 @@
 use serde::Serialize;
 
-/// 响应分页信息
+/// Pagination metadata for response.
 ///
-/// 包含分页的 limit、offset 和可选的总记录数。
+/// This structure represents pagination parameters returned in the response,
+/// including the query limits, offset, and the total count of matching records.
 #[derive(Serialize, Debug, Clone)]
 pub struct Pagination {
     pub limit: i64,
@@ -10,9 +11,9 @@ pub struct Pagination {
     pub count: Option<i64>,
 }
 
-/// 分页信息构建器
+/// Builder for response pagination metadata.
 ///
-/// 使用建造者模式构建 [`Pagination`] 实例。
+/// This builder aids in constructing a [`Pagination`] instance.
 pub struct PaginationBuilder {
     pub limit: i64,
     pub offset: i64,
@@ -20,12 +21,12 @@ pub struct PaginationBuilder {
 }
 
 impl PaginationBuilder {
-    /// 创建新的分页构建器
+    /// Create a new pagination builder.
     ///
-    /// # 参数
+    /// # Parameters
     ///
-    /// - `limit`: 每页条目数
-    /// - `offset`: 偏移量
+    /// - `limit`: The maximum number of records.
+    /// - `offset`: The offset index.
     pub fn new(limit: i64, offset: i64) -> PaginationBuilder {
         PaginationBuilder {
             limit,
@@ -34,25 +35,25 @@ impl PaginationBuilder {
         }
     }
 
-    /// 设置每页条目数
+    /// Set the limit value.
     pub fn set_limit(mut self, limit: i64) -> Self {
         self.limit = limit;
         self
     }
 
-    /// 设置偏移量
+    /// Set the offset value.
     pub fn set_offset(mut self, offset: i64) -> Self {
         self.offset = offset;
         self
     }
 
-    /// 设置总记录数
+    /// Set the total record count.
     pub fn set_count(mut self, count: i64) -> Self {
         self.count = Some(count);
         self
     }
 
-    /// 构建最终的 [`Pagination`] 实例
+    /// Build the final [`Pagination`] instance.
     pub fn build(self) -> Pagination {
         Pagination {
             limit: self.limit,

@@ -3,17 +3,19 @@ use std::env;
 use dotenv::dotenv;
 use sqlx::{PgPool, Pool, Postgres};
 
-/// 创建并返回 PostgreSQL 连接池
+/// Create and return a new PostgreSQL connection pool.
 ///
-/// 从环境变量 `.env` 文件中读取 `DATABASE_URL`，创建一个 PostgreSQL 连接池。
+/// This function reads the `DATABASE_URL` environment variable from the `.env` file
+/// and establishes a connection pool to the database.
 ///
 /// # Panics
 ///
-/// 如果 `DATABASE_URL` 未设置或连接失败，程序将 panic。
+/// The function panics if the `DATABASE_URL` environment variable is not defined,
+/// or if the connection to the database cannot be established.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 返回一个 [`Pool<Postgres>`] 连接池实例。
+/// A [`Pool<Postgres>`] instance representing the established connection pool.
 pub async fn get_db_pool() -> Pool<Postgres> {
     dotenv().ok();
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL is not set in .env file");

@@ -5,7 +5,7 @@ use crate::handlers::user::{
     update_user_details,
 };
 
-/// 配置用户相关路由
+/// Configure routes related to users.
 pub fn user_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/users")

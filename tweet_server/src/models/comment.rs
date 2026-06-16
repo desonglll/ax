@@ -2,9 +2,9 @@ use chrono::DateTime;
 use serde::{Deserialize, Serialize};
 use sqlx::types::chrono;
 
-/// 评论数据模型
+/// Comment data model.
 ///
-/// 对应数据库 `comments` 表的记录，表示一条评论。
+/// This struct corresponds to records in the `comments` database table.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Comment {
@@ -18,9 +18,10 @@ pub struct Comment {
     pub reply_to_type: String,
 }
 
-/// 创建评论请求结构
+/// Request payload structure for creating a comment.
 ///
-/// 用于接收创建评论时的请求数据，`user_id` 由服务器从 session 中设置。
+/// This structure encapsulates request parameters to submit a comment. The `user_id`
+/// attribute is populated by the server from session context.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateComment {
@@ -31,7 +32,7 @@ pub struct CreateComment {
 }
 
 impl CreateComment {
-    /// 创建新的评论请求实例
+    /// Create a new CreateComment request payload.
     pub fn new(
         content: String,
         reply_to: i32,
@@ -46,47 +47,47 @@ impl CreateComment {
         }
     }
 
-    /// 设置评论内容
+    /// Set the comment content field.
     pub fn set_content(&mut self, content: String) {
         self.content = content;
     }
 
-    /// 设置回复目标 ID
+    /// Set the identifier of the target item being replied to.
     pub fn set_reply_to(&mut self, reply_to: i32) {
         self.reply_to = reply_to;
     }
 
-    /// 设置用户 ID
+    /// Set the user identifier of the commenter.
     pub fn set_user_id(&mut self, user_id: Option<i32>) {
         self.user_id = user_id;
     }
 
-    /// 设置回复目标类型
+    /// Set the category type of the target item being replied to.
     pub fn set_reply_to_type(&mut self, reply_to_type: String) {
         self.reply_to_type = reply_to_type;
     }
 
-    /// 获取评论内容引用
+    /// Retrieve a reference to the comment content.
     pub fn content(&self) -> &str {
         &self.content
     }
 
-    /// 获取回复目标 ID
+    /// Retrieve the identifier of the target item.
     pub fn reply_to(&self) -> i32 {
         self.reply_to
     }
 
-    /// 获取用户 ID
+    /// Retrieve the optional user identifier.
     pub fn user_id(&self) -> Option<i32> {
         self.user_id
     }
 
-    /// 获取回复目标类型引用
+    /// Retrieve a reference to the reply target type.
     pub fn reply_to_type(&self) -> &str {
         &self.reply_to_type
     }
 
-    /// 创建演示用的评论数据
+    /// Generate a demonstration CreateComment request payload.
     pub fn demo() -> Self {
         CreateComment {
             content: "demo".to_string(),

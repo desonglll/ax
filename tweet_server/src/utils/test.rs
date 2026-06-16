@@ -6,17 +6,18 @@ use serde_json::Value;
 
 use crate::models::user::User;
 
-/// 获取用于测试的用户 session
+/// Obtain a user session for testing.
 ///
-/// 创建一个测试 session，并将指定用户的 `is_admin`、`user_name`、`user_id` 写入 session。
+/// This function creates a test session and writes the specified user's
+/// `is_admin`, `user_name`, and `user_id` into the session.
 ///
-/// # 参数
+/// # Arguments
 ///
-/// - `user`: 用户数据引用
+/// * `USER` - A reference to the user data structure.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 返回已设置用户信息的测试 `Session`。
+/// A [`Session`] instance populated with the user details.
 pub async fn get_test_session(user: &User) -> Session {
     let req = TestRequest::default().to_http_request();
     let session = Session::from_request(&req, &mut actix_web::dev::Payload::None)
@@ -28,14 +29,14 @@ pub async fn get_test_session(user: &User) -> Session {
     session
 }
 
-/// 获取用于测试的演示 session
+/// Obtain a demo session for testing.
 ///
-/// 创建一个测试 session，写入 `user_id=1` 和 `is_active=true`，
-/// 模拟已登录用户。
+/// This function creates a test session, setting `user_id` to 1 and `is_active` to true
+/// to simulate a logged-in user.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 返回已设置演示用户信息的测试 `Session`。
+/// A [`Session`] instance representing a logged-in demo user.
 pub async fn get_demo_session() -> Session {
     let session = TestRequest::post().to_http_request().get_session();
     session.insert("user_id", 1).unwrap();
@@ -43,17 +44,18 @@ pub async fn get_demo_session() -> Session {
     session
 }
 
-/// 将 HttpResponse 转换为 JSON 值
+/// Convert an HTTP response to a JSON value.
 ///
-/// 读取响应体的字节流并解析为 `serde_json::Value`，用于测试中的响应断言。
+/// This function reads the body of the HTTP response and parses it into a [`Value`]
+/// for assertions in tests.
 ///
-/// # 参数
+/// # Arguments
 ///
-/// - `resp`: HTTP 响应
+/// * `RESP` - The HTTP response to be converted.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 返回解析后的 JSON 值。
+/// The parsed [`Value`] containing the JSON body.
 pub async fn http_response_to_json(resp: HttpResponse) -> Value {
     let body = resp.into_body();
     let body_bytes = to_bytes(body).await.unwrap();

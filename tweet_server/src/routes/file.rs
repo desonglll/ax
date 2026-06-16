@@ -5,7 +5,7 @@ use crate::handlers::file::{
     upload_public,
 };
 
-/// 配置文件相关路由
+/// Configure routes related to files.
 pub fn file_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/files")

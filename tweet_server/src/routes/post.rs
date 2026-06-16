@@ -3,7 +3,7 @@ use actix_web::web;
 use crate::handlers::post::{delete_post, get_post_detail, get_post_list, insert_new_post, update_post_details};
 use crate::handlers::post::get_trending_posts;
 
-/// 配置推文相关路由
+/// Configure routes related to posts.
 pub fn post_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/posts")

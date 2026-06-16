@@ -5,9 +5,9 @@ use uuid::Uuid;
 
 use crate::infra::hash::Hash;
 
-/// 用户数据模型
+/// User account data model.
 ///
-/// 对应数据库 `users` 表的记录，表示一个用户。
+/// This struct corresponds to records in the `users` database table.
 #[derive(Deserialize, Serialize, Debug, Default, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct User {
@@ -25,9 +25,10 @@ pub struct User {
     pub profile_picture: Option<Uuid>,
 }
 
-/// 创建用户请求结构
+/// Request payload structure for creating a user.
 ///
-/// 用于接收注册用户时的请求数据，密码为明文（服务器端哈希后存储）。
+/// This structure encapsulates request parameters to register a new user.
+/// The plain-text password is encrypted prior to database insertion.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateUser {
@@ -41,9 +42,9 @@ pub struct CreateUser {
     pub profile_picture: Option<Uuid>,
 }
 
-/// 更新用户请求结构
+/// Request payload structure for updating user details.
 ///
-/// 用于接收更新用户信息时的请求数据，所有字段均为可选，仅更新提供的字段。
+/// This structure encapsulates optional user fields to modify.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateUser {
@@ -70,9 +71,9 @@ impl From<web::Json<UpdateUser>> for UpdateUser {
 }
 
 impl User {
-    /// 创建测试用的超级用户
+    /// Generate a demonstration super-user record.
     ///
-    /// 生成一个 ID 为 999 的测试用户，密码为 "070011"，用于测试环境。
+    /// This method yields a mock administrator user instance for testing purposes.
     pub fn test_super_user() -> Self {
         User {
             id: 999,
@@ -91,7 +92,7 @@ impl User {
     }
 }
 
-/// 用户登录请求
+/// Request payload structure for user authentication.
 #[derive(Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct LoginRequest {

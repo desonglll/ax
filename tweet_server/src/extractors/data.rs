@@ -4,18 +4,18 @@ use crate::models::reaction::Reaction;
 
 use super::response_pagination::Pagination;
 
-/// 通用响应体数据结构
+/// Universal response body data structure.
 ///
-/// 包含数据和可选的分页信息。
+/// This structure contains the response data and optional pagination metadata.
 #[derive(Serialize, Default, Debug)]
 pub struct Data<T: Default> {
     pub data: Option<T>,
     pub pagination: Option<Pagination>,
 }
 
-/// 响应体数据构建器
+/// Builder for response body data.
 ///
-/// 使用建造者模式构建 [`Data`] 实例。
+/// This builder aids in constructing a [`Data`] instance.
 #[derive(Clone)]
 pub struct DataBuilder<T: Default> {
     pub data: Option<T>,
@@ -29,7 +29,7 @@ impl<T: Default> Default for DataBuilder<T> {
 }
 
 impl<T: Default> DataBuilder<T> {
-    /// 创建新的 `DataBuilder` 实例
+    /// Create a new `DataBuilder` instance.
     pub fn new() -> Self {
         DataBuilder {
             data: None,
@@ -37,19 +37,19 @@ impl<T: Default> DataBuilder<T> {
         }
     }
 
-    /// 设置响应数据
+    /// Set the response data field.
     pub fn set_data(mut self, data: T) -> Self {
         self.data = Some(data);
         self
     }
 
-    /// 设置分页信息
+    /// Set the pagination metadata field.
     pub fn set_pagination(mut self, pagination: Pagination) -> Self {
         self.pagination = Some(pagination);
         self
     }
 
-    /// 构建最终的 [`Data`] 实例
+    /// Build the final [`Data`] instance.
     pub fn build(self) -> Data<T> {
         Data {
             data: self.data,
@@ -58,9 +58,10 @@ impl<T: Default> DataBuilder<T> {
     }
 }
 
-/// 推文列表响应体数据结构
+/// Response body data structure for post listings.
 ///
-/// 包含推文数据、互动统计和可选的分页信息。
+/// This structure holds the post records, associated user reactions,
+/// and optional pagination metadata.
 #[derive(Serialize, Default, Debug)]
 pub struct PostListData<T: Default> {
     pub data: Option<T>,
@@ -68,9 +69,9 @@ pub struct PostListData<T: Default> {
     pub pagination: Option<Pagination>,
 }
 
-/// 推文列表响应体数据构建器
+/// Builder for post list response data.
 ///
-/// 使用建造者模式构建 [`PostListData`] 实例。
+/// This builder aids in constructing a [`PostListData`] instance.
 #[derive(Clone)]
 pub struct PostListDataBuilder<T: Default> {
     pub data: Option<T>,
@@ -85,7 +86,7 @@ impl<T: Default> Default for PostListDataBuilder<T> {
 }
 
 impl<T: Default> PostListDataBuilder<T> {
-    /// 创建新的 `PostListDataBuilder` 实例
+    /// Create a new `PostListDataBuilder` instance.
     pub fn new() -> Self {
         PostListDataBuilder {
             data: None,
@@ -94,25 +95,25 @@ impl<T: Default> PostListDataBuilder<T> {
         }
     }
 
-    /// 设置推文数据
+    /// Set the list of post records.
     pub fn set_data(mut self, data: T) -> Self {
         self.data = Some(data);
         self
     }
 
-    /// 设置分页信息
+    /// Set the pagination metadata.
     pub fn set_pagination(mut self, pagination: Pagination) -> Self {
         self.pagination = Some(pagination);
         self
     }
 
-    /// 设置互动统计数据
+    /// Set the user reaction statistics.
     pub fn set_reaction(mut self, reaction: Reaction) -> Self {
         self.reaction = Some(reaction);
         self
     }
 
-    /// 构建最终的 [`PostListData`] 实例
+    /// Build the final [`PostListData`] instance.
     pub fn build(self) -> PostListData<T> {
         PostListData {
             data: self.data,

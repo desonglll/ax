@@ -4,23 +4,24 @@ use crate::{errors::AxError, models::user::User};
 
 use crate::infra::log::Log;
 
-/// Session 操作工具结构体
+/// Session operation utilities.
 ///
-/// 提供从 session 中读取用户信息的便捷方法。
+/// This structure provides helper methods for reading user details from the session.
 pub struct SessionOperation;
 
 impl SessionOperation {
-    /// 从 session 中获取当前用户 ID
+    /// Retrieve the current user identifier from the session.
     ///
-    /// 如果 session 中不存在 `user_id` 字段，返回 `Ok(0)` 作为默认值。
+    /// If the `user_id` field is absent in the SESSION, this function returns `Ok(0)`
+    /// as a default indicator.
     ///
-    /// # 参数
+    /// # Parameters
     ///
-    /// - `session`: 请求的 session 对象
+    /// - `session`: The request session object.
     ///
-    /// # 返回值
+    /// # Returns
     ///
-    /// 成功时返回用户 ID，session 中无 `user_id` 时返回 0。
+    /// The user ID on success, or 0 if `user_id` is not present in the session.
     pub fn get_user_id(session: Session) -> Result<i32, AxError> {
         match session.get::<i32>("user_id") {
             Ok(Some(user_id)) => Ok(user_id),
@@ -29,17 +30,18 @@ impl SessionOperation {
     }
 }
 
-/// 检查当前用户是否为管理员
+/// Determine if the current session belongs to an administrator.
 ///
-/// 从 session 中读取 `is_admin` 字段，判断当前用户是否具有管理员权限。
+/// This function reads the `is_admin` field from the SESSION and returns whether
+/// the user has administrative privileges.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `session`: 请求的 session 对象
+/// - `session`: The request session object.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 是管理员时返回 `Ok(true)`，不是或 session 读取失败时返回 `Ok(false)`，出错时返回 [`AxError`]。
+/// A boolean indicating administrative status, or an [`AxError`] if reading fails.
 pub async fn is_admin(session: Session) -> Result<bool, AxError> {
     match session.get::<bool>("is_admin") {
         Ok(is_admin) => Ok(is_admin.unwrap_or(false)),
@@ -47,17 +49,18 @@ pub async fn is_admin(session: Session) -> Result<bool, AxError> {
     }
 }
 
-/// 检查当前用户是否处于活跃状态
+/// Determine if the user in the session is active.
 ///
-/// 从 session 中读取 `is_active` 字段，判断当前用户是否已激活。
+/// This function reads the `is_active` field from the SESSION to verify whether
+/// the account is in an active state.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `session`: 请求的 session 对象引用
+/// - `session`: A reference to the request session object.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 已激活时返回 `Ok(true)`，未激活或 session 读取失败时返回 `Ok(false)`，出错时返回 [`AxError`]。
+/// A boolean indicating whether the user is active, or an [`AxError`] if reading fails.
 pub async fn is_active(session: &Session) -> Result<bool, AxError> {
     match session.get::<bool>("is_active") {
         Ok(is_active) => Ok(is_active.unwrap_or(false)),
@@ -80,16 +83,16 @@ pub async fn is_active(session: &Session) -> Result<bool, AxError> {
 //     pub profile_picture: Option<Uuid>,
 // }
 
-/// 将用户信息写入 Redis session
+/// Write user attributes to the session store.
 ///
-/// 将用户的所有字段（ID、用户名、邮箱、密码哈希、全名、手机号、
-/// 创建/更新/最后登录时间、是否激活、是否管理员、头像）写入 session，
-/// 用于后续请求的身份验证和信息获取。
+/// This function stores all relevant fields of USER (including identifier,
+/// username, email, password hash, full name, phone number, timestamps,
+/// and privilege flags) into the SESSION for subsequent authentication.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `session`: 请求的 session 对象
-/// - `user`: 用户数据引用
+/// - `session`: The target session object.
+/// - `user`: A reference to the user record.
 pub fn insert_user_to_redis(session: Session, user: &User) {
     if let Err(err) = session.insert("user_id", user.id) {
         Log::error(format!("Failed to set session for `user_id`: {}", err));

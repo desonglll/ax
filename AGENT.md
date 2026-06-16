@@ -102,3 +102,15 @@ If you are asked to implement a new endpoint:
 3. **Handler**: Write a controller function in `src/handlers` executing authentication, authorization, db access, and format response.
 4. **Route**: Register the route scope in the corresponding routes file under `src/routes`.
 5. **Test**: Write direct handler test cases verifying both success and failure (e.g., unauthorized access, invalid input) execution paths.
+
+---
+
+## 7. Documentation Synchronicity Rule
+
+> [!CAUTION]
+> **CRITICAL REQUIREMENT**: Whenever you modify the codebase, you MUST update all relevant documentation.
+> - If an API path, query param, request/response body, or status code changes: update `docs/src/api.md`.
+> - If database tables, schemas, or database triggers change: update `docs/src/database.md`.
+> - Always append a new record describing the modifications in `CHANGELOG.md`.
+> - Ensure all documentation additions adhere to the formal GNU-style narration and clean format rules.
+

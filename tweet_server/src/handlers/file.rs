@@ -19,18 +19,19 @@ use crate::{
 use super::auth::check_login;
 use super::file_ops::{encode_filename, upload};
 
-/// 获取所有文件列表（仅管理员）
+/// Retrieve the list of all files (Administrator only).
 ///
-/// 需要登录且具有管理员权限。返回数据库中所有文件的列表。
+/// This handler processes request payloads to retrieve all file metadata from the database.
+/// It requires active session status and administrator permissions.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `session`: 请求的 session 对象，用于登录验证和权限检查
-/// - `app_state`: 应用状态，包含数据库连接池
+/// - `session`: The session object of the incoming request.
+/// - `app_state`: Reference to the shared state of the application.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 管理员登录时返回 200 及文件列表，未登录或非管理员时返回错误响应。
+/// An HTTP response enclosing all file records on success, or an authentication error.
 pub async fn get_file_list(
     session: Session,
     app_state: web::Data<AppState>,
@@ -49,19 +50,20 @@ pub async fn get_file_list(
     }
 }
 
-/// 获取指定用户的私有文件列表
+/// Retrieve private files belonging to a specific user.
 ///
-/// 需要登录。根据查询参数中的用户 ID 返回该用户的私有文件列表。
+/// This handler processes request payloads to retrieve private file records.
+/// It requires active session status.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `session`: 请求的 session 对象，用于登录验证
-/// - `app_state`: 应用状态，包含数据库连接池
-/// - `query`: 文件筛选条件，包含 `user_id`
+/// - `session`: The session object of the incoming request.
+/// - `app_state`: Reference to the shared state of the application.
+/// - `query`: URL query filter containing optional `user_id`.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 登录时返回 200 及文件列表，未登录时返回错误响应。
+/// An HTTP response enclosing private file records on success, or an authentication error.
 pub async fn get_user_file(
     session: Session,
     app_state: web::Data<AppState>,
@@ -79,18 +81,19 @@ pub async fn get_user_file(
     }
 }
 
-/// 获取公开文件列表
+/// Retrieve all public files.
 ///
-/// 需要登录。返回所有公开文件的列表。
+/// This handler processes request payloads to retrieve public file metadata from the database.
+/// It requires active session status.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `session`: 请求的 session 对象，用于登录验证
-/// - `app_state`: 应用状态，包含数据库连接池
+/// - `session`: The session object of the incoming request.
+/// - `app_state`: Reference to the shared state of the application.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 登录时返回 200 及公开文件列表，未登录时返回错误响应。
+/// An HTTP response enclosing public file records on success, or an authentication error.
 pub async fn get_pub_file_list(
     session: Session,
     app_state: web::Data<AppState>,
@@ -104,20 +107,20 @@ pub async fn get_pub_file_list(
     }
 }
 
-/// 下载文件
+/// Download a file by its identifier.
 ///
-/// 根据文件 ID 下载文件。公开文件可直接下载，私有文件需验证当前用户是否为文件所有者。
-/// 返回完整的文件内容作为响应体。
+/// This handler returns the file content matching the UUID parameter. Public files
+/// are returned directly, whereas private files require validation of user ownership.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `session`: 请求的 session 对象，用于权限验证
-/// - `app_state`: 应用状态，包含数据库连接池
-/// - `parameters`: 路径参数，包含文件 UUID
+/// - `session`: The session object of the incoming request.
+/// - `app_state`: Reference to the shared state of the application.
+/// - `parameters`: Path parameters containing the target file UUID.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回文件内容响应，无权限或文件不存在时返回错误响应。
+/// An HTTP response containing the binary content of the file, or an authorization error.
 pub async fn download(
     session: Session,
     app_state: web::Data<AppState>,
@@ -127,9 +130,7 @@ pub async fn download(
     let (file_id,) = parameters.into_inner();
     Log::info(format!("Accessing download API with file ID: {}", file_id));
 
-    //=====================================================================================
-    //-------------------------------------------------------------------------------------
-    // 查询数据库，获取文件信息
+    // Query the database to retrieve file details.
     let file_info = get_file_details_db(&app_state.db, file_id).await?;
 
     if !file_info.is_pub {
@@ -147,7 +148,7 @@ pub async fn download(
 
     let file_path = file_info.path;
 
-    // 打开文件
+    // Open the file.
     let mut file = match StdFile::open(file_path.clone()) {
         Ok(f) => f,
         Err(e) => {
@@ -158,17 +159,15 @@ pub async fn download(
 
     let mut response = HttpResponse::Ok();
 
-    // 设置文件名和Content-Disposition头部
+    // Set the Content-Disposition header with encoded filename.
     let encoded_filename = encode_filename(&file_info.name);
     response.insert_header((
         "Content-Disposition",
         format!("attachment; filename*=UTF-8''{}", encoded_filename),
     ));
 
-    // 设置内容类型
+    // Set content type and retrieve file size.
     response.content_type(file_info.content_type);
-    // 设置内容长度
-    // 获取文件大小
     let file_size = match std::fs::metadata(file_path.clone()) {
         Ok(metadata) => metadata.len(),
         Err(e) => {
@@ -179,7 +178,7 @@ pub async fn download(
     Log::info(format!("File Size: {:?}", file_size));
 
     //============================================================================
-    // 设置一个stream来逐块地将文件内容发送给客户端
+    // Set up a stream to send the file content chunk by chunk to the client.
     // let stream = unfold(file, move |mut file| async {
     //     let mut buffer = vec![0; 4096];
     //     let bytes_read = match file.read(&mut buffer) {
@@ -192,7 +191,7 @@ pub async fn download(
     //============================================================================
     let mut file_content = Vec::new();
     file.read_to_end(&mut file_content).map_err(|e| {
-        // 错误处理
+        // Handle read errors.
         actix_web::error::ErrorInternalServerError(e)
     })?;
 
@@ -204,21 +203,21 @@ pub async fn download(
     Ok(response.body(file_content))
 }
 
-/// 流式传输文件（支持 Range 请求）
+/// Stream a file supporting HTTP Range requests.
 ///
-/// 根据文件 ID 流式传输文件内容，支持 HTTP Range 头实现断点续传。
-/// 公开文件可直接访问，私有文件需验证当前用户是否为文件所有者。
+/// This handler streams file contents matching the UUID parameter, supporting partial range queries
+/// for video seeking or resume-download.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `session`: 请求的 session 对象，用于权限验证
-/// - `app_state`: 应用状态，包含数据库连接池
-/// - `parameters`: 路径参数，包含文件 UUID
-/// - `req`: 原始 HTTP 请求，用于解析 Range 头
+/// - `session`: The session object of the incoming request.
+/// - `app_state`: Reference to the shared state of the application.
+/// - `parameters`: Path parameters containing the target file UUID.
+/// - `req`: The raw HTTP request to parse the Range header.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回 206 Partial Content 响应，无权限或文件不存在时返回错误响应。
+/// A 206 Partial Content HTTP response enclosing the requested range buffer, or an error.
 pub async fn stream(
     session: Session,
     app_state: web::Data<AppState>,
@@ -228,9 +227,7 @@ pub async fn stream(
     use std::fs::File as StdFile;
     let (file_id,) = parameters.into_inner();
     Log::info(format!("Accessing download API with file ID: {}", file_id));
-    //=====================================================================================
-    //-------------------------------------------------------------------------------------
-    // 查询数据库，获取文件信息
+    // Query the database to retrieve file details.
     let file_info = get_file_details_db(&app_state.db, file_id).await?;
 
     if !file_info.is_pub {
@@ -249,7 +246,7 @@ pub async fn stream(
     let file_path = file_info.path;
     println!("File path: {}", file_path);
 
-    // 打开文件
+    // Open the file.
     let mut file = match StdFile::open(file_path.clone()) {
         Ok(f) => f,
         Err(e) => {
@@ -258,10 +255,10 @@ pub async fn stream(
         }
     };
 
-    // 获取文件长度
+    // Retrieve file size metadata.
     let file_length = file.metadata().unwrap().len();
 
-    // 解析Range头
+    // Parse the Range request header.
     let range = req.headers().get("Range").and_then(|header| {
         let range_str = header.to_str().ok()?;
         range_str.strip_prefix("bytes=").map(|r| r.to_string())
@@ -279,42 +276,42 @@ pub async fn stream(
         (0, file_length - 1)
     };
 
-    // 设置起始位置
+    // Seek to the requested start position.
     file.seek(SeekFrom::Start(start))?;
 
-    // 读取内容
+    // Read the range data block.
     let length = end - start + 1;
     let mut buffer = vec![0; length as usize];
     file.read_exact(&mut buffer)?;
 
     let mut response = HttpResponse::PartialContent();
 
-    // 设置Content-Range头
+    // Insert the Content-Range response header.
     response.insert_header((
         "Content-Range",
         format!("bytes {}-{}/{}", start, end, file_length),
     ));
 
-    // 设置内容类型
+    // Set the response Content-Type.
     response.content_type(file_info.content_type);
 
-    // 返回视频数据
+    // Write the partial content to response.
     Ok(response.body(buffer))
 }
 
-/// 上传公开文件
+/// Upload a public file.
 ///
-/// 处理公开文件上传请求，文件标记为公开可访问。
+/// This handler processes multipart payloads to upload files that are publicly visible.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `session`: 请求的 session 对象，用于登录验证
-/// - `app_state`: 应用状态，包含数据库连接池
-/// - `payload`: Multipart 文件上传数据
+/// - `session`: The session object of the incoming request.
+/// - `app_state`: Reference to the shared state of the application.
+/// - `payload`: Multipart body containing file data.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回 200 及上传的文件信息，未登录时返回 401。
+/// An HTTP response enclosing the uploaded file details on success, or an authentication error.
 pub async fn upload_public(
     session: Session,
     app_state: web::Data<AppState>,
@@ -323,19 +320,19 @@ pub async fn upload_public(
     upload(session, app_state, true, payload).await
 }
 
-/// 上传私有文件
+/// Upload a private file.
 ///
-/// 处理私有文件上传请求，文件仅上传者可访问。
+/// This handler processes multipart payloads to upload files that are only visible to the owner.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `session`: 请求的 session 对象，用于登录验证
-/// - `app_state`: 应用状态，包含数据库连接池
-/// - `payload`: Multipart 文件上传数据
+/// - `session`: The session object of the incoming request.
+/// - `app_state`: Reference to the shared state of the application.
+/// - `payload`: Multipart body containing file data.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回 200 及上传的文件信息，未登录时返回 401。
+/// An HTTP response enclosing the uploaded file details on success, or an authentication error.
 pub async fn upload_private(
     session: Session,
     app_state: web::Data<AppState>,

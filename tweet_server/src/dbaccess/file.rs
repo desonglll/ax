@@ -3,18 +3,19 @@ use uuid::Uuid;
 
 use crate::{errors::AxError, models::file::File};
 
-/// 插入一条新文件记录到数据库
+/// Insert a new file record into the database.
 ///
-/// 将文件元数据写入 `files` 表，返回插入后的完整文件记录。
+/// This function writes file metadata to the `files` table and returns the
+/// fully populated [`File`] record.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `pool`: PostgreSQL 连接池引用
-/// - `create_file`: 待插入的文件数据
+/// - `pool`: Reference to the PostgreSQL connection pool.
+/// - `create_file`: The file record to insert.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回插入的 [`File`] 记录，失败时返回 [`AxError`]。
+/// The inserted [`File`] record on success, or an [`AxError`] on database failure.
 pub async fn insert_file_db(pool: &PgPool, create_file: File) -> Result<File, AxError> {
     let file_row = sqlx::query_as!(
         File,
@@ -24,18 +25,18 @@ pub async fn insert_file_db(pool: &PgPool, create_file: File) -> Result<File, Ax
     Ok(file_row)
 }
 
-/// 根据文件 ID 获取文件详情
+/// Retrieve details of a file by its identifier.
 ///
-/// 从 `files` 表中查询指定 ID 的文件记录。
+/// This function queries the `files` table for a record matching the FILE_ID UUID.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `pool`: PostgreSQL 连接池引用
-/// - `file_id`: 文件的 UUID
+/// - `pool`: Reference to the PostgreSQL connection pool.
+/// - `file_id`: The UUID of the target file.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回 [`File`] 记录，失败时返回 [`AxError`]。
+/// The matching [`File`] record on success, or an [`AxError`] on database failure.
 pub async fn get_file_details_db(pool: &PgPool, file_id: Uuid) -> Result<File, AxError> {
     let file_row = sqlx::query_as!(File, "select * from files where id = $1", file_id)
         .fetch_one(pool)
@@ -43,17 +44,17 @@ pub async fn get_file_details_db(pool: &PgPool, file_id: Uuid) -> Result<File, A
     Ok(file_row)
 }
 
-/// 获取所有公开文件列表
+/// Retrieve all public file records.
 ///
-/// 从 `files` 表中查询所有 `is_pub` 为 `true` 的文件记录。
+/// This function queries the `files` table for all records where `is_pub` is set to true.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `pool`: PostgreSQL 连接池引用
+/// - `pool`: Reference to the PostgreSQL connection pool.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回 [`Vec<File>`] 列表，失败时返回 [`AxError`]。
+/// A vector containing matching [`File`] records on success, or an [`AxError`] on database failure.
 pub async fn get_file_public_list_db(pool: &PgPool) -> Result<Vec<File>, AxError> {
     let files = sqlx::query_as!(File, "select * from files where is_pub = $1", true)
         .fetch_all(pool)
@@ -61,18 +62,18 @@ pub async fn get_file_public_list_db(pool: &PgPool) -> Result<Vec<File>, AxError
     Ok(files)
 }
 
-/// 获取指定用户的私有文件列表
+/// Retrieve private file records belonging to a specific user.
 ///
-/// 从 `files` 表中查询属于指定用户 ID 的所有文件记录。
+/// This function queries the `files` table for all records matching the USER_ID parameter.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `pool`: PostgreSQL 连接池引用
-/// - `user_id`: 用户 ID
+/// - `pool`: Reference to the PostgreSQL connection pool.
+/// - `user_id`: The identifier of the owner user.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回 [`Vec<File>`] 列表，失败时返回 [`AxError`]。
+/// A vector containing matching [`File`] records on success, or an [`AxError`] on database failure.
 pub async fn get_file_private_list_db(pool: &PgPool, user_id: i32) -> Result<Vec<File>, AxError> {
     let files = sqlx::query_as!(File, "select * from files where user_id = $1", user_id)
         .fetch_all(pool)
@@ -80,17 +81,17 @@ pub async fn get_file_private_list_db(pool: &PgPool, user_id: i32) -> Result<Vec
     Ok(files)
 }
 
-/// 获取所有文件列表
+/// Retrieve all file records from the database.
 ///
-/// 从 `files` 表中查询全部文件记录。
+/// This function queries the `files` table for all records.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `pool`: PostgreSQL 连接池引用
+/// - `pool`: Reference to the PostgreSQL connection pool.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回 [`Vec<File>`] 列表，失败时返回 [`AxError`]。
+/// A vector containing all [`File`] records on success, or an [`AxError`] on database failure.
 pub async fn get_file_list_db(pool: &PgPool) -> Result<Vec<File>, AxError> {
     let files = sqlx::query_as!(File, "select * from files")
         .fetch_all(pool)
@@ -98,18 +99,20 @@ pub async fn get_file_list_db(pool: &PgPool) -> Result<Vec<File>, AxError> {
     Ok(files)
 }
 
-/// 根据校验和将文件标记为已删除
+/// Mark a file record as deleted using its checksum.
 ///
-/// 在 `files` 表中将指定 checksum 的文件的 `is_deleted` 设为 `true`，用于上传重复文件时软删除旧记录。
+/// This function updates the `files` table, setting the `is_deleted` field to true
+/// for any record matching the CHECKSUM string. This is typically used to soft-delete
+/// older records when duplicate files are uploaded.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `pool`: PostgreSQL 连接池引用
-/// - `checksum`: 文件的校验和（SHA-256）
+/// - `pool`: Reference to the PostgreSQL connection pool.
+/// - `checksum`: The SHA-256 hash checksum of the target file.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回被标记为删除的 [`File`] 记录，失败时返回 [`AxError`]。
+/// The updated [`File`] record on success, or an [`AxError`] on database failure.
 pub async fn set_file_deleted_by_checksum_db(
     pool: &PgPool,
     checksum: String,

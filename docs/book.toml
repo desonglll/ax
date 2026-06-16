@@ -1,4 +1,8 @@
 [book]
-title = "ax developer references"
-authors = ["desonglll"]
+authors = ["The Ax Project Authors"]
 language = "en"
+src = "src"
+title = "Project Ax Documentation"
+
+[output.html]
+git-repository-url = "https://github.com/desonglll/ax"

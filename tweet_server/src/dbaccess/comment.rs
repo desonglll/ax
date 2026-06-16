@@ -9,18 +9,19 @@ use crate::{
     extractors::response_pagination::{Pagination, PaginationBuilder},
 };
 
-/// 插入一条新评论到数据库
+/// Insert a new comment into the database.
 ///
-/// 将评论数据写入 `comments` 表，返回插入后的完整评论记录。
+/// This function writes a comment record to the `comments` table and returns the
+/// newly inserted [`Comment`] record.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `pool`: PostgreSQL 连接池引用
-/// - `create_comment`: 待插入的评论数据
+/// - `pool`: Reference to the PostgreSQL connection pool.
+/// - `create_comment`: The data structure representing the comment to be inserted.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回插入的 [`Comment`] 记录，失败时返回 [`AxError`]。
+/// A [`Comment`] record on success, or an [`AxError`] on database failure.
 pub async fn insert_comment_db(
     pool: &PgPool,
     create_comment: CreateComment,
@@ -36,18 +37,20 @@ pub async fn insert_comment_db(
     Ok(row)
 }
 
-/// 根据 ID 从数据库删除评论
+/// Delete a comment from the database by its identifier.
 ///
-/// 从 `comments` 表中删除指定 ID 的评论，返回被删除的评论记录。
+/// This function removes the comment record matching the ID parameter from the
+/// `comments` table and returns the deleted [`Comment`] record.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `pool`: PostgreSQL 连接池引用
-/// - `id`: 待删除评论的 ID
+/// - `pool`: Reference to the PostgreSQL connection pool.
+/// - `id`: The identifier of the comment to delete.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回被删除的 [`Comment`] 记录，失败时返回 [`AxError`]。
+/// The deleted [`Comment`] record on success, or an [`AxError`] if the record
+/// is not found or database execution fails.
 pub async fn delete_comment_by_id_db(pool: &PgPool, id: i32) -> Result<Comment, AxError> {
     let row = sqlx::query_as!(
         Comment,
@@ -57,18 +60,21 @@ pub async fn delete_comment_by_id_db(pool: &PgPool, id: i32) -> Result<Comment, 
     Ok(row)
 }
 
-/// 根据查询条件从数据库获取评论列表
+/// Retrieve a list of comments from the database matching the query parameters.
 ///
-/// 支持按评论 ID、回复目标 ID、回复类型进行筛选。未指定条件的参数将被忽略。
+/// This function filters comments based on optional query arguments such as comment ID,
+/// target ID (reply_to), and target type (reply_to_type). It returns the matched comment records
+/// along with pagination metadata.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `pool`: PostgreSQL 连接池引用
-/// - `query`: URL 查询参数，支持 `commentId`、`replyTo`、`replyToType` 字段
+/// - `pool`: Reference to the PostgreSQL connection pool.
+/// - `query`: URL query mapping containing optional search criteria like `commentId`, `replyTo`, `replyToType`, `limit`, and `offset`.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回匹配的 [`(Vec<Comment>, Pagination)`] 元组，失败时返回 [`AxError`]。
+/// A tuple containing a vector of matching [`Comment`] records and the [`Pagination`] metadata on success,
+/// or an [`AxError`] on failure.
 pub async fn get_comment_by_query_db(
     pool: &PgPool,
     query: web::Query<HashMap<String, String>>,

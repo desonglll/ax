@@ -13,20 +13,21 @@ use crate::{errors::AxError, models::reaction::CreateReaction, state::AppState};
 /*
 http://localhost:8000/api/reactions/post/like?userId=2&postId=1
 */
-/// 点赞
+/// Insert a like reaction record.
 ///
-/// 为指定目标（推文或评论）添加点赞互动。从 session 获取当前用户 ID，
-/// 从查询参数获取目标 ID 和类型。如果之前已点踩，会先删除点踩记录。
+/// This handler processes request queries to record a "Like" reaction for a post or comment.
+/// It retrieves the active user's identifier from the SESSION and target specifications from QUERY.
+/// If a conflicting "Dislike" record exists, it is deleted prior to insertion.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `session`: 请求的 session 对象，用于获取用户 ID
-/// - `app_state`: 应用状态，包含数据库连接池
-/// - `query`: URL 查询参数，支持 `toId` 和 `toType` 字段
+/// - `session`: The session object of the incoming request.
+/// - `app_state`: Reference to the shared state of the application.
+/// - `query`: Optional URL query parameters containing target identifier `toId` and category `toType`.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回 200 响应及点赞记录，失败时返回 [`AxError`]。
+/// An HTTP response enclosing the created reaction details on success, or an [`AxError`] on failure.
 pub async fn insert_like_reaction(
     session: Session,
     app_state: web::Data<AppState>,
@@ -63,20 +64,21 @@ pub async fn insert_like_reaction(
 /*
 http://localhost:8000/api/reactions/post/dislike?userId=2&postId=1
 */
-/// 点踩
+/// Insert a dislike reaction record.
 ///
-/// 为指定目标（推文或评论）添加点踩互动。从 session 获取当前用户 ID，
-/// 从查询参数获取目标 ID 和类型。如果之前已点赞，会先删除点赞记录。
+/// This handler processes request queries to record a "Dislike" reaction for a post or comment.
+/// It retrieves the active user's identifier from the SESSION and target specifications from QUERY.
+/// If a conflicting "Like" record exists, it is deleted prior to insertion.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `session`: 请求的 session 对象，用于获取用户 ID
-/// - `app_state`: 应用状态，包含数据库连接池
-/// - `query`: URL 查询参数，支持 `toId` 和 `toType` 字段
+/// - `session`: The session object of the incoming request.
+/// - `app_state`: Reference to the shared state of the application.
+/// - `query`: Optional URL query parameters containing target identifier `toId` and category `toType`.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回 200 响应及点踩记录，失败时返回 [`AxError`]。
+/// An HTTP response enclosing the created reaction details on success, or an [`AxError`] on failure.
 pub async fn insert_dislike_reaction(
     session: Session,
     app_state: web::Data<AppState>,
@@ -114,18 +116,18 @@ pub async fn insert_dislike_reaction(
 /*
 http://localhost:8000/api/reactions/get?postId=1
  */
-/// 获取指定目标的互动统计表
+/// Retrieve reaction statistics table.
 ///
-/// 根据查询参数中的目标 ID，返回该目标的点赞和点踩数量统计。
+/// This handler processes request queries to compute likes and dislikes counts for a target.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `app_state`: 应用状态，包含数据库连接池
-/// - `query`: URL 查询参数，支持 `toId` 字段
+/// - `app_state`: Reference to the shared state of the application.
+/// - `query`: Optional URL query mapping representing target filters containing `toId`.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回 200 响应及互动统计表（like 和 dislike 计数），失败时返回 [`AxError`]。
+/// An HTTP response enclosing the count metadata on success, or an [`AxError`] on failure.
 pub async fn get_single_reaction_table_by_query(
     app_state: web::Data<AppState>,
     query: Option<web::Query<HashMap<String, String>>>,
@@ -143,20 +145,20 @@ pub async fn get_single_reaction_table_by_query(
         })
 }
 
-/// 根据查询条件获取互动记录列表
+/// Retrieve a list of reaction records filtered by query parameters.
 ///
-/// 验证登录状态后，根据 URL 查询参数筛选互动记录。
-/// 如果查询参数中未提供 `userId`，则自动使用当前 session 中的用户 ID。
+/// This handler returns a list of reaction records filtered based on query filters.
+/// It defaults to the active user's identifier if `userId` is omitted from the QUERY map.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `session`: 请求的 session 对象，用于登录验证和获取用户 ID
-/// - `app_state`: 应用状态，包含数据库连接池
-/// - `query`: URL 查询参数，支持 `id`、`toId`、`toType`、`userId`、`reactionName`
+/// - `session`: The session object of the incoming request.
+/// - `app_state`: Reference to the shared state of the application.
+/// - `query`: Optional URL query parameters containing filter arguments.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回 200 响应及互动记录列表，失败时返回 [`AxError`]。
+/// An HTTP response enclosing the matched reaction records on success, or an [`AxError`] on failure.
 pub async fn get_reactions_by_query(
     session: Session,
     app_state: web::Data<AppState>,
@@ -183,19 +185,19 @@ pub async fn get_reactions_by_query(
 }
 
 // Delete
-/// 根据互动 ID 删除互动记录
+/// Delete a reaction record by its identifier.
 ///
-/// 根据查询参数中的 `reactionId` 删除指定的互动记录。
+/// This handler processes request queries to delete the reaction record matching `reactionId` from QUERY.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `session`: 请求的 session 对象，用于验证
-/// - `app_state`: 应用状态，包含数据库连接池
-/// - `query`: URL 查询参数，支持 `reactionId` 字段
+/// - `session`: The session object of the incoming request.
+/// - `app_state`: Reference to the shared state of the application.
+/// - `query`: Optional URL query parameters containing `reactionId`.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回 200 响应及被删除的互动记录，失败时返回 [`AxError`]。
+/// An HTTP response enclosing the deleted reaction record details on success, or an [`AxError`] on failure.
 pub async fn delete_reaction_by_id(
     session: Session,
     app_state: web::Data<AppState>,

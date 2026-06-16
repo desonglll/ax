@@ -5,27 +5,27 @@ use crate::services::features::get_user_features;
 use crate::services::ml_predict::predict;
 use crate::state::AppState;
 
-/// 推荐推文
+/// Recommend posts for a user.
 ///
-/// 根据用户 ID 获取用户特征，然后调用 ML 模型预测推荐推文 ID 列表。
+/// This function retrieves behavioral features for the specified USER_ID,
+/// and queries the machine learning prediction service to return a list of post IDs.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `app_state`: 应用状态，包含数据库连接池
-/// - `user_id`: 用户 ID
+/// - `app_state`: Reference to the shared state of the application.
+/// - `user_id`: The identifier of the user.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回推荐的推文 ID 列表，失败时返回 [`AxError`]。
+/// A vector of recommended post IDs on success, or an [`AxError`] on failure.
 pub async fn recommend_posts(
     app_state: web::Data<AppState>,
     user_id: i32,
 ) -> Result<Vec<i32>, AxError> {
-    // 假设这是调用深度学习模型的逻辑
-    // 这里可以使用外部服务或模型库
+    // Construct model features from user stats.
     let model_input = get_user_features(&app_state.db, user_id).await?;
 
-    // 调用深度学习模型进行预测
+    // Invoke the prediction service.
     let recommended_ids = predict(model_input).await?;
 
     Ok(recommended_ids)

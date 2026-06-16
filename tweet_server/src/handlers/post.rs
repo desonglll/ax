@@ -25,20 +25,21 @@ curl -X POST localhost:8000/api/posts/post \
        "reactions": null
    }'
 */
-/// 创建新推文
+/// Insert a new post record.
 ///
-/// 创建推文处理器。从 session 中获取当前用户 ID 并设置到推文数据中，
-/// 然后调用数据库层插入推文记录。
+/// This handler processes request payloads to insert a new post. It retrieves
+/// the active user's identifier from the SESSION and delegates the database insert
+/// to the persistence layer.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `session`: 请求的 session 对象，用于登录验证和获取用户 ID
-/// - `app_state`: 应用状态，包含数据库连接池
-/// - `new_post`: 请求体中的推文数据
+/// - `session`: The session object of the incoming request.
+/// - `app_state`: Reference to the shared state of the application.
+/// - `new_post`: JSON payload representing the post details to create.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回 200 响应及创建的推文数据，失败时返回 [`AxError`]。
+/// An HTTP response enclosing the created post on success, or an [`AxError`] on failure.
 pub async fn insert_new_post(
     session: Session,
     app_state: web::Data<AppState>,
@@ -66,19 +67,18 @@ pub async fn insert_new_post(
 /*
 curl -X GET http://localhost:8000/api/posts/get/1
 */
-/// 根据推文 ID 获取推文详情
+/// Retrieve details of a post by its identifier.
 ///
-/// 查询单条推文的详细信息。
+/// This handler queries the database to return the post record matching the target ID.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `session`: 请求的 session 对象，用于登录验证
-/// - `app_state`: 应用状态，包含数据库连接池
-/// - `path`: 路径参数，包含推文 ID
+/// - `app_state`: Reference to the shared state of the application.
+/// - `path`: Path parameters containing the post identifier.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回 200 响应及推文详情，失败时返回 [`AxError`]。
+/// An HTTP response enclosing the post details on success, or an [`AxError`] on failure.
 pub async fn get_post_detail(
     app_state: web::Data<AppState>,
     path: web::Path<(i32,)>,
@@ -99,19 +99,18 @@ pub async fn get_post_detail(
 /*
 curl -X GET http://localhost:8000/api/posts/get
 */
-/// 获取推文列表（支持分页和排序）
+/// Retrieve a list of posts supporting pagination and sorting.
 ///
-/// 查询推文列表，支持通过 URL 查询参数进行分页和排序。
+/// This handler returns a list of posts filtered and ordered based on optional query arguments.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `session`: 请求的 session 对象，用于登录验证
-/// - `app_state`: 应用状态，包含数据库连接池
-/// - `query`: 可选的 URL 查询参数，支持 `order_by`、`sort`、`limit`、`offset`
+/// - `app_state`: Reference to the shared state of the application.
+/// - `query`: Optional URL query parameters containing `order_by`, `sort`, `limit`, and `offset`.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回 200 响应及推文列表和分页信息，失败时返回 [`AxError`]。
+/// An HTTP response enclosing the list of posts and pagination metadata, or an [`AxError`] on failure.
 pub async fn get_post_list(
     app_state: web::Data<AppState>,
     query: Option<web::Query<HashMap<String, String>>>,
@@ -133,20 +132,21 @@ pub async fn get_post_list(
     })
 }
 
-/// 获取推荐/热门推文
+/// Retrieve recommended/trending posts for the active user.
 ///
-/// 基于当前用户的特征，调用深度学习模型进行推文推荐。
-/// 获取用户 ID 后，通过推荐服务获取推荐推文 ID 列表，再批量查询推文详情。
+/// This handler leverages a machine learning model to recommend posts based on the active user's
+/// feature metrics. It retrieves the user ID from the SESSION, obtains recommended post IDs,
+/// and fetches the corresponding post details.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `session`: 请求的 session 对象，用于获取用户 ID
-/// - `app_state`: 应用状态，包含数据库连接池
-/// - `_query`: 保留的查询参数（暂未使用）
+/// - `session`: The session object of the incoming request.
+/// - `app_state`: Reference to the shared state of the application.
+/// - `_query`: Reserved query parameters (currently unused).
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回 200 响应及推荐推文列表，失败时返回 [`AxError`]。
+/// An HTTP response enclosing the list of recommended posts on success, or an [`AxError`] on failure.
 pub async fn get_trending_posts(
     session: Session,
     app_state: web::Data<AppState>,
@@ -157,13 +157,13 @@ pub async fn get_trending_posts(
         return Ok(resp);
     }
 
-    // 获取用户ID或特征，用于推荐
+    // Retrieve the user ID or features for recommendation.
     let user_id = SessionOperation::get_user_id(session).unwrap_or(0);
 
-    // 调用深度学习模型进行推荐
+    // Invoke the machine learning recommendation service.
     let recommended_post_ids = recommend_posts(app_state.clone(), user_id).await?;
 
-    // 获取推荐的推文
+    // Fetch post records for the recommended identifiers.
     let posts = get_posts_by_ids(&app_state.db, recommended_post_ids).await?;
 
     let api_response = ApiResponse::new(
@@ -183,20 +183,21 @@ curl -X PUT localhost:8000/api/posts/1 \
        "content": "Modified content."
    }'
 */
-/// 更新推文内容
+/// Update details of a post.
 ///
-/// 根据推文 ID 更新推文。验证登录状态后，调用数据库层更新推文记录。
+/// This handler updates a post matching the identifier in the URL path. It validates session
+/// activity and ownership before delegating the update to the persistence layer.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `session`: 请求的 session 对象，用于登录验证
-/// - `app_state`: 应用状态，包含数据库连接池
-/// - `path`: 路径参数，包含推文 ID
-/// - `update_post`: 请求体中的更新数据
+/// - `session`: The session object of the incoming request.
+/// - `app_state`: Reference to the shared state of the application.
+/// - `path`: Path parameters containing the post identifier.
+/// - `update_post`: JSON payload representing the fields to modify.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回 200 响应及更新后的推文数据，失败时返回 [`AxError`]。
+/// An HTTP response enclosing the updated post details on success, or an [`AxError`] on failure.
 pub async fn update_post_details(
     session: Session,
     app_state: web::Data<AppState>,
@@ -210,7 +211,7 @@ pub async fn update_post_details(
     let (post_id,) = path.into_inner();
     let user_id = session.get::<i32>("user_id").unwrap().unwrap_or(0);
 
-    // Owner check
+    // Perform post ownership check.
     let post = get_post_detail_db(&app_state.db, post_id).await?;
     let is_admin_user = crate::extractors::session::is_admin(session.clone()).await.unwrap_or(false);
     if post.user_id != user_id && !is_admin_user {
@@ -236,19 +237,20 @@ pub async fn update_post_details(
 /*
 curl -X DELETE http://localhost:8000/api/posts/1
 */
-/// 根据推文 ID 删除推文
+/// Delete a post by its identifier.
 ///
-/// 验证登录状态后，根据路径参数中的推文 ID 删除推文。
+/// This handler deletes a post matching the identifier in the URL path. It validates session
+/// activity and ownership before delegating the deletion to the persistence layer.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `session`: 请求的 session 对象，用于登录验证
-/// - `app_state`: 应用状态，包含数据库连接池
-/// - `path`: 路径参数，包含推文 ID
+/// - `session`: The session object of the incoming request.
+/// - `app_state`: Reference to the shared state of the application.
+/// - `path`: Path parameters containing the post identifier.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回 200 响应及被删除的推文数据，失败时返回 [`AxError`]。
+/// An HTTP response enclosing the deleted post details on success, or an [`AxError`] on failure.
 pub async fn delete_post(
     session: Session,
     app_state: web::Data<AppState>,
@@ -261,7 +263,7 @@ pub async fn delete_post(
     let (post_id,) = path.into_inner();
     let user_id = session.get::<i32>("user_id").unwrap().unwrap_or(0);
 
-    // Owner check
+    // Perform post ownership check.
     let post = get_post_detail_db(&app_state.db, post_id).await?;
     let is_admin_user = crate::extractors::session::is_admin(session.clone()).await.unwrap_or(false);
     if post.user_id != user_id && !is_admin_user {
@@ -302,24 +304,24 @@ mod tests {
         let new_post_msg = CreatePost::demo();
         let post_param = web::Json(new_post_msg.clone());
 
-        // 发送请求前设置 session 数据
+        // Set up session data before sending the request.
         let session = get_demo_session().await;
         let resp = insert_new_post(session, app_state.clone(), post_param)
             .await
             .unwrap();
         assert_eq!(resp.status(), StatusCode::OK);
 
-        // 获取响应 body 中的 JSON 数据
+        // Retrieve JSON data from the response body.
         let body = resp.into_body();
         let body_bytes = actix_web::body::to_bytes(body).await.unwrap();
         let body_json: Value = serde_json::from_slice(&body_bytes).unwrap();
 
-        // 从 JSON 中获取 id 字段
+        // Extract the id field from the JSON object.
         let post_id = body_json["body"]["data"]["id"]
             .as_i64()
             .expect("id not found or not an integer") as i32;
 
-        // 删除测试插入的 post
+        // Clean up the post inserted for testing.
         sqlx::query!("DELETE FROM posts WHERE id = $1", post_id)
             .execute(&app_state.db)
             .await
@@ -329,7 +331,7 @@ mod tests {
     #[actix_rt::test]
     async fn test_delete_post() {
         let app_state: web::Data<AppState> = get_demo_state().await;
-        // 发送请求前设置 session 数据
+        // Set up session data before sending the request.
         let session = get_demo_session().await;
         let post = CreatePost::demo();
         let insert_result = insert_post_db(&app_state.db, post.clone()).await.unwrap();
@@ -354,7 +356,7 @@ mod tests {
         };
         let parameters: web::Path<(i32,)> = web::Path::from((insert_result.id,));
         let update_param = web::Json(update_post_msg);
-        // 发送请求前设置 session 数据
+        // Set up session data before sending the request.
         let session = get_demo_session().await;
 
         let resp = update_post_details(session, app_state.clone(), parameters, update_param)
@@ -371,8 +373,6 @@ mod tests {
     #[actix_rt::test]
     async fn test_get_post_detail() {
         let app_state: web::Data<AppState> = get_demo_state().await;
-        // 发送请求前设置 session 数据
-        let session = get_demo_session().await;
 
         let new_post_msg = CreatePost::demo();
         let result = insert_post_db(&app_state.db, new_post_msg.clone())
@@ -396,7 +396,6 @@ mod tests {
     #[actix_rt::test]
     async fn test_get_post_list() {
         let app_state: web::Data<AppState> = get_demo_state().await;
-        let session = get_demo_session().await;
         let mut query_map = std::collections::HashMap::new();
         query_map.insert("limit".to_string(), "5".to_string());
         query_map.insert("offset".to_string(), "0".to_string());

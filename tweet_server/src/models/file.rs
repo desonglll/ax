@@ -3,9 +3,9 @@ use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-/// 文件数据模型
+/// File metadata data model.
 ///
-/// 对应数据库 `files` 表的记录，表示一个上传的文件。
+/// This struct corresponds to records in the `files` database table.
 #[derive(Serialize, Deserialize, Debug, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct File {
@@ -24,20 +24,20 @@ pub struct File {
 }
 
 impl File {
-    /// 创建新的文件模型实例
+    /// Create a new File metadata model instance.
     ///
-    /// 从 session 中获取用户 ID，根据文件名生成保存路径，
-    /// 自动生成 UUID 和时间戳。
+    /// This method initializes a `File` struct. It extracts the user ID from SESSION,
+    /// constructs the filesystem path based on NAME, and generates a new UUID and timestamp.
     ///
-    /// # 参数
+    /// # Parameters
     ///
-    /// - `session`: 请求的 session 对象，用于获取用户 ID
-    /// - `name`: 文件名
-    /// - `size`: 文件大小（字节）
-    /// - `content_type`: 文件 MIME 类型
-    /// - `description`: 文件描述
-    /// - `checksum`: 文件校验和（SHA-256）
-    /// - `is_pub`: 文件是否公开
+    /// - `session`: Reference to the request session to read user credentials.
+    /// - `name`: The filename string.
+    /// - `size`: The size of the file in bytes.
+    /// - `content_type`: The MIME content type string.
+    /// - `description`: The optional text description of the file.
+    /// - `checksum`: The SHA-256 hash checksum of the file.
+    /// - `is_pub`: Boolean indicating if the file is publicly readable.
     pub fn new(
         session: &Session,
         name: String,
@@ -71,9 +71,9 @@ impl File {
     }
 }
 
-/// 文件筛选条件
+/// Query filters for file records.
 ///
-/// 用于查询文件列表时的筛选参数。
+/// This structure represents filter parameters when querying lists of file metadata.
 #[derive(Deserialize)]
 pub struct FileFilter {
     pub name: Option<String>,

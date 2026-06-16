@@ -7,7 +7,7 @@ use crate::handlers::reaction::{
     get_reactions_by_query, get_single_reaction_table_by_query, insert_dislike_reaction,
 };
 
-/// 配置互动相关路由
+/// Configure routes related to user reactions.
 pub fn reaction_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/reactions")

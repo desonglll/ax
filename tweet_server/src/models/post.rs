@@ -3,9 +3,9 @@ use chrono::DateTime;
 use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
 
-/// 推文数据模型
+/// Post data model.
 ///
-/// 对应数据库 `posts` 表的记录，表示一条推文/帖子。
+/// This struct corresponds to records in the `posts` database table.
 #[derive(Debug, Serialize, Deserialize, Clone, FromRow, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct Post {
@@ -21,9 +21,10 @@ pub struct Post {
     pub engagement_rate: Option<f64>,
 }
 
-/// 创建推文请求结构
+/// Request payload structure for creating a post.
 ///
-/// 用于接收创建推文时的请求数据，`user_id` 由服务器从 session 中设置。
+/// This structure encapsulates request parameters to submit a post. The `user_id`
+/// attribute is populated by the server from session context.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct CreatePost {
@@ -34,13 +35,13 @@ pub struct CreatePost {
 }
 
 impl CreatePost {
-    /// 设置用户 ID
+    /// Set the user identifier of the author.
     pub fn set_user_id(&mut self, user_id: i32) -> &Self {
         self.user_id = Some(user_id);
         self
     }
 
-    /// 创建演示用的推文数据
+    /// Generate a demonstration CreatePost request payload.
     pub fn demo() -> Self {
         CreatePost {
             content: String::from(""),
@@ -62,9 +63,9 @@ impl From<web::Json<CreatePost>> for CreatePost {
     }
 }
 
-/// 更新推文请求结构
+/// Request payload structure for updating a post.
 ///
-/// 用于接收更新推文时的请求数据，仅包含可更新的字段。
+/// This structure encapsulates fields that are allowed to be modified on an existing post.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdatePost {

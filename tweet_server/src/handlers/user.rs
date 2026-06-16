@@ -26,18 +26,18 @@ curl -X POST localhost:8000/users \
        "profilePicture": null
    }'
 */
-/// 创建新用户
+/// Create a new user record.
 ///
-/// 注册处理器。将请求体中的用户数据插入数据库。
+/// This handler processes request payloads to register a new user in the database.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `app_state`: 应用状态，包含数据库连接池
-/// - `new_user`: 请求体中的用户注册数据
+/// - `app_state`: Reference to the shared state of the application.
+/// - `new_user`: JSON payload representing user registration fields.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回 200 响应及创建的用户数据，失败时返回 [`AxError`]。
+/// An HTTP response enclosing the created user details on success, or an [`AxError`] on failure.
 pub async fn post_new_user(
     app_state: web::Data<AppState>,
     new_user: web::Json<CreateUser>,
@@ -57,18 +57,18 @@ pub async fn post_new_user(
 /*
 curl -X GET http://localhost:8000/users/1
 */
-/// 根据用户 ID 获取用户详情
+/// Retrieve details of a user by their identifier.
 ///
-/// 根据路径参数中的用户 ID 查询用户信息。
+/// This handler queries the database for user details matching the ID parameter in URL path.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `app_state`: 应用状态，包含数据库连接池
-/// - `path`: 路径参数，包含用户 ID
+/// - `app_state`: Reference to the shared state of the application.
+/// - `path`: Path parameters containing the user identifier.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回 200 响应及用户详情，失败时返回 [`AxError`]。
+/// An HTTP response enclosing the user details on success, or an [`AxError`] on failure.
 pub async fn get_user_detail(
     app_state: web::Data<AppState>,
     path: web::Path<(i32,)>,
@@ -85,19 +85,18 @@ pub async fn get_user_detail(
         })
 }
 
-/// 获取当前登录用户的个人资料
+/// Retrieve profile details of the active user.
 ///
-/// 从 session 中获取当前用户 ID，返回该用户的详细信息。
-/// 如果用户未登录，返回 401 提示。
+/// This handler queries the database using user_id from the SESSION to return active user details.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `app_state`: 应用状态，包含数据库连接池
-/// - `session`: 请求的 session 对象，用于获取当前用户 ID
+/// - `app_state`: Reference to the shared state of the application.
+/// - `session`: The session object of the incoming request.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 登录时返回 200 响应及用户详情，未登录时返回 401 提示。
+/// An HTTP response enclosing the active user profile on success, or 401 status if not authenticated.
 pub async fn get_user_profile(
     app_state: web::Data<AppState>,
     session: Session,
@@ -124,17 +123,17 @@ pub async fn get_user_profile(
 /*
 curl -X GET http://localhost:8000/users
 */
-/// 获取所有用户列表
+/// Retrieve the list of all users.
 ///
-/// 返回数据库中所有用户的列表。
+/// This handler queries the database to return all user records.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `app_state`: 应用状态，包含数据库连接池
+/// - `app_state`: Reference to the shared state of the application.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回 200 响应及用户列表，失败时返回 [`AxError`]。
+/// An HTTP response enclosing all user records on success, or an [`AxError`] on failure.
 pub async fn get_user_list(app_state: web::Data<AppState>) -> Result<HttpResponse, AxError> {
     get_user_list_db(&app_state.db).await.map(|resp| {
         HttpResponse::Ok().json(ApiResponse::new(
@@ -153,21 +152,21 @@ curl -X PUT localhost:8000/users/1 \
        "userName": "JohnHanson"
    }'
 */
-/// 更新用户信息
+/// Update user record details.
 ///
-/// 验证当前登录用户是否为被修改用户本人后，更新用户信息。
-/// 仅更新请求体中提供的字段，未提供的字段保留原值。
+/// This handler updates fields of the user record matching the identifier in the URL path.
+/// It verifies if the user in SESSION matches the target identifier.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `session`: 请求的 session 对象，用于验证用户身份
-/// - `app_state`: 应用状态，包含数据库连接池
-/// - `path`: 路径参数，包含待更新用户的 ID
-/// - `update_user`: 请求体中的更新数据
+/// - `session`: The session object of the incoming request.
+/// - `app_state`: Reference to the shared state of the application.
+/// - `path`: Path parameters containing the target user identifier.
+/// - `update_user`: JSON payload representing fields to modify.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 身份验证通过时返回 200 响应及更新后的用户数据，身份不匹配时返回 401。
+/// An HTTP response enclosing updated user details on success, or 401/Unauthorized status on failure.
 pub async fn update_user_details(
     session: Session,
     app_state: web::Data<AppState>,
@@ -199,19 +198,20 @@ pub async fn update_user_details(
 /*
 curl -X DELETE http://localhost:8000/users/1
  */
-/// 删除用户
+/// Delete a user record by its identifier.
 ///
-/// 验证当前登录用户是否为被删除用户本人后，从数据库中删除该用户。
+/// This handler removes the user record matching the identifier in the URL path.
+/// It verifies if the user in SESSION matches the target identifier.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `session`: 请求的 session 对象，用于验证用户身份
-/// - `app_state`: 应用状态，包含数据库连接池
-/// - `path`: 路径参数，包含待删除用户的 ID
+/// - `session`: The session object of the incoming request.
+/// - `app_state`: Reference to the shared state of the application.
+/// - `path`: Path parameters containing the target user identifier.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 身份验证通过时返回 200 响应及被删除的用户数据，身份不匹配时返回 401。
+/// An HTTP response enclosing deleted user details on success, or 401/Unauthorized status on failure.
 pub async fn delete_user(
     session: Session,
     app_state: web::Data<AppState>,

@@ -2,18 +2,19 @@ use actix_web::web;
 use chrono::DateTime;
 use serde::{Deserialize, Serialize};
 
-/// 互动名称枚举
+/// Enumeration representing reaction categories.
 ///
-/// 表示互动的类型及其关联的记录 ID。
+/// This lists the active interactive responses associated with target IDs.
 #[derive(Serialize, Deserialize, Debug)]
 pub enum ReactionName {
     Like(i32),
     Dislike(i32),
 }
 
-/// 互动数据模型
+/// Reaction data model.
 ///
-/// 对应数据库 `reactions` 表的记录，表示一条用户互动（点赞或点踩）。
+/// This struct corresponds to records in the `reactions` database table, representing
+/// a user interaction (such as Like or Dislike) with a target.
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Reaction {
@@ -25,9 +26,9 @@ pub struct Reaction {
     pub to_type: String,
 }
 
-/// 创建互动请求结构
+/// Request payload structure for creating a reaction.
 ///
-/// 用于接收创建互动（点赞/点踩）时的请求数据。
+/// This structure encapsulates parameters required to register a new user reaction.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateReaction {
@@ -42,9 +43,9 @@ impl From<web::Json<CreateReaction>> for CreateReaction {
     }
 }
 
-/// 互动统计响应结构
+/// Response structure containing aggregated reaction statistics.
 ///
-/// 表示指定目标的点赞和点踩数量统计。
+/// This table aggregates counts for Like and Dislike reactions associated with a target.
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct ReactionResponseTable {
     pub like: i64,

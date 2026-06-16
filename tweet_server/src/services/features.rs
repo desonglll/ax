@@ -3,9 +3,10 @@ use sqlx::PgPool;
 
 use crate::errors::AxError;
 
-/// 用户特征数据结构
+/// User feature metrics.
 ///
-/// 用于推荐模型的输入特征，包含用户行为统计信息。
+/// This structure represents feature inputs containing user activity statistics
+/// passed to the recommendation machine learning model.
 #[derive(Debug, Serialize)]
 pub struct UserFeatures {
     pub user_id: i32,
@@ -17,21 +18,21 @@ pub struct UserFeatures {
     pub engagement_rate: f64,
 }
 
-/// 获取用户特征数据
+/// Compile feature metrics for a user.
 ///
-/// 从数据库中查询用户基础信息和行为统计（点赞数、平均点赞/评论数、
-/// 活跃度得分、参与率），组装为 [`UserFeatures`] 用于推荐模型输入。
+/// This function queries user profile information and behavioral statistics (such as like counts,
+/// averages, activity score, and engagement rate) and constructs a [`UserFeatures`] payload.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `pool`: PostgreSQL 连接池引用
-/// - `user_id`: 用户 ID
+/// - `pool`: Reference to the PostgreSQL connection pool.
+/// - `user_id`: The identifier of the user to fetch features for.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 成功时返回 [`UserFeatures`]，失败时返回 [`AxError`]。
+/// A [`UserFeatures`] structure on success, or an [`AxError`] on database failure.
 pub async fn get_user_features(pool: &PgPool, user_id: i32) -> Result<UserFeatures, AxError> {
-    // 查询用户的基础信息
+    // Query base profile information of the user.
     let user = sqlx::query!(
         r#"
         SELECT id, user_name
@@ -44,7 +45,7 @@ pub async fn get_user_features(pool: &PgPool, user_id: i32) -> Result<UserFeatur
     .await
     .map_err(|e| AxError::DBError(e.to_string()))?;
 
-    // 查询用户的其他特征统计
+    // Query aggregated behavioral metrics from the statistics tables.
     let stats = sqlx::query!(
         r#"
         SELECT
@@ -62,7 +63,7 @@ pub async fn get_user_features(pool: &PgPool, user_id: i32) -> Result<UserFeatur
     .await
     .map_err(|_e| AxError::DBError(String::from("Error when fetching user stats.")))?;
 
-    // 创建并返回 UserFeatures
+    // Construct and return the features instance.
     let user_features = UserFeatures {
         user_id: user.id,
         name: user.user_name,

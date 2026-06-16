@@ -17,19 +17,19 @@ use crate::{
     state::AppState,
 };
 
-/// 处理用户访问请求的处理器函数
+/// Handle authentication index query requests.
 ///
-/// 该函数处理用户请求并根据 session 中是否存在 `user_name` 字段返回不同的响应。如果 session 中包含 `user_name`，返回欢迎消息；否则，返回未授权消息。
+/// This handler function processes requests and checks if the `user_name` field exists in the SESSION.
+/// If the SESSION contains `user_name`, it returns a welcome message; otherwise, it returns a 401 Unauthorized status.
 ///
-/// - `session`：请求的 session 对象，用于访问存储在 session 中的数据。
+/// - `SESSION`: The session object of the incoming request.
 ///
 /// # Responses
 ///
-/// - 如果 session 中存在 `user_name`，返回 `200 OK` 响应，并在响应体中包含欢迎消息。
-/// - 如果 session 中不存在 `user_name`，返回 `401 Unauthorized` 响应，并在响应体中包含登录提示消息。
-///
+/// - If the session contains `user_name`, it returns `200 OK` with a welcome message.
+/// - If the session does not contain `user_name`, it returns `401 Unauthorized` prompting login.
 pub async fn index(session: Session) -> impl Responder {
-    // 尝试获取 session 中的 `user_name`
+    // Retrieve the `user_name` field from the session.
     if let Some(user_name) = session.get::<String>("user_name").unwrap() {
         // HttpResponse::Ok().json(format!("Welcome back! {}", user_name))
         HttpResponse::Ok().json(ApiResponse::<()>::new(
@@ -46,11 +46,12 @@ pub async fn index(session: Session) -> impl Responder {
     }
 }
 
-/// 根据当前时间生成问候语
+/// Generate a greeting message based on the current time.
 ///
-/// 该函数根据当前小时生成不同的问候语，并将其与用户名称一起格式化成完整的问候信息。日志中会记录当前小时信息，用于调试和检查。
+/// This function returns a greeting based on the current hour of the local system clock,
+/// formatting it together with USER_NAME.
 ///
-/// - `user_name`：用户的名字，将被添加到问候信息中。
+/// - `USER_NAME`: The username string to greet.
 ///
 /// # Examples
 ///
@@ -67,13 +68,13 @@ pub fn greet(user_name: String) -> String {
         5..=11 => "Good morning",
         12..=17 => "Good afternoon",
         18..=21 => "Good evening",
-        _ => "Hello", // 默认的问候语，适用于深夜或非常早的时间
+        _ => "Hello", // Default greeting for late night or early morning.
     };
 
     format!("{}, {}!", greeting, user_name)
 }
 
-/// # 请求示例数据
+/// # Request Example Data
 /*
 ```json
 curl -X POST localhost:8000/api/login \
@@ -151,17 +152,16 @@ pub async fn login(
     }
 }
 
-/// 处理用户登出的处理器函数
+/// Terminate the active user session.
 ///
-/// 该函数处理用户的登出请求。如果 session 中存在 `user_name`，则清除 session 并返回成功消息；
-/// 否则，返回服务器内部错误的消息。
+/// This handler clears all fields in the SESSION if a user is logged in, effectively logging the user out.
 ///
-/// - `session`：请求的 session 对象，用于访问和管理存储在 session 中的数据。
+/// - `SESSION`: The session object of the incoming request.
 ///
 /// # Responses
 ///
-/// - 如果 session 中存在 `user_name`，返回 `200 OK` 响应，并在响应体中包含 "Logged out!" 消息。
-/// - 如果 session 中不存在 `user_name` 或者清除 session 失败，返回 `500 Internal Server Error` 响应，并在响应体中包含 "Logged out error!" 消息。
+/// - If the session contains `user_name`, it returns `200 OK` with a success message.
+/// - If the session does not contain `user_name` or session clearing fails, it returns a warning response.
 pub async fn logout(session: Session) -> Result<impl Responder, AxError> {
     // Attempt to retrieve the `user_name` from the session
     if let Some(user_name) = session.get::<String>("user_name").unwrap() {
@@ -176,17 +176,17 @@ pub async fn logout(session: Session) -> Result<impl Responder, AxError> {
     }
 }
 
-/// 检查用户是否已登录
+/// Verify if the user session is active.
 ///
-/// 通过检查 session 中是否存在 `user_name` 来判断用户是否已登录。
+/// This function checks if the `user_name` field is defined in the SESSION.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `session`: 请求的 session 对象
+/// - `session`: Reference to the request session object.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// session 中存在 `user_name` 时返回 `Ok(true)`，否则返回 `Ok(false)`。
+/// `Ok(true)` if the session contains `user_name`, or `Ok(false)` otherwise.
 pub async fn check_login(session: &Session) -> Result<bool, AxError> {
     match session.get::<String>("user_name") {
         Ok(_user_name) => Ok(true),
@@ -194,18 +194,18 @@ pub async fn check_login(session: &Session) -> Result<bool, AxError> {
     }
 }
 
-/// 未登录时的统一响应处理
+/// Standard responder for unauthenticated requests.
 ///
-/// 如果用户未登录（`is_active` 为 false），返回 401 未授权响应；
-/// 如果用户已登录，返回错误（表示不应对已登录用户调用此函数）。
+/// This function returns a 401 Unauthorized response if the SESSION is not active.
+/// It returns an error if called on an active session.
 ///
-/// # 参数
+/// # Parameters
 ///
-/// - `session`: 请求的 session 对象
+/// - `session`: Reference to the request session object.
 ///
-/// # 返回值
+/// # Returns
 ///
-/// 用户未登录时返回 `Ok(HttpResponse)` (401)，已登录时返回 [`AxError`]。
+/// `Ok(HttpResponse)` with status 401 if the user is not logged in, otherwise an [`AxError`].
 pub async fn login_in_unauthentic(session: &Session) -> Result<HttpResponse, AxError> {
     if !is_active(session).await.unwrap() {
         // Not Login

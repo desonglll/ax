@@ -1,44 +1,44 @@
 use serde::{Deserialize, Serialize};
 
-/// 请求分页参数
+/// Query parameters for pagination request.
 ///
-/// 该结构体用于表示请求中的分页参数，包括限制条数和偏移量。
+/// This structure represents the pagination bounds passed in a request query,
+/// specifying the maximum number of items and the offset index.
 ///
-/// - `limit`：每页的条目数，类型为 `Option<i32>`。
-/// - `offset`：偏移量，类型为 `Option<i32>`。
-///
+/// - `limit`: The maximum number of records to retrieve.
+/// - `offset`: The starting offset index.
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 pub struct RequestPagination {
-    /// 每页的条目数
+    /// The maximum number of records to retrieve.
     pub limit: Option<i32>,
 
-    /// 偏移量
+    /// The starting offset index.
     pub offset: Option<i32>,
 }
 
 #[allow(dead_code)]
 impl RequestPagination {
-    /// 创建新的分页参数实例
+    /// Create a new pagination query instance.
     ///
-    /// # 参数
+    /// # Parameters
     ///
-    /// - `limit`: 每页条目数
-    /// - `offset`: 偏移量
+    /// - `limit`: The optional limit bounds.
+    /// - `offset`: The optional offset index.
     ///
-    /// # 返回值
+    /// # Returns
     ///
-    /// 返回新的 [`RequestPagination`] 实例。
+    /// A new [`RequestPagination`] instance.
     pub fn new(limit: Option<i32>, offset: Option<i32>) -> Self {
         Self { limit, offset }
     }
 
-    /// 创建演示用的分页参数
+    /// Create a demonstration pagination query.
     ///
-    /// 返回 `limit=10, offset=0` 的分页参数。
+    /// This method returns a pagination query with a LIMIT of 10 and OFFSET of 0.
     ///
-    /// # 返回值
+    /// # Returns
     ///
-    /// 返回默认演示分页参数实例。
+    /// A default demonstration [`RequestPagination`] instance.
     pub fn demo() -> Self {
         Self {
             limit: Some(10),
