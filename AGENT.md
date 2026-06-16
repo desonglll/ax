@@ -105,12 +105,23 @@ If you are asked to implement a new endpoint:
 
 ---
 
-## 7. Documentation Synchronicity Rule
+## 7. Frontend Development Rules (v1.1)
+
+When working on the frontend of Project Ax under `frontend/v1.1`, you MUST:
+1. Read, understand, and strictly follow the [FRONTEND_AGENT.md](file:///Volumes/Tuo-APFS/workspace/ax/frontend/v1.1/FRONTEND_AGENT.md) guidelines.
+2. Adhere to the GNU-Style Design Aesthetics (purely content-focused layout, zero transition animations, flat solid border lines, standard inputs/buttons, no shadows).
+3. Interface with the backend via the centralized Axios client in [api.ts](file:///Volumes/Tuo-APFS/workspace/ax/frontend/v1.1/app/utils/api.ts). You MUST ensure `withCredentials: true` is enabled globally to maintain the Actix session state.
+4. Perform type checking (`bun run typecheck`) and verification build (`bun run build`) before concluding your changes.
+
+---
+
+## 8. Documentation Synchronicity Rule
 
 > [!CAUTION]
 > **CRITICAL REQUIREMENT**: Whenever you modify the codebase, you MUST update all relevant documentation.
 > - If an API path, query param, request/response body, or status code changes: update `docs/src/api.md`.
 > - If database tables, schemas, or database triggers change: update `docs/src/database.md`.
+> - If frontend pages, flows, or design configurations change: update `docs/src/frontend_development.md`.
 > - Always append a new record describing the modifications in `CHANGELOG.md`.
 > - Ensure all documentation additions adhere to the formal GNU-style narration and clean format rules.
 
