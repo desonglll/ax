@@ -35,8 +35,8 @@ pub async fn get_file_list(
     session: Session,
     app_state: web::Data<AppState>,
 ) -> Result<HttpResponse, AxError> {
-    if check_login(&session).await.unwrap() {
-        if is_admin(session).await.unwrap() {
+    if check_login(&session).await.unwrap_or(false) {
+        if is_admin(session).await.unwrap_or(false) {
             get_file_list_db(&app_state.db)
                 .await
                 .map(|resp| HttpResponse::Ok().json(resp))
@@ -67,8 +67,11 @@ pub async fn get_user_file(
     app_state: web::Data<AppState>,
     query: web::Query<FileFilter>,
 ) -> Result<HttpResponse, AxError> {
-    if check_login(&session).await.unwrap() {
-        get_file_private_list_db(&app_state.db, query.user_id.unwrap())
+    if check_login(&session).await.unwrap_or(false) {
+        let user_id = query.user_id.unwrap_or_else(|| {
+            session.get::<i32>("user_id").unwrap_or_default().unwrap_or(0)
+        });
+        get_file_private_list_db(&app_state.db, user_id)
             .await
             .map(|resp| HttpResponse::Ok().json(resp))
     } else {
@@ -92,7 +95,7 @@ pub async fn get_pub_file_list(
     session: Session,
     app_state: web::Data<AppState>,
 ) -> Result<HttpResponse, AxError> {
-    if check_login(&session).await.unwrap() {
+    if check_login(&session).await.unwrap_or(false) {
         get_file_public_list_db(&app_state.db)
             .await
             .map(|resp| HttpResponse::Ok().json(resp))

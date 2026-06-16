@@ -6,6 +6,7 @@ use sqlx::PgPool;
 use crate::{
     errors::AxError,
     models::comment::{Comment, CreateComment},
+    extractors::response_pagination::{Pagination, PaginationBuilder},
 };
 
 /// 插入一条新评论到数据库
@@ -67,21 +68,38 @@ pub async fn delete_comment_by_id_db(pool: &PgPool, id: i32) -> Result<Comment, 
 ///
 /// # 返回值
 ///
-/// 成功时返回匹配的 [`Vec<Comment>`] 列表，失败时返回 [`AxError`]。
+/// 成功时返回匹配的 [`(Vec<Comment>, Pagination)`] 元组，失败时返回 [`AxError`]。
 pub async fn get_comment_by_query_db(
     pool: &PgPool,
     query: web::Query<HashMap<String, String>>,
-) -> Result<Vec<Comment>, AxError> {
+) -> Result<(Vec<Comment>, Pagination), AxError> {
     let id = query.get("commentId").and_then(|s| s.parse::<i32>().ok());
     let default_type = String::from("post");
     let reply_to_type = query.get("replyToType").unwrap_or(&default_type);
     let reply_to = query.get("replyTo").and_then(|s| s.parse::<i32>().ok());
-    let row = sqlx::query_as!(
+    let limit = query.get("limit").and_then(|s| s.parse::<i64>().ok()).unwrap_or(10);
+    let offset = query.get("offset").and_then(|s| s.parse::<i64>().ok()).unwrap_or(0);
+
+    let rows = sqlx::query_as!(
         Comment,
-        "select * from comments where reply_to_type = $1 and ($2::int is null or reply_to = $2) and ($3::int is null or id = $3)",
+        "select * from comments where reply_to_type = $1 and ($2::int is null or reply_to = $2) and ($3::int is null or id = $3) limit $4 offset $5",
+        reply_to_type,
+        reply_to,
+        id,
+        limit,
+        offset
+    ).fetch_all(pool).await?;
+
+    let count = sqlx::query_scalar!(
+        "select count(*) from comments where reply_to_type = $1 and ($2::int is null or reply_to = $2) and ($3::int is null or id = $3)",
         reply_to_type,
         reply_to,
         id
-    ).fetch_all(pool).await?;
-    Ok(row)
+    ).fetch_one(pool).await?;
+
+    let pagination = PaginationBuilder::new(limit, offset)
+        .set_count(count.unwrap_or(0))
+        .build();
+
+    Ok((rows, pagination))
 }

@@ -73,14 +73,23 @@ pub async fn get_post_list_db(
     pool: &PgPool,
     query: Option<web::Query<HashMap<String, String>>>,
 ) -> Result<(Vec<Post>, Pagination), AxError> {
-    let query = query.unwrap();
-    let order_by = query.get("order_by");
-    let sort = query.get("sort");
-    let limit = query
+    let query_map = query.map(|q| q.into_inner()).unwrap_or_default();
+    let order_by = query_map.get("order_by").map(|s| s.as_str()).unwrap_or("id");
+    let valid_order_by = ["id", "created_at", "updated_at", "like_count", "dislike_count", "engagement_rate"];
+    if !valid_order_by.contains(&order_by) {
+        return Err(AxError::InvalidInput(format!("Invalid order_by field: {}", order_by)));
+    }
+
+    let sort = query_map.get("sort").map(|s| s.to_lowercase()).unwrap_or_else(|| "desc".to_string());
+    if sort != "asc" && sort != "desc" {
+        return Err(AxError::InvalidInput(format!("Invalid sort direction: {}", sort)));
+    }
+
+    let limit = query_map
         .get("limit")
         .and_then(|s| s.parse::<i64>().ok())
         .unwrap_or(10);
-    let offset = query
+    let offset = query_map
         .get("offset")
         .and_then(|s| s.parse::<i64>().ok())
         .unwrap_or(0);
@@ -92,8 +101,8 @@ pub async fn get_post_list_db(
     // 拼接 SQL 查询字符串
     let sql = format!(
         "SELECT * FROM posts ORDER BY {} {} LIMIT $1 OFFSET $2",
-        order_by.unwrap_or(&String::from("id")),
-        sort.unwrap_or(&String::from("desc"))
+        order_by,
+        sort
     );
 
     // 执行查询

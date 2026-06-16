@@ -45,9 +45,11 @@ pub async fn insert_new_post(
     new_post: web::Json<CreatePost>,
 ) -> Result<HttpResponse, AxError> {
     app_state.add_request_count();
-    let _ = login_in_unauthentic(&session).await;
+    if let Ok(resp) = login_in_unauthentic(&session).await {
+        return Ok(resp);
+    }
     let mut new_post: CreatePost = new_post.into();
-    let user_id = session.get::<i32>("user_id").unwrap().unwrap();
+    let user_id = session.get::<i32>("user_id").unwrap().unwrap_or(0);
     new_post.set_user_id(user_id);
 
     insert_post_db(&app_state.db, new_post).await.map(|post| {
@@ -151,10 +153,12 @@ pub async fn get_trending_posts(
     _query: Option<web::Query<HashMap<String, String>>>,
 ) -> Result<HttpResponse, AxError> {
     app_state.add_request_count();
-    let _ = login_in_unauthentic(&session).await;
+    if let Ok(resp) = login_in_unauthentic(&session).await {
+        return Ok(resp);
+    }
 
     // 获取用户ID或特征，用于推荐
-    let user_id = SessionOperation::get_user_id(session).unwrap();
+    let user_id = SessionOperation::get_user_id(session).unwrap_or(0);
 
     // 调用深度学习模型进行推荐
     let recommended_post_ids = recommend_posts(app_state.clone(), user_id).await?;
@@ -200,8 +204,23 @@ pub async fn update_post_details(
     update_post: web::Json<UpdatePost>,
 ) -> Result<HttpResponse, AxError> {
     app_state.add_request_count();
-    let _ = login_in_unauthentic(&session).await;
+    if let Ok(resp) = login_in_unauthentic(&session).await {
+        return Ok(resp);
+    }
     let (post_id,) = path.into_inner();
+    let user_id = session.get::<i32>("user_id").unwrap().unwrap_or(0);
+
+    // Owner check
+    let post = get_post_detail_db(&app_state.db, post_id).await?;
+    let is_admin_user = crate::extractors::session::is_admin(session.clone()).await.unwrap_or(false);
+    if post.user_id != user_id && !is_admin_user {
+        return Ok(HttpResponse::Unauthorized().json(ApiResponse::<()>::new(
+            401,
+            "Not authorized to update this post".to_string(),
+            None,
+        )));
+    }
+
     update_post_db(&app_state.db, post_id, update_post.into())
         .await
         .map(|post| {
@@ -236,8 +255,23 @@ pub async fn delete_post(
     path: web::Path<(i32,)>,
 ) -> Result<HttpResponse, AxError> {
     app_state.add_request_count();
-    let _ = login_in_unauthentic(&session).await;
+    if let Ok(resp) = login_in_unauthentic(&session).await {
+        return Ok(resp);
+    }
     let (post_id,) = path.into_inner();
+    let user_id = session.get::<i32>("user_id").unwrap().unwrap_or(0);
+
+    // Owner check
+    let post = get_post_detail_db(&app_state.db, post_id).await?;
+    let is_admin_user = crate::extractors::session::is_admin(session.clone()).await.unwrap_or(false);
+    if post.user_id != user_id && !is_admin_user {
+        return Ok(HttpResponse::Unauthorized().json(ApiResponse::<()>::new(
+            401,
+            "Not authorized to delete this post".to_string(),
+            None,
+        )));
+    }
+
     delete_post_db(&app_state.db, post_id).await.map(|post| {
         HttpResponse::Ok().json(ApiResponse::new(
             200,
@@ -255,10 +289,11 @@ mod tests {
 
     use crate::{
         handlers::post::{
-            delete_post, get_post_detail, insert_new_post, insert_post_db, update_post_details,
+            delete_post, get_post_detail, get_post_list, insert_new_post, insert_post_db, update_post_details,
         },
         models::post::{CreatePost, UpdatePost},
         state::{get_demo_state, AppState},
+        utils::test::get_demo_session,
     };
 
     #[actix_rt::test]
@@ -268,8 +303,7 @@ mod tests {
         let post_param = web::Json(new_post_msg.clone());
 
         // 发送请求前设置 session 数据
-        let session = test::TestRequest::post().to_http_request().get_session();
-        session.insert("user_id", 1).unwrap(); // 模拟 user_id 为 1
+        let session = get_demo_session().await;
         let resp = insert_new_post(session, app_state.clone(), post_param)
             .await
             .unwrap();
@@ -296,8 +330,7 @@ mod tests {
     async fn test_delete_post() {
         let app_state: web::Data<AppState> = get_demo_state().await;
         // 发送请求前设置 session 数据
-        let session = test::TestRequest::post().to_http_request().get_session();
-        session.insert("user_id", 1).unwrap(); // 模拟 user_id 为 1
+        let session = get_demo_session().await;
         let post = CreatePost::demo();
         let insert_result = insert_post_db(&app_state.db, post.clone()).await.unwrap();
         assert_eq!(post.content, insert_result.content);
@@ -322,8 +355,7 @@ mod tests {
         let parameters: web::Path<(i32,)> = web::Path::from((insert_result.id,));
         let update_param = web::Json(update_post_msg);
         // 发送请求前设置 session 数据
-        let session = test::TestRequest::put().to_http_request().get_session();
-        session.insert("user_id", 1).unwrap(); // 模拟 user_id 为 1
+        let session = get_demo_session().await;
 
         let resp = update_post_details(session, app_state.clone(), parameters, update_param)
             .await
@@ -340,8 +372,7 @@ mod tests {
     async fn test_get_post_detail() {
         let app_state: web::Data<AppState> = get_demo_state().await;
         // 发送请求前设置 session 数据
-        let session = test::TestRequest::get().to_http_request().get_session();
-        session.insert("user_id", 1).unwrap(); // 模拟 user_id 为 1
+        let session = get_demo_session().await;
 
         let new_post_msg = CreatePost::demo();
         let result = insert_post_db(&app_state.db, new_post_msg.clone())
@@ -364,9 +395,6 @@ mod tests {
 
     #[actix_rt::test]
     async fn test_get_post_list() {
-        use crate::handlers::post::get_post_list;
-        use crate::utils::test::get_demo_session;
-
         let app_state: web::Data<AppState> = get_demo_state().await;
         let session = get_demo_session().await;
         let mut query_map = std::collections::HashMap::new();
@@ -375,5 +403,38 @@ mod tests {
         let query = Some(web::Query(query_map));
         let resp = get_post_list(app_state, query).await.unwrap();
         assert_eq!(resp.status(), StatusCode::OK);
+    }
+
+    #[actix_rt::test]
+    async fn test_get_post_list_invalid_order_by() {
+        let app_state: web::Data<AppState> = get_demo_state().await;
+        let mut query_map = std::collections::HashMap::new();
+        query_map.insert("order_by".to_string(), "id; DROP TABLE posts;".to_string());
+        let query = Some(web::Query(query_map));
+        let resp = get_post_list(app_state, query).await;
+        assert!(resp.is_err());
+        match resp {
+            Err(crate::errors::AxError::InvalidInput(_)) => {}
+            _ => panic!("Expected InvalidInput error"),
+        }
+    }
+
+    #[actix_rt::test]
+    async fn test_get_post_list_no_query() {
+        let app_state: web::Data<AppState> = get_demo_state().await;
+        let resp = get_post_list(app_state, None).await.unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
+    }
+
+    #[actix_rt::test]
+    async fn test_insert_post_unauthorized() {
+        let app_state: web::Data<AppState> = get_demo_state().await;
+        let new_post_msg = CreatePost::demo();
+        let post_param = web::Json(new_post_msg);
+        let session = test::TestRequest::post().to_http_request().get_session();
+        let resp = insert_new_post(session, app_state, post_param).await.unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
+        let body: Value = crate::utils::test::http_response_to_json(resp).await;
+        assert_eq!(body["code"], 401);
     }
 }

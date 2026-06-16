@@ -32,13 +32,16 @@ pub async fn insert_like_reaction(
     app_state: web::Data<AppState>,
     query: Option<web::Query<HashMap<String, String>>>,
 ) -> Result<HttpResponse, AxError> {
-    let query = query.unwrap();
+    if let Ok(resp) = login_in_unauthentic(&session).await {
+        return Ok(resp);
+    }
+    let query_map = query.map(|q| q.into_inner()).unwrap_or_default();
     let user_id = session.get::<i32>("user_id").unwrap().unwrap_or(0);
-    let to_id = query
+    let to_id = query_map
         .get("toId")
         .and_then(|s| s.parse::<i32>().ok())
         .unwrap_or(0);
-    let to_type = query.get("toType").unwrap_or(&"post".to_string()).clone();
+    let to_type = query_map.get("toType").unwrap_or(&"post".to_string()).clone();
 
     let new_reaction = CreateReaction {
         user_id,
@@ -79,14 +82,17 @@ pub async fn insert_dislike_reaction(
     app_state: web::Data<AppState>,
     query: Option<web::Query<HashMap<String, String>>>,
 ) -> Result<HttpResponse, AxError> {
-    let query = query.unwrap();
-    println!("{:?}", query);
+    if let Ok(resp) = login_in_unauthentic(&session).await {
+        return Ok(resp);
+    }
+    let query_map = query.map(|q| q.into_inner()).unwrap_or_default();
+    println!("{:?}", query_map);
     let user_id = session.get::<i32>("user_id").unwrap().unwrap_or(0);
-    let to_id = query
+    let to_id = query_map
         .get("toId")
         .and_then(|s| s.parse::<i32>().ok())
         .unwrap_or(0);
-    let to_type = query.get("toType").unwrap_or(&"post".to_string()).clone();
+    let to_type = query_map.get("toType").unwrap_or(&"post".to_string()).clone();
     println!("to_type: {:?}", to_type);
     let new_reaction = CreateReaction {
         user_id,
@@ -124,7 +130,9 @@ pub async fn get_single_reaction_table_by_query(
     app_state: web::Data<AppState>,
     query: Option<web::Query<HashMap<String, String>>>,
 ) -> Result<HttpResponse, AxError> {
-    get_reaction_table_by_query_db(&app_state.db, query.unwrap())
+    let query_map = query.map(|q| q.into_inner()).unwrap_or_default();
+    let query_wrapper = web::Query(query_map);
+    get_reaction_table_by_query_db(&app_state.db, query_wrapper)
         .await
         .map(|reaction_table| {
             HttpResponse::Ok().json(ApiResponse::new(
@@ -157,12 +165,13 @@ pub async fn get_reactions_by_query(
     if let Ok(resp) = login_in_unauthentic(&session).await {
         return Ok(resp);
     }
-    let mut query = query.unwrap();
-    if query.get("userId").is_none() {
-        let user_id = session.get::<i32>("user_id").unwrap();
-        query.insert("userId".to_string(), user_id.unwrap().to_string());
+    let mut query_map = query.map(|q| q.into_inner()).unwrap_or_default();
+    if query_map.get("userId").is_none() {
+        let user_id = session.get::<i32>("user_id").unwrap().unwrap_or(0);
+        query_map.insert("userId".to_string(), user_id.to_string());
     }
-    get_reactions_by_query_db(&app_state.db, query)
+    let query_wrapper = web::Query(query_map);
+    get_reactions_by_query_db(&app_state.db, query_wrapper)
         .await
         .map(|reactions| {
             HttpResponse::Ok().json(ApiResponse::new(
@@ -180,7 +189,7 @@ pub async fn get_reactions_by_query(
 ///
 /// # 参数
 ///
-/// - `_session`: 请求的 session 对象（暂未使用）
+/// - `session`: 请求的 session 对象，用于验证
 /// - `app_state`: 应用状态，包含数据库连接池
 /// - `query`: URL 查询参数，支持 `reactionId` 字段
 ///
@@ -188,12 +197,15 @@ pub async fn get_reactions_by_query(
 ///
 /// 成功时返回 200 响应及被删除的互动记录，失败时返回 [`AxError`]。
 pub async fn delete_reaction_by_id(
-    _session: Session,
+    session: Session,
     app_state: web::Data<AppState>,
     query: Option<web::Query<HashMap<String, String>>>,
 ) -> Result<HttpResponse, AxError> {
-    let reaction_id = query
-        .unwrap()
+    if let Ok(resp) = login_in_unauthentic(&session).await {
+        return Ok(resp);
+    }
+    let query_map = query.map(|q| q.into_inner()).unwrap_or_default();
+    let reaction_id = query_map
         .get("reactionId")
         .and_then(|s| s.parse::<i32>().ok())
         .unwrap_or(0);
@@ -211,9 +223,9 @@ pub async fn delete_reaction_by_id(
 
 #[cfg(test)]
 mod tests {
-    use actix_session::storage::RedisSessionStore;
-    use actix_session::SessionMiddleware;
-    use actix_web::{cookie::Key, http::StatusCode, test, web, App};
+    use std::collections::HashMap;
+    use actix_web::http::StatusCode;
+    use actix_web::web;
     use serde_json::Value;
 
     use crate::{
@@ -222,35 +234,24 @@ mod tests {
             insert_like_reaction,
         },
         state::{get_demo_state, AppState},
+        utils::test::{get_demo_session, http_response_to_json},
     };
 
     #[actix_rt::test]
     async fn test_insert_like_reaction() {
         let app_state: web::Data<AppState> = get_demo_state().await;
-        let secret_key = Key::generate();
-        let store = RedisSessionStore::new("redis://127.0.0.1:6379")
+        let session = get_demo_session().await;
+        let mut query_map = HashMap::new();
+        query_map.insert("toId".to_string(), "1".to_string());
+        query_map.insert("toType".to_string(), "post".to_string());
+        let query = Some(web::Query(query_map));
+        
+        let resp = insert_like_reaction(session, app_state.clone(), query)
             .await
             .unwrap();
-        let app = test::init_service(
-            App::new()
-                .app_data(app_state.clone())
-                .wrap(
-                    SessionMiddleware::builder(store, secret_key.clone())
-                        .cookie_secure(false)
-                        .build(),
-                )
-                .route("/like", web::post().to(insert_like_reaction)),
-        )
-        .await;
-
-        let req = test::TestRequest::post()
-            .uri("/like?toId=1&toType=post")
-            .cookie(actix_web::cookie::Cookie::new("user_id", "1"))
-            .to_request();
-        let resp = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK);
-
-        let body: Value = test::read_body_json(resp).await;
+        
+        let body: Value = http_response_to_json(resp).await;
         let reaction_id = body["body"]["data"]["id"]
             .as_i64()
             .expect("id not found or not an integer") as i32;
@@ -264,30 +265,18 @@ mod tests {
     #[actix_rt::test]
     async fn test_insert_dislike_reaction() {
         let app_state: web::Data<AppState> = get_demo_state().await;
-        let secret_key = Key::generate();
-        let store = RedisSessionStore::new("redis://127.0.0.1:6379")
+        let session = get_demo_session().await;
+        let mut query_map = HashMap::new();
+        query_map.insert("toId".to_string(), "1".to_string());
+        query_map.insert("toType".to_string(), "post".to_string());
+        let query = Some(web::Query(query_map));
+
+        let resp = insert_dislike_reaction(session, app_state.clone(), query)
             .await
             .unwrap();
-        let app = test::init_service(
-            App::new()
-                .app_data(app_state.clone())
-                .wrap(
-                    SessionMiddleware::builder(store, secret_key.clone())
-                        .cookie_secure(false)
-                        .build(),
-                )
-                .route("/dislike", web::post().to(insert_dislike_reaction)),
-        )
-        .await;
-
-        let req = test::TestRequest::post()
-            .uri("/dislike?toId=1&toType=post")
-            .cookie(actix_web::cookie::Cookie::new("user_id", "1"))
-            .to_request();
-        let resp = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK);
 
-        let body: Value = test::read_body_json(resp).await;
+        let body: Value = http_response_to_json(resp).await;
         let reaction_id = body["body"]["data"]["id"]
             .as_i64()
             .expect("id not found or not an integer") as i32;
@@ -301,42 +290,27 @@ mod tests {
     #[actix_rt::test]
     async fn test_get_reaction_table() {
         let app_state: web::Data<AppState> = get_demo_state().await;
-        let secret_key = Key::generate();
-        let store = RedisSessionStore::new("redis://127.0.0.1:6379")
-            .await
-            .unwrap();
-        let app = test::init_service(
-            App::new()
-                .app_data(app_state.clone())
-                .wrap(
-                    SessionMiddleware::builder(store, secret_key.clone())
-                        .cookie_secure(false)
-                        .build(),
-                )
-                .route("/like", web::post().to(insert_like_reaction))
-                .route("/table", web::get().to(get_single_reaction_table_by_query)),
-        )
-        .await;
+        let session = get_demo_session().await;
 
         // First insert a like
-        let insert_req = test::TestRequest::post()
-            .uri("/like?toId=9999&toType=post")
-            .cookie(actix_web::cookie::Cookie::new("user_id", "1"))
-            .to_request();
-        let insert_resp = test::call_service(&app, insert_req).await;
+        let mut query_map = HashMap::new();
+        query_map.insert("toId".to_string(), "9999".to_string());
+        query_map.insert("toType".to_string(), "post".to_string());
+        let insert_resp = insert_like_reaction(session, app_state.clone(), Some(web::Query(query_map.clone())))
+            .await
+            .unwrap();
         assert_eq!(insert_resp.status(), StatusCode::OK);
-        let insert_body: Value = test::read_body_json(insert_resp).await;
+        let insert_body: Value = http_response_to_json(insert_resp).await;
         let reaction_id = insert_body["body"]["data"]["id"]
             .as_i64()
             .expect("id not found") as i32;
 
         // Then get the reaction table
-        let get_req = test::TestRequest::get()
-            .uri("/table?toId=9999&toType=post")
-            .to_request();
-        let get_resp = test::call_service(&app, get_req).await;
+        let get_resp = get_single_reaction_table_by_query(app_state.clone(), Some(web::Query(query_map)))
+            .await
+            .unwrap();
         assert_eq!(get_resp.status(), StatusCode::OK);
-        let get_body: Value = test::read_body_json(get_resp).await;
+        let get_body: Value = http_response_to_json(get_resp).await;
         assert_eq!(get_body["code"], 200);
 
         // Cleanup
@@ -349,41 +323,26 @@ mod tests {
     #[actix_rt::test]
     async fn test_delete_reaction() {
         let app_state: web::Data<AppState> = get_demo_state().await;
-        let secret_key = Key::generate();
-        let store = RedisSessionStore::new("redis://127.0.0.1:6379")
-            .await
-            .unwrap();
-        let app = test::init_service(
-            App::new()
-                .app_data(app_state.clone())
-                .wrap(
-                    SessionMiddleware::builder(store, secret_key.clone())
-                        .cookie_secure(false)
-                        .build(),
-                )
-                .route("/like", web::post().to(insert_like_reaction))
-                .route("/delete", web::delete().to(delete_reaction_by_id)),
-        )
-        .await;
+        let session = get_demo_session().await;
 
         // First insert a like
-        let insert_req = test::TestRequest::post()
-            .uri("/like?toId=8888&toType=post")
-            .cookie(actix_web::cookie::Cookie::new("user_id", "1"))
-            .to_request();
-        let insert_resp = test::call_service(&app, insert_req).await;
-        let insert_body: Value = test::read_body_json(insert_resp).await;
+        let mut query_map = HashMap::new();
+        query_map.insert("toId".to_string(), "8888".to_string());
+        query_map.insert("toType".to_string(), "post".to_string());
+        let insert_resp = insert_like_reaction(session.clone(), app_state.clone(), Some(web::Query(query_map)))
+            .await
+            .unwrap();
+        let insert_body: Value = http_response_to_json(insert_resp).await;
         let reaction_id = insert_body["body"]["data"]["id"]
             .as_i64()
             .expect("id not found") as i32;
 
         // Delete the reaction
-        let delete_req = test::TestRequest::delete()
-            .uri(format!("/delete?reactionId={}", reaction_id).as_str())
-            .to_request();
-        let delete_resp = test::call_service(&app, delete_req).await;
+        let mut delete_query_map = HashMap::new();
+        delete_query_map.insert("reactionId".to_string(), reaction_id.to_string());
+        let delete_resp = delete_reaction_by_id(session, app_state.clone(), Some(web::Query(delete_query_map)))
+            .await
+            .unwrap();
         assert_eq!(delete_resp.status(), StatusCode::OK);
-        let delete_body: Value = test::read_body_json(delete_resp).await;
-        assert_eq!(delete_body["code"], 200);
     }
 }

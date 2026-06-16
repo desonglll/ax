@@ -39,7 +39,9 @@ pub async fn insert_comment(
     create_comment: web::Json<CreateComment>,
 ) -> Result<HttpResponse, AxError> {
     // Login check
-    let _ = login_in_unauthentic(&session).await;
+    if let Ok(resp) = login_in_unauthentic(&session).await {
+        return Ok(resp);
+    }
     let user_id: i32 = session.get::<i32>("user_id").unwrap().unwrap_or(0);
     let mut create_comment = create_comment.into_inner();
     create_comment.set_user_id(Some(user_id));
@@ -74,8 +76,26 @@ pub async fn delete_comment(
     params: web::Path<(i32,)>,
 ) -> Result<HttpResponse, AxError> {
     // Login check
-    let _ = login_in_unauthentic(&session).await;
+    if let Ok(resp) = login_in_unauthentic(&session).await {
+        return Ok(resp);
+    }
     let (id,) = params.into_inner();
+
+    // Owner check
+    let comment = sqlx::query!("select user_id from comments where id = $1", id)
+        .fetch_one(&app_state.db)
+        .await
+        .map_err(|_| AxError::NotFound("Comment not found".to_string()))?;
+    let user_id = session.get::<i32>("user_id").unwrap().unwrap_or(0);
+    let is_admin_user = crate::extractors::session::is_admin(session.clone()).await.unwrap_or(false);
+    if comment.user_id != user_id && !is_admin_user {
+        return Ok(HttpResponse::Unauthorized().json(ApiResponse::<()>::new(
+            401,
+            "Not authorized to delete this comment".to_string(),
+            None,
+        )));
+    }
+
     delete_comment_by_id_db(&app_state.db, id)
         .await
         .map(|comment| {
@@ -107,11 +127,16 @@ pub async fn get_comment_by_query(
 ) -> Result<HttpResponse, AxError> {
     get_comment_by_query_db(&app_state.db, query)
         .await
-        .map(|comment| {
+        .map(|(comment, pagination)| {
             let api_response = ApiResponse::new(
                 200,
                 "Get Comment Successful".to_string(),
-                Some(DataBuilder::new().set_data(comment).build()),
+                Some(
+                    DataBuilder::new()
+                        .set_data(comment)
+                        .set_pagination(pagination)
+                        .build(),
+                ),
             );
             HttpResponse::Ok().json(api_response)
         })
@@ -198,6 +223,42 @@ mod tests {
         assert_eq!(comment_id, get_comment_id);
 
         // 删除测试插入的 post
+        sqlx::query!("DELETE FROM comments WHERE id = $1", comment_id)
+            .execute(&app_state.db)
+            .await
+            .unwrap();
+    }
+
+    #[actix_rt::test]
+    async fn test_get_comment_pagination() {
+        let new_comment = CreateComment::demo();
+        let session = get_demo_session().await;
+        let app_state = get_demo_state().await;
+        let resp = insert_comment(session.clone(), app_state.clone(), Json(new_comment))
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
+        let body_json: Value = http_response_to_json(resp).await;
+        let comment_id = body_json["body"]["data"]["id"]
+            .as_i64()
+            .expect("id not found or not an integer") as i32;
+
+        // Query with pagination limit=1
+        let mut query = HashMap::<String, String>::new();
+        query.insert("commentId".to_string(), comment_id.to_string());
+        query.insert("limit".to_string(), "1".to_string());
+        query.insert("offset".to_string(), "0".to_string());
+
+        let get_resp = get_comment_by_query(app_state.clone(), Query(query))
+            .await
+            .unwrap();
+        let get_body_json: Value = http_response_to_json(get_resp).await;
+        let comments = get_body_json["body"]["data"].as_array().unwrap();
+        assert_eq!(comments.len(), 1);
+        assert_eq!(get_body_json["body"]["pagination"]["limit"], 1);
+        assert_eq!(get_body_json["body"]["pagination"]["offset"], 0);
+
+        // Cleanup
         sqlx::query!("DELETE FROM comments WHERE id = $1", comment_id)
             .execute(&app_state.db)
             .await

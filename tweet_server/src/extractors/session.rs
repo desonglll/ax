@@ -22,10 +22,10 @@ impl SessionOperation {
     ///
     /// 成功时返回用户 ID，session 中无 `user_id` 时返回 0。
     pub fn get_user_id(session: Session) -> Result<i32, AxError> {
-        let Ok(user_id) = session.get::<i32>("user_id") else {
-            return Ok(0);
-        };
-        Ok(user_id.unwrap())
+        match session.get::<i32>("user_id") {
+            Ok(Some(user_id)) => Ok(user_id),
+            _ => Ok(0),
+        }
     }
 }
 
