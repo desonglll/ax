@@ -18,8 +18,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const checkAuth = async () => {
     try {
-      const res = await authApi.loginCheck();
-      if (res.code === 200 && res.body.data) {
+      const res = await userApi.profile();
+      if (res.code === 200 && res.body?.data) {
         setUser(res.body.data);
       } else {
         setUser(null);

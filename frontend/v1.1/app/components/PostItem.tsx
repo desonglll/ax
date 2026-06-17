@@ -6,9 +6,10 @@ import { useAuth } from "../contexts/AuthContext";
 interface PostItemProps {
   post: Post;
   onDeleteSuccess?: (postId: number) => void;
+  isDetail?: boolean;
 }
 
-export const PostItem: React.FC<PostItemProps> = ({ post, onDeleteSuccess }) => {
+export const PostItem: React.FC<PostItemProps> = ({ post, onDeleteSuccess, isDetail = false }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [likes, setLikes] = useState<number>(0);
@@ -16,6 +17,7 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onDeleteSuccess }) => 
   const [userReactionId, setUserReactionId] = useState<number | null>(null);
   const [userReactionType, setUserReactionType] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const fetchReactions = async () => {
     try {
@@ -106,8 +108,26 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onDeleteSuccess }) => 
         <div>{formattedDate}</div>
       </div>
 
-      <div className="text-sm whitespace-pre-wrap break-all mb-4 text-gray-800 dark:text-gray-200 leading-relaxed">
-        {post.content}
+      <div className="text-sm whitespace-pre-wrap break-all mb-4 text-gray-800 dark:text-gray-200 leading-relaxed font-sans">
+        {(() => {
+          const isLong = !isDetail && post.content.length > 280;
+          const contentToShow = isLong && !isExpanded
+            ? post.content.substring(0, 280) + "..."
+            : post.content;
+          return (
+            <>
+              {contentToShow}
+              {isLong && (
+                <button
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="ml-2 text-blue-600 hover:underline cursor-pointer font-bold font-mono text-xs"
+                >
+                  {isExpanded ? "[Collapse]" : "[Read More]"}
+                </button>
+              )}
+            </>
+          );
+        })()}
       </div>
 
       <div className="flex items-center justify-between text-xs border-t border-gray-100 dark:border-gray-900 pt-3">

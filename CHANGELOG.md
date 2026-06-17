@@ -2,6 +2,15 @@
 
 This document logs the development history and version alterations of Project Ax.
 
+## [0.3.1] - 2026-06-17
+
+### Added
+- Added frontend automation recipes to the root `justfile` (`fe-install`, `fe-dev`, `fe-check`, `fe-build`).
+- Implemented Reddit-style content truncation and inline expand/collapse toggles in `PostItem.tsx` for posts longer than 280 characters in list views.
+
+### Fixed
+- Fixed login session persistence bug where refreshing the browser cleared the logged-in status. The frontend now queries the full user profile details from `/api/users/profile` to restore sessions.
+
 ## [0.3.0] - 2026-06-16
 
 ### Added

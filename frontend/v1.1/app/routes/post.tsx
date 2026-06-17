@@ -131,7 +131,7 @@ export default function PostDetail() {
       </div>
 
       {/* Main Post */}
-      <PostItem post={post} onDeleteSuccess={handlePostDeleteSuccess} />
+      <PostItem post={post} onDeleteSuccess={handlePostDeleteSuccess} isDetail={true} />
 
       {/* Comments Section */}
       <div className="border border-gray-300 dark:border-gray-800 p-4 bg-white dark:bg-gray-950">

@@ -28,3 +28,20 @@ doc-build:
 # Serve the mdBook documentation locally
 doc-serve:
 	mdbook serve docs
+
+# Install frontend dependencies (v1.1)
+fe-install:
+	cd frontend/v1.1 && bun install
+
+# Start frontend development server (v1.1)
+fe-dev:
+	cd frontend/v1.1 && bun run dev
+
+# Run frontend typescript typecheck (v1.1)
+fe-check:
+	cd frontend/v1.1 && bun run typecheck
+
+# Build frontend production bundle (v1.1)
+fe-build:
+	cd frontend/v1.1 && bun run build
+
