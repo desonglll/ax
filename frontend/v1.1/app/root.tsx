@@ -58,7 +58,7 @@ function AppLayout() {
     <div className="flex-1 flex flex-col">
       {/* GNU-Style Minimalist Navigation Header */}
       <header className="bg-gray-100 border-b border-gray-300 dark:bg-gray-900 dark:border-gray-800 py-3 px-4">
-        <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <Link to="/" className="text-xl font-bold tracking-tight text-black dark:text-white hover:underline">
               AX Microblog
@@ -99,13 +99,13 @@ function AppLayout() {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-3xl w-full mx-auto p-4 py-8">
+      <main className="flex-1 max-w-5xl w-full mx-auto p-4 py-8">
         <Outlet />
       </main>
 
       {/* GNU-Style Minimalist Footer */}
       <footer className="bg-gray-50 border-t border-gray-200 dark:bg-gray-950 dark:border-gray-900 py-6 px-4 text-center text-xs text-gray-500 font-mono mt-auto">
-        <div className="max-w-3xl mx-auto flex flex-col gap-2">
+        <div className="max-w-5xl mx-auto flex flex-col gap-2">
           <p>
             AX Microblog is free software. You can redistribute it and/or modify it under the terms of the GNU General Public License.
           </p>
@@ -135,7 +135,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   }
 
   return (
-    <main className="max-w-3xl mx-auto p-8 py-16 text-center">
+    <main className="max-w-5xl mx-auto p-8 py-16 text-center">
       <h1 className="text-2xl font-bold text-red-600 mb-4">{message}</h1>
       <p className="text-gray-700 dark:text-gray-300 mb-6">{details}</p>
       <Link to="/" className="text-blue-600 hover:underline font-mono">

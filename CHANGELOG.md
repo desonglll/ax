@@ -2,6 +2,20 @@
 
 This document logs the development history and version alterations of Project Ax.
 
+## [0.3.2] - 2026-06-17
+
+### Added
+- Implemented reaction cancellation and toggle logic in `PostItem.tsx` and `CommentNode.tsx`.
+- Migrated timeline and comments pagination from memory state to URL search parameters (`offset`) using standard HTTP `href` links to preserve page memory on browser refreshes.
+- Re-structured the timeline homepage into a modern, minimalist two-column layout: timeline timeline list and post-creation form on the left, session status/server monitor/project info widgets in a right sidebar.
+- Redesigned likes, dislikes, comments, and delete actions into clean, flat-bordered mono buttons with subtle visual cues.
+
+### Changed
+- Expanded root layout max-width constraint from `max-w-3xl` to `max-w-5xl` to support desktop grid splitting.
+
+### Fixed
+- Fixed runtime crash in `SystemStatsWidget` where route latencies `response_times` and request count `request_count` received from the backend stats endpoint were serialized in snake_case, causing undefined exceptions on camelCase references. The API client now maps these keys properly.
+
 ## [0.3.1] - 2026-06-17
 
 ### Added

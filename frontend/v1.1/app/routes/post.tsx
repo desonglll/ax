@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, Link } from "react-router";
+import { useParams, Link, useSearchParams } from "react-router";
 import { postApi, commentApi, type Post, type Comment } from "../utils/api";
 import { useAuth } from "../contexts/AuthContext";
 import { PostItem } from "../components/PostItem";
@@ -18,8 +18,9 @@ export default function PostDetail() {
   const [submittingComment, setSubmittingComment] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Pagination for top-level comments
-  const [offset, setOffset] = useState(0);
+  // Pagination for top-level comments bound to URL search parameter
+  const [searchParams, setSearchParams] = useSearchParams();
+  const offset = Number(searchParams.get("offset") || "0");
   const limit = 5;
   const [hasMore, setHasMore] = useState(true);
 
@@ -85,7 +86,7 @@ export default function PostDetail() {
         if (offset === 0) {
           fetchComments(0);
         } else {
-          setOffset(0);
+          setSearchParams({ offset: "0" });
         }
       }
     } catch (err: any) {
@@ -184,25 +185,35 @@ export default function PostDetail() {
 
             {/* Pagination Controls */}
             <div className="flex items-center justify-between border-t border-gray-200 dark:border-gray-800 pt-3 mt-2">
-              <button
-                onClick={() => setOffset((o) => Math.max(0, o - limit))}
-                disabled={offset === 0}
-                className="bg-gray-100 border border-gray-300 px-3 py-0.5 text-2xs font-bold dark:bg-gray-900 dark:border-gray-700 disabled:opacity-30 cursor-pointer"
-              >
-                [Prev Comments]
-              </button>
+              {offset === 0 ? (
+                <span className="bg-gray-100 border border-gray-300 px-3 py-0.5 text-2xs font-bold dark:bg-gray-900 dark:border-gray-800 opacity-30 cursor-not-allowed text-gray-400">
+                  [Prev Comments]
+                </span>
+              ) : (
+                <a
+                  href={`/posts/${post.id}?offset=${Math.max(0, offset - limit)}`}
+                  className="bg-gray-100 border border-gray-300 px-3 py-0.5 text-2xs font-bold dark:bg-gray-900 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200 cursor-pointer"
+                >
+                  [Prev Comments]
+                </a>
+              )}
 
               <span className="text-xs text-gray-500">
                 Offset: {offset}
               </span>
 
-              <button
-                onClick={() => setOffset((o) => o + limit)}
-                disabled={!hasMore}
-                className="bg-gray-100 border border-gray-300 px-3 py-0.5 text-2xs font-bold dark:bg-gray-900 dark:border-gray-700 disabled:opacity-30 cursor-pointer"
-              >
-                [Next Comments]
-              </button>
+              {!hasMore ? (
+                <span className="bg-gray-100 border border-gray-300 px-3 py-0.5 text-2xs font-bold dark:bg-gray-900 dark:border-gray-800 opacity-30 cursor-not-allowed text-gray-400">
+                  [Next Comments]
+                </span>
+              ) : (
+                <a
+                  href={`/posts/${post.id}?offset=${offset + limit}`}
+                  className="bg-gray-100 border border-gray-300 px-3 py-0.5 text-2xs font-bold dark:bg-gray-900 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200 cursor-pointer"
+                >
+                  [Next Comments]
+                </a>
+              )}
             </div>
           </div>
         )}

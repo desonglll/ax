@@ -217,6 +217,10 @@ export const reactionApi = {
     });
     return response.data;
   },
+  getReactions: async (params?: { toId?: number; toType?: "post" | "comment"; reactionName?: "Like" | "Dislike"; userId?: number }): Promise<ApiResponse<Reaction[]>> => {
+    const response = await api.get("/reactions/get", { params });
+    return response.data;
+  },
   delete: async (reactionId: number): Promise<ApiResponse<Reaction>> => {
     const response = await api.delete("/reactions/delete", {
       params: { reactionId },
@@ -258,6 +262,15 @@ export const fileApi = {
   getDownloadUrl: (fileId: string): string => {
     return `${api.defaults.baseURL}/files/download/${fileId}`;
   },
+};
+
+export const getSystemStats = async (): Promise<{ requestCount: number; responseTimes: Record<string, number[]> }> => {
+  const statsUrl = (api.defaults.baseURL || "http://localhost:8000/api").replace(/\/api$/, "") + "/stats";
+  const response = await axios.get(statsUrl);
+  return {
+    requestCount: response.data.request_count ?? 0,
+    responseTimes: response.data.response_times ?? {},
+  };
 };
 
 export default api;

@@ -1,19 +1,71 @@
 import React, { useEffect, useState } from "react";
-import { postApi, type Post } from "../utils/api";
+import { postApi, getSystemStats, type Post } from "../utils/api";
 import { useAuth } from "../contexts/AuthContext";
 import { PostItem } from "../components/PostItem";
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
+
+function SystemStatsWidget() {
+  const [stats, setStats] = useState<{ requestCount: number; responseTimes: Record<string, number[]> } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const data = await getSystemStats();
+        setStats(data);
+      } catch (err) {
+        console.error("Failed to load server stats", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+    const interval = setInterval(fetchStats, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="border border-gray-300 dark:border-gray-800 p-4 bg-white dark:bg-gray-950 text-xs">
+        Loading system stats...
+      </div>
+    );
+  }
+
+  if (!stats) return null;
+
+  return (
+    <div className="border border-gray-300 dark:border-gray-800 p-4 bg-white dark:bg-gray-950 text-xs font-mono">
+      <h3 className="font-bold border-b border-gray-200 dark:border-gray-800 pb-1.5 mb-2 uppercase text-gray-700 dark:text-gray-300">
+        System Monitor
+      </h3>
+      <p className="mb-2">Processed Requests: <strong>{stats.requestCount}</strong></p>
+      <div className="text-2xs text-gray-500 font-bold mb-1">Route Latency (us):</div>
+      <ul className="list-disc pl-4 flex flex-col gap-1 text-gray-600 dark:text-gray-400">
+        {Object.entries(stats.responseTimes).map(([route, times]) => {
+          const avgTime = times.length > 0 ? Math.round(times.reduce((a, b) => a + b, 0) / times.length) : 0;
+          return (
+            <li key={route} className="truncate">
+              <span className="font-bold">{route}</span>: {avgTime} us
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
 
 export default function Home() {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [posts, setPosts] = useState<Post[]>([]);
   const [newContent, setNewContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Pagination states
-  const [offset, setOffset] = useState(0);
+  // Pagination states bound to URL query parameter
+  const offset = Number(searchParams.get("offset") || "0");
   const limit = 10;
   const [hasMore, setHasMore] = useState(true);
 
@@ -57,7 +109,7 @@ export default function Home() {
         if (offset === 0) {
           fetchPosts(0);
         } else {
-          setOffset(0);
+          setSearchParams({ offset: "0" });
         }
       }
     } catch (err: any) {
@@ -72,90 +124,148 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col gap-6 font-mono">
-      {/* Create Post Section (authenticated only) */}
-      {user ? (
-        <form onSubmit={handleCreatePost} className="border border-gray-300 dark:border-gray-800 p-4 bg-white dark:bg-gray-950">
-          <h3 className="text-sm font-bold mb-2 uppercase tracking-wide">Write a new post</h3>
-          <textarea
-            value={newContent}
-            onChange={(e) => setNewContent(e.target.value)}
-            disabled={submitting}
-            placeholder="What is on your mind? (Markdown-like text)"
-            rows={3}
-            className="w-full border border-gray-300 dark:border-gray-800 p-2 text-sm bg-gray-50 dark:bg-gray-900 focus:outline-none focus:border-black dark:focus:border-white mb-3 resize-y font-sans"
-            required
-          />
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={submitting || !newContent.trim()}
-              className="bg-gray-200 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 px-4 py-1.5 text-xs font-bold hover:bg-gray-300 dark:hover:bg-gray-700 cursor-pointer disabled:opacity-50"
-            >
-              {submitting ? "Publishing..." : "[Publish Post]"}
-            </button>
-          </div>
-        </form>
-      ) : (
-        <div className="border border-gray-300 dark:border-gray-800 p-4 bg-gray-50 dark:bg-gray-900 text-sm text-center">
-          Please{" "}
-          <Link to="/login" className="text-blue-600 hover:underline font-bold">
-            [Login]
-          </Link>{" "}
-          or{" "}
-          <Link to="/register" className="text-blue-600 hover:underline font-bold">
-            [Register]
-          </Link>{" "}
-          to write posts and react.
-        </div>
-      )}
-
-      {error && (
-        <div className="bg-red-50 text-red-700 border border-red-300 p-3 text-sm">
-          Error: {error}
-        </div>
-      )}
-
-      {/* Timeline List */}
-      <div>
-        <h2 className="text-lg font-bold border-b border-gray-300 dark:border-gray-800 pb-2 mb-4 uppercase tracking-wide">
-          Timeline
-        </h2>
-
-        {loading && posts.length === 0 ? (
-          <div className="text-center py-8 text-sm text-gray-500 font-mono">Loading posts...</div>
-        ) : posts.length === 0 ? (
-          <div className="text-center py-8 text-sm text-gray-500 font-mono">No posts found. Write one!</div>
-        ) : (
-          <div className="flex flex-col">
-            {posts.map((post) => (
-              <PostItem key={post.id} post={post} onDeleteSuccess={handleDeleteSuccess} />
-            ))}
-
-            {/* Pagination Controls */}
-            <div className="flex items-center justify-between border-t border-gray-300 dark:border-gray-800 pt-4 mt-2">
+    <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+      {/* Left Column: Timeline & Editor */}
+      <div className="md:col-span-8 flex flex-col gap-6">
+        {/* Create Post Section (authenticated only) */}
+        {user ? (
+          <form onSubmit={handleCreatePost} className="border border-gray-300 dark:border-gray-800 p-4 bg-white dark:bg-gray-950 font-mono">
+            <h3 className="text-sm font-bold mb-2 uppercase tracking-wide">Write a new post</h3>
+            <textarea
+              value={newContent}
+              onChange={(e) => setNewContent(e.target.value)}
+              disabled={submitting}
+              placeholder="What is on your mind? (Markdown-like text)"
+              rows={3}
+              className="w-full border border-gray-300 dark:border-gray-800 p-2 text-sm bg-gray-50 dark:bg-gray-900 focus:outline-none focus:border-black dark:focus:border-white mb-3 resize-y font-sans"
+              required
+            />
+            <div className="flex justify-end">
               <button
-                onClick={() => setOffset((o) => Math.max(0, o - limit))}
-                disabled={offset === 0}
-                className="bg-gray-100 border border-gray-300 px-3 py-1 text-xs font-bold dark:bg-gray-900 dark:border-gray-700 disabled:opacity-30 cursor-pointer"
+                type="submit"
+                disabled={submitting || !newContent.trim()}
+                className="bg-gray-200 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 px-4 py-1.5 text-xs font-bold hover:bg-gray-300 dark:hover:bg-gray-750 cursor-pointer disabled:opacity-50"
               >
-                [Prev Page]
-              </button>
-
-              <span className="text-xs text-gray-500 font-mono">
-                Offset: {offset}
-              </span>
-
-              <button
-                onClick={() => setOffset((o) => o + limit)}
-                disabled={!hasMore}
-                className="bg-gray-100 border border-gray-300 px-3 py-1 text-xs font-bold dark:bg-gray-900 dark:border-gray-700 disabled:opacity-30 cursor-pointer"
-              >
-                [Next Page]
+                {submitting ? "Publishing..." : "[Publish Post]"}
               </button>
             </div>
+          </form>
+        ) : (
+          <div className="border border-gray-300 dark:border-gray-800 p-4 bg-gray-50 dark:bg-gray-900 text-sm text-center font-mono">
+            Please{" "}
+            <Link to="/login" className="text-blue-600 hover:underline font-bold">
+              [Login]
+            </Link>{" "}
+            or{" "}
+            <Link to="/register" className="text-blue-600 hover:underline font-bold">
+              [Register]
+            </Link>{" "}
+            to write posts and react.
           </div>
         )}
+
+        {error && (
+          <div className="bg-red-50 text-red-700 border border-red-300 p-3 text-sm font-mono">
+            Error: {error}
+          </div>
+        )}
+
+        {/* Timeline List */}
+        <div>
+          <h2 className="text-lg font-bold border-b border-gray-300 dark:border-gray-800 pb-2 mb-4 uppercase tracking-wide font-mono">
+            Timeline
+          </h2>
+
+          {loading && posts.length === 0 ? (
+            <div className="text-center py-8 text-sm text-gray-500 font-mono">Loading posts...</div>
+          ) : posts.length === 0 ? (
+            <div className="text-center py-8 text-sm text-gray-500 font-mono">No posts found. Write one!</div>
+          ) : (
+            <div className="flex flex-col">
+              {posts.map((post) => (
+                <PostItem key={post.id} post={post} onDeleteSuccess={handleDeleteSuccess} />
+              ))}
+
+              {/* Pagination Controls */}
+              <div className="flex items-center justify-between border-t border-gray-300 dark:border-gray-800 pt-4 mt-2 font-mono">
+                {offset === 0 ? (
+                  <span className="bg-gray-100 border border-gray-300 px-3 py-1 text-xs font-bold dark:bg-gray-900 dark:border-gray-800 opacity-30 cursor-not-allowed text-gray-400">
+                    [Prev Page]
+                  </span>
+                ) : (
+                  <a
+                    href={`/?offset=${Math.max(0, offset - limit)}`}
+                    className="bg-gray-100 border border-gray-300 px-3 py-1 text-xs font-bold dark:bg-gray-900 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200 cursor-pointer"
+                  >
+                    [Prev Page]
+                  </a>
+                )}
+
+                <span className="text-xs text-gray-500">
+                  Offset: {offset}
+                </span>
+
+                {!hasMore ? (
+                  <span className="bg-gray-100 border border-gray-300 px-3 py-1 text-xs font-bold dark:bg-gray-900 dark:border-gray-800 opacity-30 cursor-not-allowed text-gray-400">
+                    [Next Page]
+                  </span>
+                ) : (
+                  <a
+                    href={`/?offset=${offset + limit}`}
+                    className="bg-gray-100 border border-gray-300 px-3 py-1 text-xs font-bold dark:bg-gray-900 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200 cursor-pointer"
+                  >
+                    [Next Page]
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Right Column: Sidebar */}
+      <div className="md:col-span-4 flex flex-col gap-6">
+        {/* User Session Widget */}
+        <div className="border border-gray-300 dark:border-gray-800 p-4 bg-white dark:bg-gray-950 text-xs">
+          <h3 className="font-bold border-b border-gray-200 dark:border-gray-800 pb-1.5 mb-2 uppercase text-gray-700 dark:text-gray-300 font-mono">
+            User Session
+          </h3>
+          {user ? (
+            <div className="flex flex-col gap-1.5 font-mono">
+              <p>Logged in as: <strong className="text-black dark:text-white">{user.userName}</strong></p>
+              <p>Email: <span className="text-gray-600 dark:text-gray-400">{user.email}</span></p>
+              <p>Role: <span className="font-bold text-gray-700 dark:text-gray-300">{user.isAdmin ? "Administrator" : "Standard User"}</span></p>
+              <div className="mt-3 pt-2 border-t border-gray-150 dark:border-gray-900">
+                <Link to="/profile" className="text-blue-600 hover:underline font-bold">[Edit Profile]</Link>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2 font-mono">
+              <p className="text-gray-600 dark:text-gray-400">You are browsing as a guest.</p>
+              <div className="flex gap-2">
+                <Link to="/login" className="text-blue-600 hover:underline font-bold">[Login]</Link>
+                <span className="text-gray-300 dark:text-gray-700">|</span>
+                <Link to="/register" className="text-blue-600 hover:underline font-bold">[Register]</Link>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* System Stats Widget */}
+        <SystemStatsWidget />
+
+        {/* About Info Widget */}
+        <div className="border border-gray-300 dark:border-gray-800 p-4 bg-white dark:bg-gray-950 text-xs">
+          <h3 className="font-bold border-b border-gray-200 dark:border-gray-800 pb-1.5 mb-2 uppercase text-gray-700 dark:text-gray-300 font-mono">
+            About AX Project
+          </h3>
+          <p className="text-gray-650 dark:text-gray-400 leading-relaxed mb-2 font-sans">
+            AX is a minimalist microblogging site designed after traditional software directory sites. It values structural clarity and free software principles.
+          </p>
+          <p className="text-gray-650 dark:text-gray-400 leading-relaxed font-sans">
+            It is licensed under the GNU General Public License. You are free to study, modify, and run the system.
+          </p>
+        </div>
       </div>
     </div>
   );

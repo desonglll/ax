@@ -43,13 +43,43 @@ export const CommentNode: React.FC<CommentNodeProps> = ({ comment, onDeleteSucce
 
   const fetchReactions = async () => {
     try {
+      // 1. Fetch counts
       const res = await reactionApi.getTable(comment.id, "comment");
       if (res.code === 200 && res.body.data) {
         setLikes(res.body.data.like);
         setDislikes(res.body.data.dislike);
-        setUserReactionId(res.body.data.userReactionId || null);
-        setUserReactionType(res.body.data.userReactionType || null);
       }
+
+      // 2. Fetch logged in user's active reaction (Like or Dislike)
+      if (user) {
+        const likesRes = await reactionApi.getReactions({
+          toId: comment.id,
+          toType: "comment",
+          reactionName: "Like",
+          userId: user.id,
+        });
+        if (likesRes.code === 200 && likesRes.body.data && likesRes.body.data.length > 0) {
+          setUserReactionId(likesRes.body.data[0].id);
+          setUserReactionType("like");
+          return;
+        }
+
+        const dislikesRes = await reactionApi.getReactions({
+          toId: comment.id,
+          toType: "comment",
+          reactionName: "Dislike",
+          userId: user.id,
+        });
+        if (dislikesRes.code === 200 && dislikesRes.body.data && dislikesRes.body.data.length > 0) {
+          setUserReactionId(dislikesRes.body.data[0].id);
+          setUserReactionType("dislike");
+          return;
+        }
+      }
+
+      // Fallback if no reaction
+      setUserReactionId(null);
+      setUserReactionType(null);
     } catch (err) {
       console.error("Failed to load reactions for comment", comment.id, err);
     }
@@ -161,32 +191,36 @@ export const CommentNode: React.FC<CommentNodeProps> = ({ comment, onDeleteSucce
         </div>
 
         {/* Comment Controls */}
-        <div className="flex items-center justify-between text-xs pt-1">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between text-xs pt-1 border-t border-gray-100 dark:border-gray-900 mt-2">
+          <div className="flex items-center gap-3">
             <button
               onClick={handleLike}
-              className={`cursor-pointer hover:underline ${
-                userReactionType === "like" ? "text-green-700 font-bold" : "text-gray-600"
+              className={`cursor-pointer border border-gray-300 dark:border-gray-800 px-2 py-0.5 text-xs font-mono transition-colors ${
+                userReactionType === "like"
+                  ? "bg-green-50 text-green-700 border-green-400 font-bold dark:bg-green-950/20 dark:text-green-400 dark:border-green-800"
+                  : "bg-gray-50 text-gray-650 hover:bg-gray-100 hover:border-gray-400 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
               }`}
             >
-              {userReactionType === "like" ? `[*Like* (${likes})]` : `[Like (${likes})]`}
+              ▲ Like {likes}
             </button>
 
             <button
               onClick={handleDislike}
-              className={`cursor-pointer hover:underline ${
-                userReactionType === "dislike" ? "text-red-700 font-bold" : "text-gray-600"
+              className={`cursor-pointer border border-gray-300 dark:border-gray-800 px-2 py-0.5 text-xs font-mono transition-colors ${
+                userReactionType === "dislike"
+                  ? "bg-red-50 text-red-700 border-red-400 font-bold dark:bg-red-950/20 dark:text-red-400 dark:border-red-800"
+                  : "bg-gray-50 text-gray-650 hover:bg-gray-100 hover:border-gray-400 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
               }`}
             >
-              {userReactionType === "dislike" ? `[*Dislike* (${dislikes})]` : `[Dislike (${dislikes})]`}
+              ▼ Dislike {dislikes}
             </button>
 
             {user && (
               <button
                 onClick={() => setShowReplyForm(!showReplyForm)}
-                className="text-blue-600 hover:underline cursor-pointer font-bold"
+                className="cursor-pointer border border-gray-300 dark:border-gray-800 px-2 py-0.5 text-xs font-mono transition-colors bg-gray-50 text-blue-600 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 dark:bg-gray-900 dark:text-blue-400 dark:hover:bg-blue-950/20 dark:hover:border-blue-900"
               >
-                [Reply]
+                💬 Reply
               </button>
             )}
           </div>
@@ -195,9 +229,9 @@ export const CommentNode: React.FC<CommentNodeProps> = ({ comment, onDeleteSucce
             <button
               onClick={handleDelete}
               disabled={deleting}
-              className="text-red-600 hover:underline font-bold cursor-pointer disabled:opacity-50"
+              className="border border-red-200 dark:border-red-900/50 bg-red-50/50 hover:bg-red-50 dark:bg-red-950/10 px-2 py-0.5 text-xs font-mono text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/20 dark:hover:text-red-300 cursor-pointer disabled:opacity-50"
             >
-              {deleting ? "[Deleting...]" : "[Delete]"}
+              {deleting ? "Deleting..." : "✕ Delete"}
             </button>
           )}
         </div>
