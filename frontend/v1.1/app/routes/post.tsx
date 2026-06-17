@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useSearchParams } from "react-router";
 import { postApi, commentApi, type Post, type Comment } from "../utils/api";
+import { useScrollPreservation } from "../utils/scroll";
 import { useAuth } from "../contexts/AuthContext";
 import { PostItem } from "../components/PostItem";
 import { CommentNode } from "../components/CommentNode";
@@ -72,6 +73,8 @@ export default function PostDetail() {
   useEffect(() => {
     fetchComments(offset);
   }, [parsedPostId, offset]);
+
+  useScrollPreservation(`post_${parsedPostId}_${offset}`, loadingPost || loadingComments, !!post);
 
   const handleCreateComment = async (e: React.FormEvent) => {
     e.preventDefault();

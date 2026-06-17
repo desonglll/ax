@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { postApi, type Post } from "../utils/api";
+import { useScrollPreservation } from "../utils/scroll";
 import { PostItem } from "../components/PostItem";
 
 export default function Trending() {
@@ -25,39 +26,7 @@ export default function Trending() {
     fetchTrending();
   }, []);
 
-  // Save scroll position for trending list
-  useEffect(() => {
-    const handleScroll = () => {
-      sessionStorage.setItem("scroll_position_trending", window.scrollY.toString());
-    };
-    let timeoutId: number;
-    const debouncedHandleScroll = () => {
-      window.clearTimeout(timeoutId);
-      timeoutId = window.setTimeout(handleScroll, 100);
-    };
-
-    window.addEventListener("scroll", debouncedHandleScroll);
-    return () => {
-      window.removeEventListener("scroll", debouncedHandleScroll);
-      window.clearTimeout(timeoutId);
-    };
-  }, []);
-
-  // Restore scroll position once trending posts are loaded
-  useEffect(() => {
-    if (!loading && posts.length > 0) {
-      const savedScroll = sessionStorage.getItem("scroll_position_trending");
-      if (savedScroll) {
-        const timer = setTimeout(() => {
-          window.scrollTo({
-            top: parseInt(savedScroll, 10),
-            behavior: "instant" as ScrollBehavior,
-          });
-        }, 50);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [loading, posts]);
+  useScrollPreservation("trending", loading, posts.length > 0);
 
   const handleDeleteSuccess = (deletedId: number) => {
     setPosts((prev) => prev.filter((p) => p.id !== deletedId));

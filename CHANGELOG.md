@@ -9,7 +9,7 @@ This document logs the development history and version alterations of Project Ax
 - Migrated timeline and comments pagination from memory state to URL search parameters (`offset`) using standard HTTP `href` links to preserve page memory on browser refreshes.
 - Re-structured the timeline homepage into a modern, minimalist two-column layout: timeline timeline list and post-creation form on the left, session status/server monitor/project info widgets in a right sidebar.
 - Redesigned likes, dislikes, comments, and delete actions into clean, flat-bordered mono buttons with subtle visual cues.
-- Added automatic scroll position saving (to `sessionStorage`) and restoration on home timeline and trending feeds, ensuring seamless back-navigation without losing scroll progress.
+- Added automatic scroll position saving (to `sessionStorage`) and restoration globally across all async views (home timeline, trending, post details, files hub, and profile stats), ensuring seamless back-navigation and refresh state preservation.
 
 ### Changed
 - Expanded root layout max-width constraint from `max-w-3xl` to `max-w-5xl` to support desktop grid splitting.

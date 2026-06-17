@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { fileApi, type FileRecord } from "../utils/api";
+import { useScrollPreservation } from "../utils/scroll";
 import { useAuth } from "../contexts/AuthContext";
 import { Link } from "react-router";
 
@@ -55,6 +56,8 @@ export default function Files() {
   useEffect(() => {
     fetchFileList();
   }, [user]);
+
+  useScrollPreservation("files", loading, !loading);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {

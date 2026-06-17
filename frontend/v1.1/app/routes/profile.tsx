@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router";
 import { userApi, postApi, type User, type Post } from "../utils/api";
+import { useScrollPreservation } from "../utils/scroll";
 import { useAuth } from "../contexts/AuthContext";
 import { PostItem } from "../components/PostItem";
 
@@ -106,6 +107,8 @@ export default function Profile() {
   useEffect(() => {
     fetchProfileAndStats();
   }, [userId, currentUser]);
+
+  useScrollPreservation(`profile_${userId || 'self'}`, loading, !loading);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
