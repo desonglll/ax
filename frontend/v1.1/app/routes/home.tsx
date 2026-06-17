@@ -94,6 +94,40 @@ export default function Home() {
     fetchPosts(offset);
   }, [offset]);
 
+  // Save scroll position for the current offset
+  useEffect(() => {
+    const handleScroll = () => {
+      sessionStorage.setItem(`scroll_position_home_${offset}`, window.scrollY.toString());
+    };
+    let timeoutId: number;
+    const debouncedHandleScroll = () => {
+      window.clearTimeout(timeoutId);
+      timeoutId = window.setTimeout(handleScroll, 100);
+    };
+
+    window.addEventListener("scroll", debouncedHandleScroll);
+    return () => {
+      window.removeEventListener("scroll", debouncedHandleScroll);
+      window.clearTimeout(timeoutId);
+    };
+  }, [offset]);
+
+  // Restore scroll position once posts are loaded
+  useEffect(() => {
+    if (!loading && posts.length > 0) {
+      const savedScroll = sessionStorage.getItem(`scroll_position_home_${offset}`);
+      if (savedScroll) {
+        const timer = setTimeout(() => {
+          window.scrollTo({
+            top: parseInt(savedScroll, 10),
+            behavior: "instant" as ScrollBehavior,
+          });
+        }, 50);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [loading, posts, offset]);
+
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newContent.trim()) return;
