@@ -61,6 +61,7 @@ export default function Home() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [posts, setPosts] = useState<Post[]>([]);
   const [newContent, setNewContent] = useState("");
+  const [newTitle, setNewTitle] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -117,9 +118,10 @@ export default function Home() {
     setError(null);
 
     try {
-      const res = await postApi.create(newContent.trim());
+      const res = await postApi.create(newContent.trim(), newTitle.trim());
       if (res.code === 200 && res.body.data) {
         setNewContent("");
+        setNewTitle("");
         // Reset to first page to see the new post
         if (offset === 0 && !searchQuery) {
           fetchPosts(0, "");
@@ -188,6 +190,15 @@ export default function Home() {
         {user ? (
           <form onSubmit={handleCreatePost} className="border border-gray-300 dark:border-gray-800 p-4 bg-white dark:bg-gray-950 font-mono">
             <h3 className="text-sm font-bold mb-2 uppercase tracking-wide">Write a new post</h3>
+            <input
+              type="text"
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              disabled={submitting}
+              placeholder="Title"
+              className="w-full border border-gray-300 dark:border-gray-800 p-2 text-sm bg-gray-50 dark:bg-gray-900 focus:outline-none focus:border-black dark:focus:border-white mb-3 font-sans text-gray-800 dark:text-gray-200"
+              required
+            />
             <textarea
               value={newContent}
               onChange={(e) => setNewContent(e.target.value)}

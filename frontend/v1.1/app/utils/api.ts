@@ -31,6 +31,7 @@ export interface User {
 
 export interface Post {
   id: string;
+  title: string;
   content: string;
   createdAt: string;
   updatedAt: string;
@@ -146,8 +147,8 @@ export const userApi = {
 // Post Endpoints
 // ============================================================================
 export const postApi = {
-  create: async (content: string): Promise<ApiResponse<Post>> => {
-    const response = await api.post("/posts/post", { content });
+  create: async (content: string, title: string): Promise<ApiResponse<Post>> => {
+    const response = await api.post("/posts/post", { content, title });
     return response.data;
   },
   list: async (params?: { limit?: number; offset?: number; order_by?: string; sort?: string; search?: string }): Promise<ApiResponse<Post[]>> => {
@@ -162,8 +163,8 @@ export const postApi = {
     const response = await api.get("/posts/trending");
     return response.data;
   },
-  update: async (postId: string, content: string): Promise<ApiResponse<Post>> => {
-    const response = await api.put(`/posts/put/${postId}`, { content });
+  update: async (postId: string, content: string, title?: string): Promise<ApiResponse<Post>> => {
+    const response = await api.put(`/posts/put/${postId}`, { content, title });
     return response.data;
   },
   delete: async (postId: string): Promise<ApiResponse<Post>> => {

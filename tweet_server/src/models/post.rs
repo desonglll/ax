@@ -10,6 +10,7 @@ use sqlx::prelude::FromRow;
 #[serde(rename_all = "camelCase")]
 pub struct Post {
     pub id: uuid::Uuid,
+    pub title: String,
     pub content: String,
     pub created_at: DateTime<chrono::Utc>,
     pub updated_at: DateTime<chrono::Utc>,
@@ -28,6 +29,7 @@ pub struct Post {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct CreatePost {
+    pub title: Option<String>,
     pub content: String,
     pub user_id: Option<i32>,
     pub reply_to: Option<uuid::Uuid>,
@@ -44,6 +46,7 @@ impl CreatePost {
     /// Generate a demonstration CreatePost request payload.
     pub fn demo() -> Self {
         CreatePost {
+            title: Some(String::from("Demo Title")),
             content: String::from(""),
             user_id: Some(1),
             reply_to: Some(uuid::Uuid::nil()),
@@ -55,6 +58,7 @@ impl CreatePost {
 impl From<web::Json<CreatePost>> for CreatePost {
     fn from(value: web::Json<CreatePost>) -> Self {
         CreatePost {
+            title: value.title.clone(),
             content: value.content.clone(),
             user_id: value.user_id,
             reply_to: value.reply_to,
@@ -69,12 +73,14 @@ impl From<web::Json<CreatePost>> for CreatePost {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdatePost {
+    pub title: Option<String>,
     pub content: Option<String>,
 }
 
 impl From<web::Json<UpdatePost>> for UpdatePost {
     fn from(value: web::Json<UpdatePost>) -> Self {
         UpdatePost {
+            title: value.title.clone(),
             content: value.content.clone(),
         }
     }

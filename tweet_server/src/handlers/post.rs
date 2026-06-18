@@ -353,6 +353,7 @@ mod tests {
         assert_eq!(&post.content, &insert_result.content);
         // Update test user.
         let update_post_msg = UpdatePost {
+            title: Some(String::from("test_update_title_after")),
             content: Some(String::from("test_update_post_after")),
         };
         let parameters: web::Path<(uuid::Uuid,)> = web::Path::from((insert_result.id,));

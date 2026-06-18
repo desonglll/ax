@@ -23,11 +23,13 @@ use crate::{
 ///
 /// The inserted [`Post`] record on success, or an [`AxError`] on database failure.
 pub async fn insert_post_db(pool: &PgPool, create_post: CreatePost) -> Result<Post, AxError> {
+    let title = create_post.title.unwrap_or_default();
     let post_row = sqlx::query_as!(
         Post,
-        "insert into posts (content, user_id, reply_to, user_name)
-         values ($1, $2, $3, $4)
-         returning id, content, created_at, updated_at, user_id, reply_to, user_name, like_count, dislike_count, engagement_rate",
+        "insert into posts (title, content, user_id, reply_to, user_name)
+         values ($1, $2, $3, $4, $5)
+         returning id, title, content, created_at, updated_at, user_id, reply_to, user_name, like_count, dislike_count, engagement_rate",
+        title,
         create_post.content,
         create_post.user_id,
         create_post.reply_to,
@@ -215,7 +217,7 @@ pub async fn get_posts_by_ids(pool: &PgPool, ids: Vec<uuid::Uuid>) -> Result<Vec
 pub async fn delete_post_db(pool: &PgPool, post_id: uuid::Uuid) -> Result<Post, AxError> {
     let post_row = sqlx::query_as!(
         Post,
-        "delete from posts where id = $1 returning id, content, created_at, updated_at, user_id, reply_to, user_name, like_count, dislike_count, engagement_rate",
+        "delete from posts where id = $1 returning id, title, content, created_at, updated_at, user_id, reply_to, user_name, like_count, dislike_count, engagement_rate",
         post_id
     ).fetch_one(pool).await?;
     Ok(post_row)
@@ -247,6 +249,11 @@ pub async fn update_post_db(
         .await
         .map_err(|_err| AxError::NotFound("Post id not found".into()))?;
     // Construct the parameters for update.
+    let title: String = if let Some(title) = update_post.title {
+        title
+    } else {
+        current_post_row.title
+    };
     let content: String = if let Some(content) = update_post.content {
         content
     } else {
@@ -256,8 +263,8 @@ pub async fn update_post_db(
     // Prepare SQL statement
     let post_row = sqlx::query_as!(
         Post,
-        "update posts set content = $1 where id = $2 returning id, content, created_at, updated_at, user_id, reply_to, user_name, like_count, dislike_count, engagement_rate",
-        content, post_id
+        "update posts set title = $1, content = $2 where id = $3 returning id, title, content, created_at, updated_at, user_id, reply_to, user_name, like_count, dislike_count, engagement_rate",
+        title, content, post_id
     ).fetch_one(pool).await;
     if let Ok(post) = post_row {
         Ok(post)

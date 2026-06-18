@@ -21,23 +21,28 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onDeleteSuccess, isDet
 
   // Inline post editing states
   const [postContent, setPostContent] = useState(post.content);
+  const [postTitle, setPostTitle] = useState(post.title);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(post.content);
+  const [editTitle, setEditTitle] = useState(post.title);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setPostContent(post.content);
     setEditContent(post.content);
-  }, [post.content]);
+    setPostTitle(post.title);
+    setEditTitle(post.title);
+  }, [post.content, post.title]);
 
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editContent.trim()) return;
+    if (!editContent.trim() || !editTitle.trim()) return;
     setSaving(true);
     try {
-      const res = await postApi.update(post.id, editContent.trim());
+      const res = await postApi.update(post.id, editContent.trim(), editTitle.trim());
       if (res.code === 200) {
         setPostContent(editContent.trim());
+        setPostTitle(editTitle.trim());
         setIsEditing(false);
       }
     } catch (err) {
@@ -166,19 +171,32 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onDeleteSuccess, isDet
         <div>{formattedDate}</div>
       </div>
 
-      {!isDetail && (
+      {!isDetail ? (
         <div className="mb-2">
           <Link
             to={`/posts/${post.id}`}
             className="text-sm font-bold text-blue-600 dark:text-blue-400 hover:underline block mb-1 font-sans"
           >
-            {postContent.split("\n")[0].substring(0, 80) || "Untitled Post"}
+            {postTitle || "Untitled Post"}
           </Link>
         </div>
+      ) : (
+        <h1 className="text-lg font-bold mb-3 font-sans text-gray-900 dark:text-gray-100">
+          {postTitle || "Untitled Post"}
+        </h1>
       )}
 
       {isEditing ? (
         <form onSubmit={handleSaveEdit} className="mt-2 font-mono">
+          <input
+            type="text"
+            value={editTitle}
+            onChange={(e) => setEditTitle(e.target.value)}
+            disabled={saving}
+            placeholder="Title"
+            className="w-full border border-gray-300 dark:border-gray-800 p-2 text-sm bg-gray-50 dark:bg-gray-900 focus:outline-none focus:border-black dark:focus:border-white mb-2 font-sans text-gray-800 dark:text-gray-200"
+            required
+          />
           <textarea
             value={editContent}
             onChange={(e) => setEditContent(e.target.value)}
@@ -267,6 +285,7 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onDeleteSuccess, isDet
               <button
                 onClick={() => {
                   setEditContent(postContent);
+                  setEditTitle(postTitle);
                   setIsEditing(true);
                 }}
                 className="border border-gray-300 dark:border-gray-800 px-2.5 py-1 text-xs font-mono text-gray-650 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 cursor-pointer"
