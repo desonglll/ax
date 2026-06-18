@@ -33,7 +33,6 @@ pub async fn insert_like_reaction_db(
         create_reaction.to_id,
         create_reaction.user_id,
         String::from("Dislike"),
-        create_reaction.to_type.clone(),
     )
     .await
     {
@@ -43,11 +42,10 @@ pub async fn insert_like_reaction_db(
 
     let reaction_row = sqlx::query_as!(
         Reaction,
-        "insert into reactions (user_id, to_id, reaction_name, to_type) values ($1, $2, $3, $4) on conflict (user_id, to_id, reaction_name, to_type) do update set created_at = CURRENT_TIMESTAMP returning id, user_id, to_id, created_at, reaction_name, to_type",
+        "insert into reactions (user_id, to_id, reaction_name) values ($1, $2, $3) on conflict (user_id, to_id, reaction_name, to_type) do update set created_at = CURRENT_TIMESTAMP returning id, user_id, to_id, created_at, reaction_name, to_type",
         create_reaction.user_id,
         create_reaction.to_id,
-        "Like",
-        create_reaction.to_type.clone()
+        "Like"
     ).fetch_one(pool).await?;
     Ok(reaction_row)
 }
@@ -75,7 +73,6 @@ pub async fn insert_dislike_reaction_db(
         create_reaction.to_id,
         create_reaction.user_id,
         String::from("Like"),
-        create_reaction.to_type.clone(),
     )
     .await
     {
@@ -85,11 +82,10 @@ pub async fn insert_dislike_reaction_db(
 
     let reaction_row = sqlx::query_as!(
         Reaction,
-        "insert into reactions (user_id, to_id, reaction_name, to_type) values ($1, $2, $3, $4) on conflict (user_id, to_id, reaction_name, to_type) do update set created_at = CURRENT_TIMESTAMP returning id, user_id, to_id, created_at, reaction_name, to_type",
+        "insert into reactions (user_id, to_id, reaction_name) values ($1, $2, $3) on conflict (user_id, to_id, reaction_name, to_type) do update set created_at = CURRENT_TIMESTAMP returning id, user_id, to_id, created_at, reaction_name, to_type",
         create_reaction.user_id,
         create_reaction.to_id,
-        "Dislike",
-        create_reaction.to_type.clone()
+        "Dislike"
     ).fetch_one(pool).await?;
     Ok(reaction_row)
 }
@@ -137,15 +133,13 @@ pub async fn is_reaction_record_exists_db(
     to_id: uuid::Uuid,
     user_id: i32,
     reaction_name: String,
-    to_type: String,
 ) -> Result<Reaction, sqlx::Error> {
     sqlx::query_as!(
         Reaction,
-        "select * from reactions where to_id = $1 and user_id = $2 and reaction_name = $3 and to_type = $4",
+        "select * from reactions where to_id = $1 and user_id = $2 and reaction_name = $3",
         to_id,
         user_id,
-        reaction_name,
-        to_type
+        reaction_name
     )
         .fetch_one(pool)
         .await
@@ -208,16 +202,13 @@ pub async fn get_reactions_by_query_db(
     println!("{:?}", query);
     let id = query.get("id").and_then(|s| s.parse::<i32>().ok());
     let to_id = query.get("toId").and_then(|s| s.parse::<uuid::Uuid>().ok());
-    let default_type = String::from("post");
-    let to_type = query.get("toType").unwrap_or(&default_type);
     let user_id = query.get("userId").and_then(|s| s.parse::<i32>().ok());
     let default_reaction_name = String::from("Like");
     let reaction_name = query.get("reactionName").unwrap_or(&default_reaction_name);
     let row = sqlx::query_as!(
         Reaction,
-        "select * from reactions where ($1::uuid is null or to_id = $1) and ($2::varchar is null or to_type = $2) and ($3::int is null or user_id = $3) and ($4::int is null or id = $4) and ($5::varchar is null or reaction_name = $5)",
+        "select * from reactions where ($1::uuid is null or to_id = $1) and ($2::int is null or user_id = $2) and ($3::int is null or id = $3) and ($4::varchar is null or reaction_name = $4)",
         to_id,
-        to_type,
         user_id,
         id,
         reaction_name

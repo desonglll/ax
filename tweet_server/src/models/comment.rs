@@ -15,7 +15,6 @@ pub struct Comment {
     pub user_name: String,
     pub created_at: DateTime<chrono::Utc>,
     pub updated_at: DateTime<chrono::Utc>,
-    pub reply_to_type: String,
 }
 
 /// Request payload structure for creating a comment.
@@ -28,7 +27,6 @@ pub struct CreateComment {
     content: String,
     reply_to: uuid::Uuid,
     user_id: Option<i32>,
-    reply_to_type: String,
 }
 
 impl CreateComment {
@@ -37,13 +35,11 @@ impl CreateComment {
         content: String,
         reply_to: uuid::Uuid,
         user_id: Option<i32>,
-        reply_to_type: String,
     ) -> Self {
         Self {
             content,
             reply_to,
             user_id,
-            reply_to_type,
         }
     }
 
@@ -62,11 +58,6 @@ impl CreateComment {
         self.user_id = user_id;
     }
 
-    /// Set the category type of the target item being replied to.
-    pub fn set_reply_to_type(&mut self, reply_to_type: String) {
-        self.reply_to_type = reply_to_type;
-    }
-
     /// Retrieve a reference to the comment content.
     pub fn content(&self) -> &str {
         &self.content
@@ -82,18 +73,12 @@ impl CreateComment {
         self.user_id
     }
 
-    /// Retrieve a reference to the reply target type.
-    pub fn reply_to_type(&self) -> &str {
-        &self.reply_to_type
-    }
-
     /// Generate a demonstration CreateComment request payload.
     pub fn demo() -> Self {
         CreateComment {
             content: "demo".to_string(),
             reply_to: uuid::Uuid::nil(),
             user_id: None,
-            reply_to_type: "post".to_string(),
         }
     }
 }

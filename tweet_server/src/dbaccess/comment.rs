@@ -28,11 +28,10 @@ pub async fn insert_comment_db(
 ) -> Result<Comment, AxError> {
     let row = sqlx::query_as!(
     Comment,
-    "insert into comments (content, reply_to, user_id, reply_to_type) values ($1, $2, $3, $4) returning id, content, reply_to, user_id, user_name, created_at, updated_at, reply_to_type",
+    "insert into comments (content, reply_to, user_id) values ($1, $2, $3) returning id, content, reply_to, user_id, user_name, created_at, updated_at",
     create_comment.content(),
     create_comment.reply_to(),
     create_comment.user_id(),
-    create_comment.reply_to_type(),
     ).fetch_one(pool).await?;
     Ok(row)
 }
@@ -54,7 +53,7 @@ pub async fn insert_comment_db(
 pub async fn delete_comment_by_id_db(pool: &PgPool, id: uuid::Uuid) -> Result<Comment, AxError> {
     let row = sqlx::query_as!(
         Comment,
-        "delete from comments where id = $1 returning id, content, reply_to, user_id, user_name, created_at, updated_at, reply_to_type",
+        "delete from comments where id = $1 returning id, content, reply_to, user_id, user_name, created_at, updated_at",
         id
     ).fetch_one(pool).await?;
     Ok(row)
@@ -62,14 +61,13 @@ pub async fn delete_comment_by_id_db(pool: &PgPool, id: uuid::Uuid) -> Result<Co
 
 /// Retrieve a list of comments from the database matching the query parameters.
 ///
-/// This function filters comments based on optional query arguments such as comment ID,
-/// target ID (reply_to), and target type (reply_to_type). It returns the matched comment records
-/// along with pagination metadata.
+/// This function filters comments based on optional query arguments such as comment ID
+/// and target ID (reply_to). It returns the matched comment records along with pagination metadata.
 ///
 /// # Parameters
 ///
 /// - `pool`: Reference to the PostgreSQL connection pool.
-/// - `query`: URL query mapping containing optional search criteria like `commentId`, `replyTo`, `replyToType`, `limit`, and `offset`.
+/// - `query`: URL query mapping containing optional search criteria like `commentId`, `replyTo`, `limit`, and `offset`.
 ///
 /// # Returns
 ///
@@ -80,16 +78,13 @@ pub async fn get_comment_by_query_db(
     query: web::Query<HashMap<String, String>>,
 ) -> Result<(Vec<Comment>, Pagination), AxError> {
     let id = query.get("commentId").and_then(|s| s.parse::<uuid::Uuid>().ok());
-    let default_type = String::from("post");
-    let reply_to_type = query.get("replyToType").unwrap_or(&default_type);
     let reply_to = query.get("replyTo").and_then(|s| s.parse::<uuid::Uuid>().ok());
     let limit = query.get("limit").and_then(|s| s.parse::<i64>().ok()).unwrap_or(10);
     let offset = query.get("offset").and_then(|s| s.parse::<i64>().ok()).unwrap_or(0);
 
     let rows = sqlx::query_as!(
         Comment,
-        "select * from comments where reply_to_type = $1 and ($2::uuid is null or reply_to = $2) and ($3::uuid is null or id = $3) limit $4 offset $5",
-        reply_to_type,
+        "select id, content, reply_to, user_id, user_name, created_at, updated_at from comments where ($1::uuid is null or reply_to = $1) and ($2::uuid is null or id = $2) limit $3 offset $4",
         reply_to,
         id,
         limit,
@@ -97,8 +92,7 @@ pub async fn get_comment_by_query_db(
     ).fetch_all(pool).await?;
 
     let count = sqlx::query_scalar!(
-        "select count(*) from comments where reply_to_type = $1 and ($2::uuid is null or reply_to = $2) and ($3::uuid is null or id = $3)",
-        reply_to_type,
+        "select count(*) from comments where ($1::uuid is null or reply_to = $1) and ($2::uuid is null or id = $2)",
         reply_to,
         id
     ).fetch_one(pool).await?;

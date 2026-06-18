@@ -34,7 +34,6 @@ pub struct Reaction {
 pub struct CreateReaction {
     pub user_id: i32,
     pub to_id: uuid::Uuid,
-    pub to_type: String,
 }
 
 impl From<web::Json<CreateReaction>> for CreateReaction {

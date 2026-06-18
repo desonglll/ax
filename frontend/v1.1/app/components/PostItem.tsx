@@ -19,6 +19,34 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onDeleteSuccess, isDet
   const [deleting, setDeleting] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // Inline post editing states
+  const [postContent, setPostContent] = useState(post.content);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(post.content);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setPostContent(post.content);
+    setEditContent(post.content);
+  }, [post.content]);
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editContent.trim()) return;
+    setSaving(true);
+    try {
+      const res = await postApi.update(post.id, editContent.trim());
+      if (res.code === 200) {
+        setPostContent(editContent.trim());
+        setIsEditing(false);
+      }
+    } catch (err) {
+      alert("Failed to save post");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const fetchReactions = async () => {
     try {
       // 1. Fetch counts
@@ -138,27 +166,66 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onDeleteSuccess, isDet
         <div>{formattedDate}</div>
       </div>
 
-      <div className="text-sm whitespace-pre-wrap break-all mb-4 text-gray-800 dark:text-gray-200 leading-relaxed font-sans">
-        {(() => {
-          const isLong = !isDetail && post.content.length > 280;
-          const contentToShow = isLong && !isExpanded
-            ? post.content.substring(0, 280) + "..."
-            : post.content;
-          return (
-            <>
-              {contentToShow}
-              {isLong && (
-                <button
-                  onClick={() => setIsExpanded(!isExpanded)}
-                  className="ml-2 text-blue-600 hover:underline cursor-pointer font-bold font-mono text-xs"
-                >
-                  {isExpanded ? "[Collapse]" : "[Read More]"}
-                </button>
-              )}
-            </>
-          );
-        })()}
-      </div>
+      {!isDetail && (
+        <div className="mb-2">
+          <Link
+            to={`/posts/${post.id}`}
+            className="text-sm font-bold text-blue-600 dark:text-blue-400 hover:underline block mb-1 font-sans"
+          >
+            {postContent.split("\n")[0].substring(0, 80) || "Untitled Post"}
+          </Link>
+        </div>
+      )}
+
+      {isEditing ? (
+        <form onSubmit={handleSaveEdit} className="mt-2 font-mono">
+          <textarea
+            value={editContent}
+            onChange={(e) => setEditContent(e.target.value)}
+            className="w-full border border-gray-300 dark:border-gray-800 p-2 font-sans text-sm focus:outline-none focus:border-gray-500 bg-white dark:bg-gray-950 text-gray-850 dark:text-gray-200 mb-2"
+            rows={4}
+            required
+          />
+          <div className="flex gap-2 mb-3">
+            <button
+              type="submit"
+              disabled={saving}
+              className="cursor-pointer border border-gray-300 dark:border-gray-800 px-2.5 py-1 text-xs font-mono bg-green-50 text-green-700 hover:bg-green-100 disabled:opacity-50"
+            >
+              {saving ? "[Saving...]" : "[Save]"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsEditing(false)}
+              className="cursor-pointer border border-gray-300 dark:border-gray-800 px-2.5 py-1 text-xs font-mono bg-gray-50 text-gray-650 hover:bg-gray-100"
+            >
+              [Cancel]
+            </button>
+          </div>
+        </form>
+      ) : (
+        <div className="text-sm whitespace-pre-wrap break-all mb-4 text-gray-800 dark:text-gray-200 leading-relaxed font-sans">
+          {(() => {
+            const isLong = !isDetail && postContent.length > 280;
+            const contentToShow = isLong && !isExpanded
+              ? postContent.substring(0, 280) + "..."
+              : postContent;
+            return (
+              <>
+                {contentToShow}
+                {isLong && (
+                  <button
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className="ml-2 text-blue-600 hover:underline cursor-pointer font-bold font-mono text-xs"
+                  >
+                    {isExpanded ? "[Collapse]" : "[Read More]"}
+                  </button>
+                )}
+              </>
+            );
+          })()}
+        </div>
+      )}
 
       <div className="flex items-center justify-between text-xs border-t border-gray-150 dark:border-gray-900 pt-3">
         <div className="flex items-center gap-3">
@@ -195,13 +262,26 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onDeleteSuccess, isDet
         </div>
 
         {isOwnerOrAdmin && (
-          <button
-            onClick={handleDelete}
-            disabled={deleting}
-            className="border border-red-200 dark:border-red-900/50 bg-red-50/50 hover:bg-red-50 dark:bg-red-950/10 px-2.5 py-1 text-xs font-mono text-red-650 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/20 dark:hover:text-red-300 cursor-pointer disabled:opacity-50"
-          >
-            {deleting ? "Deleting..." : "✕ Delete"}
-          </button>
+          <div className="flex gap-2">
+            {!isEditing && (
+              <button
+                onClick={() => {
+                  setEditContent(postContent);
+                  setIsEditing(true);
+                }}
+                className="border border-gray-300 dark:border-gray-800 px-2.5 py-1 text-xs font-mono text-gray-650 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 cursor-pointer"
+              >
+                ✎ Edit
+              </button>
+            )}
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="border border-red-200 dark:border-red-900/50 bg-red-50/50 hover:bg-red-50 dark:bg-red-950/10 px-2.5 py-1 text-xs font-mono text-red-650 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/20 dark:hover:text-red-300 cursor-pointer disabled:opacity-50"
+            >
+              {deleting ? "Deleting..." : "✕ Delete"}
+            </button>
+          </div>
         )}
       </div>
     </div>

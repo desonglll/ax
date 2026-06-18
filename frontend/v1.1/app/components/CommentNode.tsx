@@ -31,7 +31,6 @@ export const CommentNode: React.FC<CommentNodeProps> = ({ comment, onDeleteSucce
     try {
       const res = await commentApi.list({
         replyTo: comment.id,
-        replyToType: "comment",
       });
       if (res.code === 200 && res.body.data) {
         setReplies(res.body.data);
@@ -130,7 +129,7 @@ export const CommentNode: React.FC<CommentNodeProps> = ({ comment, onDeleteSucce
 
     setSubmittingReply(true);
     try {
-      const res = await commentApi.create(replyContent.trim(), comment.id, "comment");
+      const res = await commentApi.create(replyContent.trim(), comment.id);
       if (res.code === 200 && res.body.data) {
         setReplyContent("");
         setShowReplyForm(false);

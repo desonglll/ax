@@ -42,12 +42,10 @@ pub async fn insert_like_reaction(
         .get("toId")
         .and_then(|s| s.parse::<uuid::Uuid>().ok())
         .unwrap_or_else(uuid::Uuid::nil);
-    let to_type = query_map.get("toType").unwrap_or(&"post".to_string()).clone();
 
     let new_reaction = CreateReaction {
         user_id,
         to_id,
-        to_type,
     };
     println!("{:#?}", new_reaction);
     insert_like_reaction_db(&app_state.db, new_reaction)
@@ -93,12 +91,9 @@ pub async fn insert_dislike_reaction(
         .get("toId")
         .and_then(|s| s.parse::<uuid::Uuid>().ok())
         .unwrap_or_else(uuid::Uuid::nil);
-    let to_type = query_map.get("toType").unwrap_or(&"post".to_string()).clone();
-    println!("to_type: {:?}", to_type);
     let new_reaction = CreateReaction {
         user_id,
         to_id,
-        to_type,
     };
     insert_dislike_reaction_db(&app_state.db, new_reaction)
         .await

@@ -50,7 +50,6 @@ export interface Comment {
   userName: string;
   createdAt: string;
   updatedAt: string;
-  replyToType: "post" | "comment";
 }
 
 export interface Reaction {
@@ -177,15 +176,14 @@ export const postApi = {
 // Comment Endpoints
 // ============================================================================
 export const commentApi = {
-  create: async (content: string, replyTo: string, replyToType: "post" | "comment"): Promise<ApiResponse<Comment>> => {
+  create: async (content: string, replyTo: string): Promise<ApiResponse<Comment>> => {
     const response = await api.post("/comments/post", {
       content,
       replyTo,
-      replyToType,
     });
     return response.data;
   },
-  list: async (params: { commentId?: string; replyTo?: string; replyToType?: "post" | "comment"; limit?: number; offset?: number }): Promise<ApiResponse<Comment[]>> => {
+  list: async (params: { commentId?: string; replyTo?: string; limit?: number; offset?: number }): Promise<ApiResponse<Comment[]>> => {
     const response = await api.get("/comments/get", { params });
     return response.data;
   },

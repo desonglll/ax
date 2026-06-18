@@ -52,7 +52,6 @@ export default function PostDetail() {
     try {
       const res = await commentApi.list({
         replyTo: parsedPostId,
-        replyToType: "post",
         limit,
         offset: currentOffset,
       });
@@ -85,7 +84,7 @@ export default function PostDetail() {
 
     setSubmittingComment(true);
     try {
-      const res = await commentApi.create(newCommentText.trim(), parsedPostId, "post");
+      const res = await commentApi.create(newCommentText.trim(), parsedPostId);
       if (res.code === 200 && res.body.data) {
         setNewCommentText("");
         // Reset to first page of comments to see the new comment
