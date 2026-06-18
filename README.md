@@ -60,6 +60,7 @@ The project root contains a `justfile` providing the following automation recipe
 - `just check`: Compiles the server codebase to check for errors.
 - `just test`: Runs all unit and integration tests.
 - `just run`: Launches the backend HTTP server.
+- `just start`: Launches all services (backend, frontend, recommendation) concurrently.
 - `just doc-build`: Builds the documentation book.
 - `just doc-serve`: Launches a local server to view documentation.
 
