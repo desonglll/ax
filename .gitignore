@@ -6,3 +6,14 @@ target
 uploads
 upload
 ssh
+
+# python ignores
+__pycache__/
+*.pyc
+.venv/
+.uv/
+
+# node ignores
+node_modules/
+build/
+.react-router/

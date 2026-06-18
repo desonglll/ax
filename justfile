@@ -15,7 +15,7 @@ check:
 
 # Run the unit and integration tests using cargo-nextest
 test:
-	cargo nextest run --manifest-path tweet_server/Cargo.toml
+	cargo nextest run --workspace
 
 # Run the backend server locally
 run:

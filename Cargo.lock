@@ -397,6 +397,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "ai"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
 name = "alloc-no-stdlib"
 version = "2.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3182,6 +3194,7 @@ dependencies = [
  "actix-rt",
  "actix-session",
  "actix-web",
+ "ai",
  "bcrypt",
  "chrono",
  "clap",

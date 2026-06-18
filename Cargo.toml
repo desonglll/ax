@@ -1,5 +1,6 @@
 [workspace]
 members = [
     "tweet_server",
+    "ai",
 ]
 resolver = "2"
