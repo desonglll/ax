@@ -38,38 +38,38 @@ export default function Login() {
   };
 
   return (
-    <div className="max-w-md mx-auto border border-gray-300 dark:border-gray-800 p-6 bg-white dark:bg-gray-950 font-mono">
-      <h2 className="text-xl font-bold mb-4 border-b border-gray-300 dark:border-gray-800 pb-2">
+    <div className="card card-border bg-base-100 p-6 max-w-md mx-auto font-mono">
+      <h2 className="text-xl font-bold mb-4 border-b border-base-300 pb-2">
         Login to AX
       </h2>
 
       {error && (
-        <div className="bg-red-50 text-red-700 border border-red-300 p-3 mb-4 text-sm">
+        <div role="alert" className="alert alert-error text-xs mb-4">
           Error: {error}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-bold">Username:</label>
+          <label className="text-xs font-bold uppercase opacity-85">Username:</label>
           <input
             type="text"
             value={userName}
             onChange={(e) => setUserName(e.target.value)}
             disabled={submitting}
-            className="border border-gray-300 dark:border-gray-800 p-2 text-sm bg-gray-50 dark:bg-gray-900 focus:outline-none focus:border-black dark:focus:border-white"
+            className="input input-bordered input-sm font-sans w-full"
             required
           />
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-bold">Password:</label>
+          <label className="text-xs font-bold uppercase opacity-85">Password:</label>
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             disabled={submitting}
-            className="border border-gray-300 dark:border-gray-800 p-2 text-sm bg-gray-50 dark:bg-gray-900 focus:outline-none focus:border-black dark:focus:border-white"
+            className="input input-bordered input-sm font-sans w-full"
             required
           />
         </div>
@@ -77,15 +77,15 @@ export default function Login() {
         <button
           type="submit"
           disabled={submitting}
-          className="bg-gray-200 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 p-2 text-sm font-bold hover:bg-gray-300 dark:hover:bg-gray-700 cursor-pointer disabled:opacity-50"
+          className="btn btn-neutral btn-sm w-full font-bold cursor-pointer disabled:opacity-50"
         >
           {submitting ? "Logging in..." : "[Submit]"}
         </button>
       </form>
 
-      <div className="mt-4 text-xs text-gray-500 border-t border-gray-200 dark:border-gray-800 pt-3 flex justify-between">
+      <div className="mt-4 text-xs opacity-60 border-t border-base-300 pt-3 flex justify-between">
         <span>No account?</span>
-        <Link to="/register" className="text-blue-600 hover:underline">
+        <Link to="/register" className="link link-primary font-bold">
           [Register here]
         </Link>
       </div>

@@ -168,16 +168,16 @@ export const CommentNode: React.FC<CommentNodeProps> = ({ comment, onDeleteSucce
 
   // Limit nesting depth visual offset to prevent rendering too far right
   const maxDepthOffset = 4;
-  const plClass = depth > 0 ? "pl-4 border-l border-gray-300 dark:border-gray-800 mt-3" : "";
+  const plClass = depth > 0 ? "pl-4 border-l border-base-300 mt-3" : "";
 
   return (
     <div className={`${plClass} font-mono text-sm`}>
-      <div className="bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-900 p-3">
+      <div className="card card-border bg-base-200/50 p-3">
         {/* Comment Header */}
-        <div className="flex justify-between items-center text-xs text-gray-500 mb-2 border-b border-gray-100 dark:border-gray-900 pb-1">
+        <div className="flex justify-between items-center text-xs opacity-60 mb-2 border-b border-base-300 pb-1">
           <div>
             By:{" "}
-            <Link to={`/profile/${comment.userId}`} className="text-blue-600 hover:underline font-bold">
+            <Link to={`/profile/${comment.userId}`} className="link link-primary font-bold">
               {comment.userName}
             </Link>
           </div>
@@ -185,19 +185,19 @@ export const CommentNode: React.FC<CommentNodeProps> = ({ comment, onDeleteSucce
         </div>
 
         {/* Comment Content */}
-        <div className="text-sm text-gray-800 dark:text-gray-200 mb-3 break-all whitespace-pre-wrap">
+        <div className="text-sm text-base-content mb-3 break-all whitespace-pre-wrap">
           {comment.content}
         </div>
 
         {/* Comment Controls */}
-        <div className="flex items-center justify-between text-xs pt-1 border-t border-gray-100 dark:border-gray-900 mt-2">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between text-xs pt-1 border-t border-base-300 mt-2">
+          <div className="flex items-center gap-2">
             <button
               onClick={handleLike}
-              className={`cursor-pointer border border-gray-300 dark:border-gray-800 px-2 py-0.5 text-xs font-mono transition-colors ${
+              className={`btn btn-xs cursor-pointer ${
                 userReactionType === "like"
-                  ? "bg-green-50 text-green-700 border-green-400 font-bold dark:bg-green-950/20 dark:text-green-400 dark:border-green-800"
-                  : "bg-gray-50 text-gray-650 hover:bg-gray-100 hover:border-gray-400 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
+                  ? "btn-success text-success-content font-bold"
+                  : "btn-outline btn-neutral"
               }`}
             >
               ▲ Like {likes}
@@ -205,10 +205,10 @@ export const CommentNode: React.FC<CommentNodeProps> = ({ comment, onDeleteSucce
 
             <button
               onClick={handleDislike}
-              className={`cursor-pointer border border-gray-300 dark:border-gray-800 px-2 py-0.5 text-xs font-mono transition-colors ${
+              className={`btn btn-xs cursor-pointer ${
                 userReactionType === "dislike"
-                  ? "bg-red-50 text-red-700 border-red-400 font-bold dark:bg-red-950/20 dark:text-red-400 dark:border-red-800"
-                  : "bg-gray-50 text-gray-650 hover:bg-gray-100 hover:border-gray-400 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
+                  ? "btn-error text-error-content font-bold"
+                  : "btn-outline btn-neutral"
               }`}
             >
               ▼ Dislike {dislikes}
@@ -217,7 +217,7 @@ export const CommentNode: React.FC<CommentNodeProps> = ({ comment, onDeleteSucce
             {user && (
               <button
                 onClick={() => setShowReplyForm(!showReplyForm)}
-                className="cursor-pointer border border-gray-300 dark:border-gray-800 px-2 py-0.5 text-xs font-mono transition-colors bg-gray-50 text-blue-600 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 dark:bg-gray-900 dark:text-blue-400 dark:hover:bg-blue-950/20 dark:hover:border-blue-900"
+                className="btn btn-xs btn-outline btn-neutral cursor-pointer"
               >
                 💬 Reply
               </button>
@@ -228,7 +228,7 @@ export const CommentNode: React.FC<CommentNodeProps> = ({ comment, onDeleteSucce
             <button
               onClick={handleDelete}
               disabled={deleting}
-              className="border border-red-200 dark:border-red-900/50 bg-red-50/50 hover:bg-red-50 dark:bg-red-950/10 px-2 py-0.5 text-xs font-mono text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/20 dark:hover:text-red-300 cursor-pointer disabled:opacity-50"
+              className="btn btn-xs btn-outline btn-error cursor-pointer disabled:opacity-50"
             >
               {deleting ? "Deleting..." : "✕ Delete"}
             </button>
@@ -237,30 +237,30 @@ export const CommentNode: React.FC<CommentNodeProps> = ({ comment, onDeleteSucce
 
         {/* Reply Form */}
         {showReplyForm && (
-          <form onSubmit={handleCreateReply} className="mt-3 border-t border-gray-200 dark:border-gray-800 pt-3 flex flex-col gap-2">
+          <form onSubmit={handleCreateReply} className="mt-3 border-t border-base-300 pt-3 flex flex-col gap-2">
             <textarea
               value={replyContent}
               onChange={(e) => setReplyContent(e.target.value)}
               disabled={submittingReply}
               placeholder={`Replying to ${comment.userName}...`}
               rows={2}
-              className="w-full border border-gray-300 dark:border-gray-850 p-1.5 text-xs bg-white dark:bg-gray-900 focus:outline-none focus:border-black dark:focus:border-white font-sans"
+              className="textarea textarea-bordered w-full font-sans text-xs"
               required
             />
             <div className="flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setShowReplyForm(false)}
-                className="border border-gray-300 px-2.5 py-1 text-2xs font-bold hover:bg-gray-100 cursor-pointer"
+                className="btn btn-ghost btn-xs font-bold cursor-pointer"
               >
-                [Cancel]
+                Cancel
               </button>
               <button
                 type="submit"
                 disabled={submittingReply || !replyContent.trim()}
-                className="bg-gray-200 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 px-3 py-1 text-2xs font-bold hover:bg-gray-300 dark:hover:bg-gray-700 cursor-pointer disabled:opacity-50"
+                className="btn btn-neutral btn-xs font-bold cursor-pointer disabled:opacity-50"
               >
-                {submittingReply ? "Submitting..." : "[Submit]"}
+                {submittingReply ? "Submitting..." : "Submit"}
               </button>
             </div>
           </form>

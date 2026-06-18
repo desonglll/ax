@@ -110,19 +110,17 @@ export default function PostDetail() {
     window.location.href = "/";
   };
 
-  if (loadingPost) {
-    return <div className="text-center py-12 font-mono text-sm">Loading post details...</div>;
-  }
-
   if (error || !post) {
     return (
-      <div className="border border-red-300 bg-red-50 text-red-700 p-6 font-mono text-sm">
-        <h3 className="font-bold mb-2">Error:</h3>
-        <p>{error || "Post not found."}</p>
-        <div className="mt-4">
-          <Link to="/" className="text-blue-600 hover:underline">
-            [Back to Timeline]
-          </Link>
+      <div role="alert" className="alert alert-error font-mono text-sm max-w-xl mx-auto">
+        <div>
+          <h3 className="font-bold mb-1">Error:</h3>
+          <p className="text-xs">{error || "Post not found."}</p>
+          <div className="mt-4">
+            <Link to="/" className="btn btn-neutral btn-sm font-mono">
+              [Back to Timeline]
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -134,7 +132,7 @@ export default function PostDetail() {
   return (
     <div className="flex flex-col gap-6 font-mono">
       <div>
-        <Link to="/" className="text-blue-600 hover:underline text-xs">
+        <Link to="/" className="link link-primary text-xs font-bold">
           &lt; [Back to Timeline]
         </Link>
       </div>
@@ -143,8 +141,8 @@ export default function PostDetail() {
       <PostItem post={post} onDeleteSuccess={handlePostDeleteSuccess} isDetail={true} />
 
       {/* Comments Section */}
-      <div className="border border-gray-300 dark:border-gray-800 p-4 bg-white dark:bg-gray-950">
-        <h3 className="text-sm font-bold border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 uppercase tracking-wide">
+      <div className="card card-border bg-base-100 p-4">
+        <h3 className="text-sm font-bold border-b border-base-300 pb-2 mb-4 uppercase tracking-wide">
           Comments
         </h3>
 
@@ -157,30 +155,30 @@ export default function PostDetail() {
               disabled={submittingComment}
               placeholder="Write a comment..."
               rows={2}
-              className="w-full border border-gray-300 dark:border-gray-800 p-2 text-xs bg-gray-50 dark:bg-gray-900 focus:outline-none focus:border-black dark:focus:border-white font-sans"
+              className="textarea textarea-bordered w-full font-sans text-xs"
               required
             />
             <div className="flex justify-end">
               <button
                 type="submit"
                 disabled={submittingComment || !newCommentText.trim()}
-                className="bg-gray-200 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 px-3 py-1.5 text-xs font-bold hover:bg-gray-300 dark:hover:bg-gray-700 cursor-pointer disabled:opacity-50"
+                className="btn btn-neutral btn-sm font-bold cursor-pointer disabled:opacity-50"
               >
                 {submittingComment ? "Submitting..." : "[Add Comment]"}
               </button>
             </div>
           </form>
         ) : (
-          <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-3 text-xs text-center text-gray-500 mb-6">
+          <div className="bg-base-200 border border-base-300 p-3 text-xs text-center text-base-content/60 mb-6 rounded-btn">
             Please login to participate in the conversation.
           </div>
         )}
 
         {/* Comments List */}
         {loadingComments && comments.length === 0 ? (
-          <div className="text-center py-4 text-xs text-gray-500">Loading comments...</div>
+          <div className="text-center py-4 text-xs opacity-50">Loading comments...</div>
         ) : comments.length === 0 ? (
-          <div className="text-center py-6 text-xs text-gray-500">No comments yet. Be the first to comment!</div>
+          <div className="text-center py-6 text-xs opacity-50">No comments yet. Be the first to comment!</div>
         ) : (
           <div className="flex flex-col gap-4">
             {comments.map((comment) => (
@@ -192,37 +190,37 @@ export default function PostDetail() {
             ))}
 
             {/* Pagination Controls */}
-            <div className="flex items-center justify-between border-t border-gray-200 dark:border-gray-800 pt-3 mt-2 flex-wrap gap-4">
-              <div className="flex gap-2">
+            <div className="flex items-center justify-between border-t border-base-300 pt-3 mt-2 flex-wrap gap-4">
+              <div className="join">
                 {offset === 0 ? (
-                  <span className="bg-gray-100 border border-gray-300 px-3 py-0.5 text-2xs font-bold dark:bg-gray-900 dark:border-gray-800 opacity-30 cursor-not-allowed text-gray-400">
-                    [Prev Comments]
+                  <span className="join-item btn btn-outline btn-xs btn-disabled opacity-50">
+                    Prev Comments
                   </span>
                 ) : (
                   <a
                     href={`/posts/${post.id}?offset=${Math.max(0, offset - limit)}`}
-                    className="bg-gray-100 border border-gray-300 px-3 py-0.5 text-2xs font-bold dark:bg-gray-900 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200 cursor-pointer"
+                    className="join-item btn btn-outline btn-xs"
                   >
-                    [Prev Comments]
+                    Prev Comments
                   </a>
                 )}
 
                 {!hasMore ? (
-                  <span className="bg-gray-100 border border-gray-300 px-3 py-0.5 text-2xs font-bold dark:bg-gray-900 dark:border-gray-800 opacity-30 cursor-not-allowed text-gray-400">
-                    [Next Comments]
+                  <span className="join-item btn btn-outline btn-xs btn-disabled opacity-50">
+                    Next Comments
                   </span>
                 ) : (
                   <a
                     href={`/posts/${post.id}?offset=${offset + limit}`}
-                    className="bg-gray-100 border border-gray-300 px-3 py-0.5 text-2xs font-bold dark:bg-gray-900 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200 cursor-pointer"
+                    className="join-item btn btn-outline btn-xs"
                   >
-                    [Next Comments]
+                    Next Comments
                   </a>
                 )}
               </div>
 
               {totalPages > 0 && (
-                <div className="flex items-center gap-2 text-2xs text-gray-700 dark:text-gray-300">
+                <div className="flex items-center gap-2 text-xs opacity-80">
                   <span>Page:</span>
                   <select
                     value={currentPage}
@@ -231,7 +229,7 @@ export default function PostDetail() {
                       const newOffset = (pageNum - 1) * limit;
                       window.location.href = `/posts/${post.id}?offset=${newOffset}`;
                     }}
-                    className="border border-gray-300 dark:border-gray-800 bg-white dark:bg-gray-950 px-2 py-0.5 text-2xs font-mono focus:outline-none text-gray-800 dark:text-gray-200"
+                    className="select select-bordered select-xs font-mono"
                   >
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map((pNum) => (
                       <option key={pNum} value={pNum}>
@@ -243,7 +241,7 @@ export default function PostDetail() {
                 </div>
               )}
 
-              <span className="text-2xs text-gray-500">
+              <span className="text-xs opacity-50">
                 Offset: {offset}
               </span>
             </div>

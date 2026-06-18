@@ -14,6 +14,7 @@ This document logs the development history and version alterations of Project Ax
 - Added a global floating scroll-to-top button in the master application layout (`root.tsx`) that appears when scrolling down past 300px.
 
 ### Changed
+- Refactored the entire frontend page layouts, form inputs, buttons, tables, alerts, and stats panels to utilize standard, clean daisyUI components. Standardized the theme design to follow flat, content-focused minimalist principles without flashy gradients, animations, or shadows.
 - Configured the default sorting column of the post list database query to fallback to `created_at` instead of random `id` (UUID), sorting timeline posts chronologically by default.
 - Configured post titles to be optional in the frontend creation form and editing view, removing the `required` HTML attributes and updating validation logic.
 - Restricted access to the files list manager (`/files` page and navbar tab) exclusively to administrators. Regular users can upload files through post attachments but cannot view the overall files list.

@@ -50,68 +50,68 @@ export default function Register() {
   };
 
   return (
-    <div className="max-w-md mx-auto border border-gray-300 dark:border-gray-800 p-6 bg-white dark:bg-gray-950 font-mono">
-      <h2 className="text-xl font-bold mb-4 border-b border-gray-300 dark:border-gray-800 pb-2">
+    <div className="card card-border bg-base-100 p-6 max-w-md mx-auto font-mono">
+      <h2 className="text-xl font-bold mb-4 border-b border-base-300 pb-2">
         Register an Account
       </h2>
 
       {error && (
-        <div className="bg-red-50 text-red-700 border border-red-300 p-3 mb-4 text-sm">
+        <div role="alert" className="alert alert-error text-xs mb-4">
           Error: {error}
         </div>
       )}
 
       {success && (
-        <div className="bg-green-50 text-green-700 border border-green-300 p-3 mb-4 text-sm">
+        <div role="alert" className="alert alert-success text-xs mb-4">
           Success! Account created. Logging you in...
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-bold">Username:</label>
+          <label className="text-xs font-bold uppercase opacity-85">Username:</label>
           <input
             type="text"
             value={userName}
             onChange={(e) => setUserName(e.target.value)}
             disabled={submitting || success}
-            className="border border-gray-300 dark:border-gray-800 p-2 text-sm bg-gray-50 dark:bg-gray-900 focus:outline-none focus:border-black dark:focus:border-white"
+            className="input input-bordered input-sm font-sans w-full"
             required
           />
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-bold">Email Address:</label>
+          <label className="text-xs font-bold uppercase opacity-85">Email Address:</label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={submitting || success}
-            className="border border-gray-300 dark:border-gray-800 p-2 text-sm bg-gray-50 dark:bg-gray-900 focus:outline-none focus:border-black dark:focus:border-white"
+            className="input input-bordered input-sm font-sans w-full"
             required
           />
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-bold">Password:</label>
+          <label className="text-xs font-bold uppercase opacity-85">Password:</label>
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             disabled={submitting || success}
-            className="border border-gray-300 dark:border-gray-800 p-2 text-sm bg-gray-50 dark:bg-gray-900 focus:outline-none focus:border-black dark:focus:border-white"
+            className="input input-bordered input-sm font-sans w-full"
             required
           />
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-bold">Confirm Password:</label>
+          <label className="text-xs font-bold uppercase opacity-85">Confirm Password:</label>
           <input
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             disabled={submitting || success}
-            className="border border-gray-300 dark:border-gray-800 p-2 text-sm bg-gray-50 dark:bg-gray-900 focus:outline-none focus:border-black dark:focus:border-white"
+            className="input input-bordered input-sm font-sans w-full"
             required
           />
         </div>
@@ -119,15 +119,15 @@ export default function Register() {
         <button
           type="submit"
           disabled={submitting || success}
-          className="bg-gray-200 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 p-2 text-sm font-bold hover:bg-gray-300 dark:hover:bg-gray-700 cursor-pointer disabled:opacity-50"
+          className="btn btn-neutral btn-sm w-full font-bold cursor-pointer disabled:opacity-50"
         >
           {submitting ? "Registering..." : "[Submit]"}
         </button>
       </form>
 
-      <div className="mt-4 text-xs text-gray-500 border-t border-gray-200 dark:border-gray-800 pt-3 flex justify-between">
+      <div className="mt-4 text-xs opacity-60 border-t border-base-300 pt-3 flex justify-between">
         <span>Already have an account?</span>
-        <Link to="/login" className="text-blue-600 hover:underline">
+        <Link to="/login" className="link link-primary font-bold">
           [Login here]
         </Link>
       </div>

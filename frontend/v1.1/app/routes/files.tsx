@@ -10,11 +10,11 @@ export default function Files() {
   if (!user || !user.isAdmin) {
     return (
       <div className="max-w-5xl mx-auto p-4 font-mono">
-        <div className="border border-red-500 bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300 p-4 text-center">
-          <h2 className="font-bold mb-2 uppercase text-sm">Access Denied</h2>
-          <p className="text-xs">You do not have permission to view or manage files.</p>
-          <div className="mt-4 text-xs">
-            <Link to="/" className="underline font-bold">[Back to Timeline]</Link>
+        <div role="alert" className="alert alert-error text-center p-6">
+          <div>
+            <h2 className="font-bold mb-2 uppercase text-sm">Access Denied</h2>
+            <p className="text-xs mb-4">You do not have permission to view or manage files.</p>
+            <Link to="/" className="btn btn-neutral btn-sm font-mono">[Back to Timeline]</Link>
           </div>
         </div>
       </div>
@@ -134,42 +134,42 @@ export default function Files() {
     <div className="flex flex-col gap-8 font-mono">
       {/* Upload File Form (authenticated only) */}
       {user ? (
-        <div className="border border-gray-300 dark:border-gray-800 p-6 bg-white dark:bg-gray-950">
-          <h3 className="text-sm font-bold border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 uppercase tracking-wide">
+        <div className="card card-border bg-base-100 p-6">
+          <h3 className="text-sm font-bold border-b border-base-300 pb-2 mb-4 uppercase tracking-wide">
             Upload a File
           </h3>
 
           {uploadSuccess && (
-            <div className="bg-green-50 text-green-700 border border-green-300 p-3 mb-4 text-xs">
+            <div role="alert" className="alert alert-success text-xs mb-4">
               Success: File uploaded and saved.
             </div>
           )}
           {uploadError && (
-            <div className="bg-red-50 text-red-700 border border-red-300 p-3 mb-4 text-xs">
+            <div role="alert" className="alert alert-error text-xs mb-4">
               Error: {uploadError}
             </div>
           )}
 
           <form onSubmit={handleUploadSubmit} className="flex flex-col gap-4 max-w-md">
             <div className="flex flex-col gap-1 text-xs">
-              <label className="font-bold">Select File:</label>
+              <label className="font-bold opacity-80 uppercase">Select File:</label>
               <input
                 id="file-input"
                 type="file"
                 onChange={handleFileChange}
                 disabled={uploading}
-                className="border border-gray-300 dark:border-gray-800 p-1.5 text-xs bg-gray-50 dark:bg-gray-900"
+                className="file-input file-input-bordered file-input-sm w-full font-sans"
                 required
               />
             </div>
 
             <div className="flex flex-col gap-1 text-xs">
-              <label className="font-bold">Visibility Type:</label>
+              <label className="font-bold opacity-80 uppercase">Visibility Type:</label>
               <select
                 value={fileType}
                 onChange={(e) => setFileType(e.target.value as "public" | "private")}
                 disabled={uploading}
-                className="border border-gray-300 dark:border-gray-800 p-1.5 text-xs bg-gray-50 dark:bg-gray-900"
+                className="select select-bordered select-sm font-mono w-full"
               >
                 <option value="public">Public (anyone can view/download)</option>
                 <option value="private">Private (only you can view/download)</option>
@@ -177,14 +177,14 @@ export default function Files() {
             </div>
 
             <div className="flex flex-col gap-1 text-xs">
-              <label className="font-bold">File Description (optional):</label>
+              <label className="font-bold opacity-80 uppercase">File Description (optional):</label>
               <input
                 type="text"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 disabled={uploading}
                 placeholder="Brief description of the file contents"
-                className="border border-gray-300 dark:border-gray-800 p-1.5 text-xs bg-gray-50 dark:bg-gray-900"
+                className="input input-bordered input-sm font-sans w-full"
               />
             </div>
 
@@ -192,7 +192,7 @@ export default function Files() {
               <button
                 type="submit"
                 disabled={uploading || !selectedFile}
-                className="bg-gray-200 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 px-4 py-1.5 text-xs font-bold hover:bg-gray-300 dark:hover:bg-gray-700 cursor-pointer disabled:opacity-50"
+                className="btn btn-neutral btn-sm font-bold cursor-pointer disabled:opacity-50"
               >
                 {uploading ? "Uploading..." : "[Upload File]"}
               </button>
@@ -200,9 +200,9 @@ export default function Files() {
           </form>
         </div>
       ) : (
-        <div className="border border-gray-300 dark:border-gray-800 p-4 bg-gray-50 dark:bg-gray-900 text-sm text-center">
+        <div className="card bg-base-200 border border-base-300 p-4 text-sm text-center font-mono rounded-box">
           Please{" "}
-          <Link to="/login" className="text-blue-600 hover:underline font-bold">
+          <Link to="/login" className="link link-primary font-bold">
             [Login]
           </Link>{" "}
           to upload and manage files.
@@ -210,56 +210,56 @@ export default function Files() {
       )}
 
       {error && (
-        <div className="bg-red-50 text-red-700 border border-red-300 p-3 text-sm">
+        <div role="alert" className="alert alert-error text-xs">
           Error: {error}
         </div>
       )}
 
       {loading ? (
-        <div className="text-center py-12 text-sm text-gray-500">Loading files list...</div>
+        <div className="text-center py-12 text-sm opacity-50 font-mono">Loading files list...</div>
       ) : (
         <div className="flex flex-col gap-8">
           {/* Admin overall files table */}
           {user?.isAdmin && (
-            <div className="border border-gray-300 dark:border-gray-800 p-6 bg-white dark:bg-gray-950">
-              <h3 className="text-sm font-bold border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 uppercase tracking-wide text-red-600">
+            <div className="card card-border bg-base-100 p-6">
+              <h3 className="text-sm font-bold border-b border-base-300 pb-2 mb-4 uppercase tracking-wide text-error">
                 Administration: All System Files
               </h3>
               <div className="overflow-x-auto">
-                <table className="w-full text-xs text-left border border-gray-300 dark:border-gray-800 border-collapse">
+                <table className="table table-zebra table-sm w-full">
                   <thead>
-                    <tr className="bg-gray-100 dark:bg-gray-900 border-b border-gray-300 dark:border-gray-800">
-                      <th className="p-2 border-r border-gray-300 dark:border-gray-850">Filename</th>
-                      <th className="p-2 border-r border-gray-300 dark:border-gray-850">Owner ID</th>
-                      <th className="p-2 border-r border-gray-300 dark:border-gray-850">Size</th>
-                      <th className="p-2 border-r border-gray-300 dark:border-gray-850">Type</th>
-                      <th className="p-2 border-r border-gray-300 dark:border-gray-850">Description</th>
-                      <th className="p-2">Download</th>
+                    <tr>
+                      <th>Filename</th>
+                      <th>Owner ID</th>
+                      <th>Size</th>
+                      <th>Type</th>
+                      <th>Description</th>
+                      <th>Download</th>
                     </tr>
                   </thead>
                   <tbody>
                     {allFiles.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="p-4 text-center text-gray-400">No files uploaded in the system yet.</td>
+                        <td colSpan={6} className="text-center text-base-content/40">No files uploaded in the system yet.</td>
                       </tr>
                     ) : (
                       allFiles.map((file) => (
-                        <tr key={file.id} className="border-b border-gray-200 dark:border-gray-900">
-                          <td className="p-2 border-r border-gray-300 dark:border-gray-850 font-bold">{file.name}</td>
-                          <td className="p-2 border-r border-gray-300 dark:border-gray-850">{file.userId}</td>
-                          <td className="p-2 border-r border-gray-300 dark:border-gray-850">{formatBytes(file.size)}</td>
-                          <td className="p-2 border-r border-gray-300 dark:border-gray-850">
-                            {file.isPub ? "Public" : "Private"}
+                        <tr key={file.id}>
+                          <td className="font-bold">{file.name}</td>
+                          <td>{file.userId}</td>
+                          <td>{formatBytes(file.size)}</td>
+                          <td>
+                            {file.isPub ? <span className="badge badge-neutral badge-xs">Public</span> : <span className="badge badge-ghost badge-xs">Private</span>}
                           </td>
-                          <td className="p-2 border-r border-gray-300 dark:border-gray-850">
-                            {file.description || <span className="text-gray-400 font-mono">(none)</span>}
+                          <td>
+                            {file.description || <span className="text-base-content/40 font-mono text-2xs">(none)</span>}
                           </td>
-                          <td className="p-2">
+                          <td>
                             <a
                               href={fileApi.getDownloadUrl(file.id)}
                               target="_blank"
                               rel="noreferrer"
-                              className="text-blue-600 hover:underline font-bold"
+                              className="link link-primary font-bold"
                             >
                               [Download]
                             </a>
@@ -275,43 +275,43 @@ export default function Files() {
 
           {/* User's own files table */}
           {user && (
-            <div className="border border-gray-300 dark:border-gray-800 p-6 bg-white dark:bg-gray-950">
-              <h3 className="text-sm font-bold border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 uppercase tracking-wide">
+            <div className="card card-border bg-base-100 p-6">
+              <h3 className="text-sm font-bold border-b border-base-300 pb-2 mb-4 uppercase tracking-wide">
                 My Uploaded Files ({userFiles.length})
               </h3>
               <div className="overflow-x-auto">
-                <table className="w-full text-xs text-left border border-gray-300 dark:border-gray-800 border-collapse">
+                <table className="table table-zebra table-sm w-full">
                   <thead>
-                    <tr className="bg-gray-100 dark:bg-gray-900 border-b border-gray-300 dark:border-gray-800">
-                      <th className="p-2 border-r border-gray-300 dark:border-gray-850">Filename</th>
-                      <th className="p-2 border-r border-gray-300 dark:border-gray-850">Size</th>
-                      <th className="p-2 border-r border-gray-300 dark:border-gray-850">Visibility</th>
-                      <th className="p-2 border-r border-gray-300 dark:border-gray-850">Description</th>
-                      <th className="p-2">Download</th>
+                    <tr>
+                      <th>Filename</th>
+                      <th>Size</th>
+                      <th>Visibility</th>
+                      <th>Description</th>
+                      <th>Download</th>
                     </tr>
                   </thead>
                   <tbody>
                     {userFiles.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="p-4 text-center text-gray-400">You haven't uploaded any files yet.</td>
+                        <td colSpan={5} className="text-center text-base-content/40">You haven't uploaded any files yet.</td>
                       </tr>
                     ) : (
                       userFiles.map((file) => (
-                        <tr key={file.id} className="border-b border-gray-200 dark:border-gray-900">
-                          <td className="p-2 border-r border-gray-300 dark:border-gray-850 font-bold">{file.name}</td>
-                          <td className="p-2 border-r border-gray-300 dark:border-gray-850">{formatBytes(file.size)}</td>
-                          <td className="p-2 border-r border-gray-300 dark:border-gray-850">
-                            {file.isPub ? "Public" : "Private"}
+                        <tr key={file.id}>
+                          <td className="font-bold">{file.name}</td>
+                          <td>{formatBytes(file.size)}</td>
+                          <td>
+                            {file.isPub ? <span className="badge badge-neutral badge-xs">Public</span> : <span className="badge badge-ghost badge-xs">Private</span>}
                           </td>
-                          <td className="p-2 border-r border-gray-300 dark:border-gray-850">
-                            {file.description || <span className="text-gray-400 font-mono">(none)</span>}
+                          <td>
+                            {file.description || <span className="text-base-content/40 font-mono text-2xs">(none)</span>}
                           </td>
-                          <td className="p-2">
+                          <td>
                             <a
                               href={fileApi.getDownloadUrl(file.id)}
                               target="_blank"
                               rel="noreferrer"
-                              className="text-blue-600 hover:underline font-bold"
+                              className="link link-primary font-bold"
                             >
                               [Download]
                             </a>
@@ -326,39 +326,39 @@ export default function Files() {
           )}
 
           {/* Public files table (available to everyone) */}
-          <div className="border border-gray-300 dark:border-gray-800 p-6 bg-white dark:bg-gray-950">
-            <h3 className="text-sm font-bold border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 uppercase tracking-wide">
+          <div className="card card-border bg-base-100 p-6">
+            <h3 className="text-sm font-bold border-b border-base-300 pb-2 mb-4 uppercase tracking-wide">
               Shared Public Files ({publicFiles.length})
             </h3>
             <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left border border-gray-300 dark:border-gray-800 border-collapse">
+              <table className="table table-zebra table-sm w-full">
                 <thead>
-                  <tr className="bg-gray-100 dark:bg-gray-900 border-b border-gray-300 dark:border-gray-800">
-                    <th className="p-2 border-r border-gray-300 dark:border-gray-850">Filename</th>
-                    <th className="p-2 border-r border-gray-300 dark:border-gray-850">Size</th>
-                    <th className="p-2 border-r border-gray-300 dark:border-gray-850">Description</th>
-                    <th className="p-2">Download</th>
+                  <tr>
+                    <th>Filename</th>
+                    <th>Size</th>
+                    <th>Description</th>
+                    <th>Download</th>
                   </tr>
                 </thead>
                 <tbody>
                   {publicFiles.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="p-4 text-center text-gray-400">No public files available.</td>
+                      <td colSpan={4} className="text-center text-base-content/40">No public files available.</td>
                     </tr>
                   ) : (
                     publicFiles.map((file) => (
-                      <tr key={file.id} className="border-b border-gray-200 dark:border-gray-900">
-                        <td className="p-2 border-r border-gray-300 dark:border-gray-850 font-bold">{file.name}</td>
-                        <td className="p-2 border-r border-gray-300 dark:border-gray-850">{formatBytes(file.size)}</td>
-                        <td className="p-2 border-r border-gray-300 dark:border-gray-850">
-                          {file.description || <span className="text-gray-400 font-mono">(none)</span>}
+                      <tr key={file.id}>
+                        <td className="font-bold">{file.name}</td>
+                        <td>{formatBytes(file.size)}</td>
+                        <td>
+                          {file.description || <span className="text-base-content/40 font-mono text-2xs">(none)</span>}
                         </td>
-                        <td className="p-2">
+                        <td>
                           <a
                             href={fileApi.getDownloadUrl(file.id)}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-blue-600 hover:underline font-bold"
+                            className="link link-primary font-bold"
                           >
                             [Download]
                           </a>

@@ -171,11 +171,11 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onDeleteSuccess, isDet
   const isOwnerOrAdmin = user && (user.id === post.userId || user.isAdmin);
 
   return (
-    <div className="border border-gray-300 dark:border-gray-800 p-4 mb-4 bg-white dark:bg-gray-950 font-mono">
-      <div className="flex justify-between items-center text-xs text-gray-500 border-b border-gray-200 dark:border-gray-800 pb-2 mb-3">
+    <div className="card card-border bg-base-100 p-4 mb-4 font-mono">
+      <div className="flex justify-between items-center text-xs opacity-60 border-b border-base-200 pb-2 mb-3">
         <div>
           By:{" "}
-          <Link to={`/profile/${post.userId}`} className="text-blue-600 hover:underline font-bold">
+          <Link to={`/profile/${post.userId}`} className="link link-primary font-bold">
             {post.userName}
           </Link>
         </div>
@@ -186,54 +186,54 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onDeleteSuccess, isDet
         <div className="mb-2">
           <Link
             to={`/posts/${post.id}`}
-            className="text-sm font-bold text-blue-600 dark:text-blue-400 hover:underline block mb-1 font-sans"
+            className="text-sm font-bold link hover:link-primary block mb-1 font-sans"
           >
             {postTitle || "Untitled Post"}
           </Link>
         </div>
       ) : (
-        <h1 className="text-lg font-bold mb-3 font-sans text-gray-900 dark:text-gray-100">
+        <h1 className="text-lg font-bold mb-3 font-sans text-base-content">
           {postTitle || "Untitled Post"}
         </h1>
       )}
 
       {isEditing ? (
-        <form onSubmit={handleSaveEdit} className="mt-2 font-mono">
+        <form onSubmit={handleSaveEdit} className="mt-2 font-mono flex flex-col gap-2">
           <input
             type="text"
             value={editTitle}
             onChange={(e) => setEditTitle(e.target.value)}
             disabled={saving}
             placeholder="Title (optional)"
-            className="w-full border border-gray-300 dark:border-gray-800 p-2 text-sm bg-gray-50 dark:bg-gray-900 focus:outline-none focus:border-black dark:focus:border-white mb-2 font-sans text-gray-800 dark:text-gray-200"
+            className="input input-bordered input-sm font-sans w-full"
           />
           <textarea
             value={editContent}
             onChange={(e) => setEditContent(e.target.value)}
-            className="w-full border border-gray-300 dark:border-gray-800 p-2 font-sans text-sm focus:outline-none focus:border-gray-500 bg-white dark:bg-gray-950 text-gray-850 dark:text-gray-200 mb-2"
+            className="textarea textarea-bordered w-full font-sans text-sm resize-y"
             rows={4}
             required
           />
 
           {/* Edit attachments list (remove items) */}
           {editAttachments.length > 0 && (
-            <div className="mb-3 p-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-800 font-mono text-xs">
-              <span className="text-[10px] font-bold uppercase block text-gray-500 mb-2">
+            <div className="card card-border bg-base-200 p-3 mb-2 font-mono text-xs">
+              <span className="text-[10px] font-bold uppercase block opacity-60 mb-2">
                 Current Attachments ({editAttachments.length}):
               </span>
               <div className="flex flex-col gap-2">
                 {editAttachments.map((file) => (
                   <div
                     key={file.id}
-                    className="flex items-center justify-between border border-gray-300 dark:border-gray-800 p-2 bg-white dark:bg-gray-950 rounded-sm"
+                    className="flex items-center justify-between border border-base-300 p-2 bg-base-100 rounded-btn"
                   >
-                    <span className="truncate max-w-[80%] text-gray-700 dark:text-gray-300">
+                    <span className="truncate max-w-[80%] opacity-85">
                       {file.name} ({Math.round(file.size / 1024)} KB)
                     </span>
                     <button
                       type="button"
                       onClick={() => setEditAttachments((prev) => prev.filter((a) => a.id !== file.id))}
-                      className="text-red-650 hover:underline font-bold"
+                      className="btn btn-ghost btn-xs text-error font-bold"
                     >
                       [Remove]
                     </button>
@@ -247,21 +247,21 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onDeleteSuccess, isDet
             <button
               type="submit"
               disabled={saving}
-              className="cursor-pointer border border-gray-300 dark:border-gray-800 px-2.5 py-1 text-xs font-mono bg-green-50 text-green-700 hover:bg-green-100 disabled:opacity-50"
+              className="btn btn-neutral btn-xs cursor-pointer disabled:opacity-50"
             >
-              {saving ? "[Saving...]" : "[Save]"}
+              {saving ? "Saving..." : "Save"}
             </button>
             <button
               type="button"
               onClick={() => setIsEditing(false)}
-              className="cursor-pointer border border-gray-300 dark:border-gray-800 px-2.5 py-1 text-xs font-mono bg-gray-50 text-gray-650 hover:bg-gray-100"
+              className="btn btn-ghost btn-xs cursor-pointer"
             >
-              [Cancel]
+              Cancel
             </button>
           </div>
         </form>
       ) : (
-        <div className="text-sm whitespace-pre-wrap break-all mb-4 text-gray-800 dark:text-gray-200 leading-relaxed font-sans">
+        <div className="text-sm whitespace-pre-wrap break-all mb-4 text-base-content leading-relaxed font-sans">
           {(() => {
             const isLong = !isDetail && postContent.length > 280;
             const contentToShow = isLong && !isExpanded
@@ -273,7 +273,7 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onDeleteSuccess, isDet
                 {isLong && (
                   <button
                     onClick={() => setIsExpanded(!isExpanded)}
-                    className="ml-2 text-blue-600 hover:underline cursor-pointer font-bold font-mono text-xs"
+                    className="ml-2 link link-primary cursor-pointer font-bold font-mono text-xs"
                   >
                     {isExpanded ? "[Collapse]" : "[Read More]"}
                   </button>
@@ -286,8 +286,8 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onDeleteSuccess, isDet
 
       {/* Attachments list */}
       {postAttachments && postAttachments.length > 0 && (
-        <div className="border-t border-dashed border-gray-200 dark:border-gray-800 pt-3 pb-2 mb-4">
-          <span className="text-[10px] font-bold uppercase block text-gray-500 mb-2 font-mono">Attachments:</span>
+        <div className="border-t border-dashed border-base-300 pt-3 pb-2 mb-4">
+          <span className="text-[10px] font-bold uppercase block opacity-60 mb-2 font-mono">Attachments:</span>
           <div className="flex flex-col gap-2">
             {postAttachments.map((file) => (
               <AttachmentItemRenderer key={file.id} file={file} />
@@ -296,14 +296,14 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onDeleteSuccess, isDet
         </div>
       )}
 
-      <div className="flex items-center justify-between text-xs border-t border-gray-150 dark:border-gray-900 pt-3">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between text-xs border-t border-base-200 pt-3">
+        <div className="flex items-center gap-2">
           <button
             onClick={handleLike}
-            className={`cursor-pointer border border-gray-300 dark:border-gray-800 px-2.5 py-1 text-xs font-mono transition-colors ${
+            className={`btn btn-xs cursor-pointer ${
               userReactionType === "like"
-                ? "bg-green-50 text-green-700 border-green-400 font-bold dark:bg-green-950/20 dark:text-green-400 dark:border-green-800"
-                : "bg-gray-50 text-gray-600 hover:bg-gray-100 hover:border-gray-400 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
+                ? "btn-success text-success-content font-bold"
+                : "btn-outline btn-neutral"
             }`}
           >
             ▲ Like {likes}
@@ -311,10 +311,10 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onDeleteSuccess, isDet
 
           <button
             onClick={handleDislike}
-            className={`cursor-pointer border border-gray-300 dark:border-gray-800 px-2.5 py-1 text-xs font-mono transition-colors ${
+            className={`btn btn-xs cursor-pointer ${
               userReactionType === "dislike"
-                ? "bg-red-50 text-red-700 border-red-400 font-bold dark:bg-red-950/20 dark:text-red-400 dark:border-red-800"
-                : "bg-gray-50 text-gray-600 hover:bg-gray-100 hover:border-gray-400 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
+                ? "btn-error text-error-content font-bold"
+                : "btn-outline btn-neutral"
             }`}
           >
             ▼ Dislike {dislikes}
@@ -323,7 +323,7 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onDeleteSuccess, isDet
           {!isDetail && (
             <Link
               to={`/posts/${post.id}`}
-              className="cursor-pointer border border-gray-300 dark:border-gray-800 px-2.5 py-1 text-xs font-mono transition-colors bg-gray-50 text-blue-600 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 dark:bg-gray-900 dark:text-blue-400 dark:hover:bg-blue-950/20 dark:hover:border-blue-900"
+              className="btn btn-xs btn-outline btn-neutral"
             >
               💬 Comments
             </Link>
@@ -340,7 +340,7 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onDeleteSuccess, isDet
                   setEditAttachments(postAttachments);
                   setIsEditing(true);
                 }}
-                className="border border-gray-300 dark:border-gray-800 px-2.5 py-1 text-xs font-mono text-gray-655 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 cursor-pointer"
+                className="btn btn-xs btn-outline btn-neutral cursor-pointer"
               >
                 ✎ Edit
               </button>
@@ -348,7 +348,7 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onDeleteSuccess, isDet
             <button
               onClick={handleDelete}
               disabled={deleting}
-              className="border border-red-200 dark:border-red-900/50 bg-red-50/50 hover:bg-red-50 dark:bg-red-950/10 px-2.5 py-1 text-xs font-mono text-red-650 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/20 dark:hover:text-red-300 cursor-pointer disabled:opacity-50"
+              className="btn btn-xs btn-outline btn-error cursor-pointer disabled:opacity-50"
             >
               {deleting ? "Deleting..." : "✕ Delete"}
             </button>
@@ -368,38 +368,38 @@ const AttachmentItemRenderer: React.FC<{ file: FileRecord }> = ({ file }) => {
 
   if (!isImage && !isVideo) {
     return (
-      <div className="flex items-center gap-1.5 border border-gray-300 dark:border-gray-800 p-2 bg-gray-50 dark:bg-gray-900 rounded-sm font-mono text-xs w-full max-w-md">
-        <span className="text-gray-500">📄</span>
+      <div className="flex items-center gap-1.5 border border-base-300 p-2 bg-base-200 rounded-btn font-mono text-xs w-full max-w-md">
+        <span className="opacity-60">📄</span>
         <a
           href={downloadUrl}
           download
-          className="text-blue-600 hover:underline font-bold"
+          className="link link-primary font-bold"
         >
           {file.name}
         </a>
-        <span className="text-gray-400">({Math.round(file.size / 1024)} KB)</span>
+        <span className="opacity-60">({Math.round(file.size / 1024)} KB)</span>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-start gap-2 border border-gray-300 dark:border-gray-800 p-2 bg-gray-50 dark:bg-gray-900 rounded-sm font-mono text-xs w-full max-w-md">
+    <div className="flex flex-col items-start gap-2 border border-base-300 p-2 bg-base-200 rounded-btn font-mono text-xs w-full max-w-md">
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-gray-500">{isImage ? "🖼️" : "🎥"}</span>
+        <span className="opacity-60">{isImage ? "🖼️" : "🎥"}</span>
         <a
           href={downloadUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-blue-600 hover:underline font-bold truncate max-w-[200px]"
+          className="link link-primary font-bold truncate max-w-[200px]"
           title={file.name}
         >
           {file.name}
         </a>
-        <span className="text-gray-400">({Math.round(file.size / 1024)} KB)</span>
+        <span className="opacity-60">({Math.round(file.size / 1024)} KB)</span>
         <button
           type="button"
           onClick={() => setShowPreview(!showPreview)}
-          className="bg-gray-200 dark:bg-gray-850 border border-gray-300 dark:border-gray-700 px-2 py-0.5 text-[10px] font-bold hover:bg-gray-300 dark:hover:bg-gray-750 text-gray-800 dark:text-gray-200 cursor-pointer"
+          className="btn btn-xs btn-neutral font-bold cursor-pointer"
         >
           {showPreview ? "[Hide Preview]" : "[Show Preview]"}
         </button>
@@ -411,7 +411,7 @@ const AttachmentItemRenderer: React.FC<{ file: FileRecord }> = ({ file }) => {
             <img
               src={downloadUrl}
               alt={file.name}
-              className="max-w-full max-h-96 border border-gray-300 dark:border-gray-800 object-contain hover:opacity-95 bg-white dark:bg-black"
+              className="max-w-full max-h-96 border border-base-300 object-contain hover:opacity-95 bg-base-100"
             />
           </a>
         </div>
@@ -422,7 +422,7 @@ const AttachmentItemRenderer: React.FC<{ file: FileRecord }> = ({ file }) => {
           <video
             src={downloadUrl}
             controls
-            className="max-w-full max-h-96 border border-gray-300 dark:border-gray-800 object-contain bg-white dark:bg-black"
+            className="max-w-full max-h-96 border border-base-300 object-contain bg-base-100"
           />
         </div>
       )}

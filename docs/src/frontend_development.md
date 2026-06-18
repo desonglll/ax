@@ -16,13 +16,13 @@ The frontend client in `frontend/v1.1` is built on a modern, robust, and lightwe
 
 ---
 
-## GNU-Style Layout Philosophy
+## GNU-Style Layout Philosophy & daisyUI Integration
 
-Project Ax adopts a minimalist, content-focused, lightweight design layout inspired by classic GNU project pages (such as gnu.org). It prioritizes functional clarity over aesthetic decoration:
-1. **Flat Design**: Zero card shadows (`shadow` classes are omitted). All containers, headers, and navigation bars use solid 1px borders for separation.
-2. **Static Viewports**: No transition animations, slide effects, or hover-scaling. Clicking an action or routing immediately switches state.
-3. **Typography-Driven Layout**: Uses clean fonts with clear section breaks (`border-b`) and standard bold headers.
-4. **Classic Forms & Inputs**: Form fields render plain inputs and textareas with light backgrounds and standard focus borders. Buttons are styled with borders resembling default native browser layouts.
+Project Ax adopts a clean, content-focused, lightweight design layout inspired by classic GNU project pages (such as gnu.org). To make frontend development more robust and maintainable, the layout utilizes **daisyUI** components (like `card`, `stats`, `table`, `btn`, `input`, and `alert`) configured to stay flat, clean, and completely non-flashy:
+1. **Flat Design**: Zero card shadows. Containers utilize the `card card-border` modifier and flat borders (`border-base-300`) for structural separation.
+2. **Static Viewports**: Zero transition animations, slide effects, or hover-scaling. Clicking actions or navigating routes transitions the view instantly.
+3. **Clean Forms & Inputs**: Form fields render daisyUI input and textarea components with clean outlines (`input-bordered`, `textarea-bordered`) and standard focus outlines. Buttons use compact sizes (`btn-sm`, `btn-xs`) in neutral or outline styles (`btn-neutral`, `btn-outline`).
+4. **Contrast alerts & stats**: Feedback and errors use standard alert components (`alert alert-error`, `alert alert-success`) and user statistics utilize the stats grid (`stats stats-vertical sm:stats-horizontal`) to align layout data.
 
 ---
 

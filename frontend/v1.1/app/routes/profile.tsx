@@ -197,13 +197,15 @@ export default function Profile() {
 
   if (error || !profileUser) {
     return (
-      <div className="border border-red-300 bg-red-50 text-red-700 p-6 font-mono text-sm">
-        <h3 className="font-bold mb-2">Error:</h3>
-        <p>{error || "Profile could not be loaded."}</p>
-        <div className="mt-4">
-          <Link to="/" className="text-blue-600 hover:underline">
-            [Back to Timeline]
-          </Link>
+      <div role="alert" className="alert alert-error font-mono text-sm max-w-xl mx-auto">
+        <div>
+          <h3 className="font-bold mb-1">Error:</h3>
+          <p className="text-xs">{error || "Profile could not be loaded."}</p>
+          <div className="mt-4">
+            <Link to="/" className="btn btn-neutral btn-sm font-mono">
+              [Back to Timeline]
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -215,123 +217,127 @@ export default function Profile() {
   return (
     <div className="flex flex-col gap-8 font-mono">
       {/* Profile Overview Card */}
-      <div className="border border-gray-300 dark:border-gray-800 p-6 bg-white dark:bg-gray-950">
-        <h2 className="text-xl font-bold border-b border-gray-300 dark:border-gray-800 pb-2 mb-4 uppercase tracking-wide">
+      <div className="card card-border bg-base-100 p-6">
+        <h2 className="text-xl font-bold border-b border-base-300 pb-2 mb-4 uppercase tracking-wide">
           User Profile
         </h2>
 
-        <table className="w-full text-sm border-collapse text-left mb-6">
-          <tbody>
-            <tr className="border-b border-gray-200 dark:border-gray-900">
-              <td className="py-2 font-bold w-1/3">Username:</td>
-              <td className="py-2 text-gray-700 dark:text-gray-300">{profileUser.userName}</td>
-            </tr>
-            <tr className="border-b border-gray-200 dark:border-gray-900">
-              <td className="py-2 font-bold">Email:</td>
-              <td className="py-2 text-gray-700 dark:text-gray-300">{profileUser.email}</td>
-            </tr>
-            <tr className="border-b border-gray-200 dark:border-gray-900">
-              <td className="py-2 font-bold">Member Since:</td>
-              <td className="py-2 text-gray-700 dark:text-gray-300">{joinDate}</td>
-            </tr>
-            <tr>
-              <td className="py-2 font-bold">Role:</td>
-              <td className="py-2 text-gray-700 dark:text-gray-300">
-                {profileUser.isAdmin ? "Site Administrator" : "Regular Member"}
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div className="overflow-x-auto mb-6">
+          <table className="table table-zebra table-sm w-full">
+            <tbody>
+              <tr>
+                <td className="font-bold w-1/3">Username:</td>
+                <td>{profileUser.userName}</td>
+              </tr>
+              <tr>
+                <td className="font-bold">Email:</td>
+                <td>{profileUser.email}</td>
+              </tr>
+              <tr>
+                <td className="font-bold">Member Since:</td>
+                <td>{joinDate}</td>
+              </tr>
+              <tr>
+                <td className="font-bold">Role:</td>
+                <td>
+                  {profileUser.isAdmin ? "Site Administrator" : "Regular Member"}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
-        {/* Local computed statistics */}
-        <h3 className="text-sm font-bold border-b border-gray-200 dark:border-gray-800 pb-1.5 mb-3 uppercase tracking-wide">
+        {/* Local computed statistics using daisyui stats */}
+        <h3 className="text-sm font-bold border-b border-base-300 pb-1.5 mb-3 uppercase tracking-wide">
           User Statistics
         </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs font-mono mb-2">
-          <div className="border border-gray-300 dark:border-gray-800 p-3 bg-gray-50 dark:bg-gray-900">
-            <div className="font-bold text-gray-500 mb-1">Total Posts</div>
-            <div className="text-lg font-bold">{stats.postCount}</div>
+        <div className="stats stats-vertical sm:stats-horizontal w-full card-border bg-base-100 mb-2 font-mono">
+          <div className="stat">
+            <div className="stat-title text-[10px] uppercase font-bold tracking-wider">Total Posts</div>
+            <div className="stat-value text-lg font-bold text-primary">{stats.postCount}</div>
           </div>
-          <div className="border border-gray-300 dark:border-gray-800 p-3 bg-gray-50 dark:bg-gray-900">
-            <div className="font-bold text-gray-500 mb-1">Average Likes</div>
-            <div className="text-lg font-bold">{stats.averageLikes}</div>
+          <div className="stat">
+            <div className="stat-title text-[10px] uppercase font-bold tracking-wider">Avg Likes</div>
+            <div className="stat-value text-lg font-bold">{stats.averageLikes}</div>
           </div>
-          <div className="border border-gray-300 dark:border-gray-800 p-3 bg-gray-50 dark:bg-gray-900">
-            <div className="font-bold text-gray-500 mb-1">Average Dislikes</div>
-            <div className="text-lg font-bold">{stats.averageDislikes}</div>
+          <div className="stat">
+            <div className="stat-title text-[10px] uppercase font-bold tracking-wider">Avg Dislikes</div>
+            <div className="stat-value text-lg font-bold">{stats.averageDislikes}</div>
           </div>
-          <div className="border border-gray-300 dark:border-gray-800 p-3 bg-gray-50 dark:bg-gray-900">
-            <div className="font-bold text-gray-500 mb-1">Total Likes</div>
-            <div className="text-lg font-bold">{stats.totalLikes}</div>
+        </div>
+        <div className="stats stats-vertical sm:stats-horizontal w-full card-border bg-base-100 mb-2 font-mono">
+          <div className="stat">
+            <div className="stat-title text-[10px] uppercase font-bold tracking-wider">Total Likes</div>
+            <div className="stat-value text-lg font-bold">{stats.totalLikes}</div>
           </div>
-          <div className="border border-gray-300 dark:border-gray-800 p-3 bg-gray-50 dark:bg-gray-900">
-            <div className="font-bold text-gray-500 mb-1">Total Dislikes</div>
-            <div className="text-lg font-bold">{stats.totalDislikes}</div>
+          <div className="stat">
+            <div className="stat-title text-[10px] uppercase font-bold tracking-wider">Total Dislikes</div>
+            <div className="stat-value text-lg font-bold">{stats.totalDislikes}</div>
           </div>
-          <div className="border border-gray-300 dark:border-gray-800 p-3 bg-gray-50 dark:bg-gray-900">
-            <div className="font-bold text-gray-500 mb-1">Engagement Rate</div>
-            <div className="text-lg font-bold">{stats.averageEngagementRate}%</div>
+          <div className="stat">
+            <div className="stat-title text-[10px] uppercase font-bold tracking-wider">Engagement Rate</div>
+            <div className="stat-value text-lg font-bold text-secondary">{stats.averageEngagementRate}%</div>
           </div>
         </div>
       </div>
 
       {/* Edit own profile settings */}
       {isOwnProfile && (
-        <div className="border border-gray-300 dark:border-gray-800 p-6 bg-white dark:bg-gray-950">
-          <h3 className="text-sm font-bold border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 uppercase tracking-wide">
+        <div className="card card-border bg-base-100 p-6">
+          <h3 className="text-sm font-bold border-b border-base-300 pb-2 mb-4 uppercase tracking-wide">
             Account Settings
           </h3>
 
           {updateSuccess && (
-            <div className="bg-green-50 text-green-700 border border-green-300 p-3 mb-4 text-xs">
+            <div role="alert" className="alert alert-success text-xs mb-4">
               Profile updated successfully.
             </div>
           )}
           {updateError && (
-            <div className="bg-red-50 text-red-700 border border-red-300 p-3 mb-4 text-xs">
+            <div role="alert" className="alert alert-error text-xs mb-4">
               Error: {updateError}
             </div>
           )}
 
           <form onSubmit={handleUpdateProfile} className="flex flex-col gap-4 max-w-sm">
             <div className="flex flex-col gap-1 text-xs">
-              <label className="font-bold">Username:</label>
+              <label className="font-bold opacity-80 uppercase">Username:</label>
               <input
                 type="text"
                 value={editUserName}
                 onChange={(e) => setEditUserName(e.target.value)}
                 disabled={updating}
-                className="border border-gray-300 dark:border-gray-800 p-1.5 text-xs bg-gray-50 dark:bg-gray-900 focus:outline-none focus:border-black dark:focus:border-white"
+                className="input input-bordered input-sm font-sans w-full"
                 required
               />
             </div>
             <div className="flex flex-col gap-1 text-xs">
-              <label className="font-bold">Email Address:</label>
+              <label className="font-bold opacity-80 uppercase">Email Address:</label>
               <input
                 type="email"
                 value={editEmail}
                 onChange={(e) => setEditEmail(e.target.value)}
                 disabled={updating}
-                className="border border-gray-300 dark:border-gray-800 p-1.5 text-xs bg-gray-50 dark:bg-gray-900 focus:outline-none focus:border-black dark:focus:border-white"
+                className="input input-bordered input-sm font-sans w-full"
                 required
               />
             </div>
             <div className="flex flex-col gap-1 text-xs">
-              <label className="font-bold">New Password (leave blank to keep unchanged):</label>
+              <label className="font-bold opacity-80 uppercase">New Password (leave blank to keep unchanged):</label>
               <input
                 type="password"
                 value={editPassword}
                 onChange={(e) => setEditPassword(e.target.value)}
                 disabled={updating}
                 placeholder="********"
-                className="border border-gray-300 dark:border-gray-800 p-1.5 text-xs bg-gray-50 dark:bg-gray-900 focus:outline-none focus:border-black dark:focus:border-white"
+                className="input input-bordered input-sm font-sans w-full"
               />
             </div>
             <div>
               <button
                 type="submit"
                 disabled={updating}
-                className="bg-gray-200 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 px-4 py-1.5 text-xs font-bold hover:bg-gray-300 dark:hover:bg-gray-700 cursor-pointer disabled:opacity-50"
+                className="btn btn-neutral btn-sm font-bold cursor-pointer disabled:opacity-50"
               >
                 {updating ? "Saving..." : "[Update Profile]"}
               </button>
@@ -342,43 +348,43 @@ export default function Profile() {
 
       {/* Admin User Control Panel */}
       {currentUser?.isAdmin && isOwnProfile && (
-        <div className="border border-gray-300 dark:border-gray-800 p-6 bg-white dark:bg-gray-950">
-          <h3 className="text-sm font-bold border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 uppercase tracking-wide text-red-600">
+        <div className="card card-border bg-base-100 p-6">
+          <h3 className="text-sm font-bold border-b border-base-300 pb-2 mb-4 uppercase tracking-wide text-error">
             Administration Panel: Users List
           </h3>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left border border-gray-350 dark:border-gray-800 border-collapse">
+            <table className="table table-zebra table-sm w-full">
               <thead>
-                <tr className="bg-gray-100 dark:bg-gray-900 border-b border-gray-300 dark:border-gray-800">
-                  <th className="p-2 border-r border-gray-300 dark:border-gray-850">ID</th>
-                  <th className="p-2 border-r border-gray-300 dark:border-gray-850">Username</th>
-                  <th className="p-2 border-r border-gray-300 dark:border-gray-850">Email</th>
-                  <th className="p-2 border-r border-gray-300 dark:border-gray-850">Role</th>
-                  <th className="p-2">Action</th>
+                <tr>
+                  <th>ID</th>
+                  <th>Username</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
                 {users.map((u) => (
-                  <tr key={u.id} className="border-b border-gray-200 dark:border-gray-900 hover:bg-gray-50 dark:hover:bg-gray-900">
-                    <td className="p-2 border-r border-gray-300 dark:border-gray-850">{u.id}</td>
-                    <td className="p-2 border-r border-gray-300 dark:border-gray-850">
-                      <Link to={`/profile/${u.id}`} className="text-blue-600 hover:underline">
+                  <tr key={u.id}>
+                    <td>{u.id}</td>
+                    <td className="font-bold">
+                      <Link to={`/profile/${u.id}`} className="link link-primary">
                         {u.userName}
                       </Link>
                     </td>
-                    <td className="p-2 border-r border-gray-300 dark:border-gray-850">{u.email}</td>
-                    <td className="p-2 border-r border-gray-300 dark:border-gray-850">{u.isAdmin ? "Admin" : "User"}</td>
-                    <td className="p-2">
+                    <td>{u.email}</td>
+                    <td>{u.isAdmin ? <span className="badge badge-error badge-sm">Admin</span> : <span className="badge badge-neutral badge-sm">User</span>}</td>
+                    <td>
                       {u.id !== currentUser.id ? (
                         <button
                           onClick={() => handleUserDelete(u.id)}
-                          className="text-red-600 font-bold hover:underline cursor-pointer"
+                          className="btn btn-ghost btn-xs text-error font-bold"
                         >
                           [Delete User]
                         </button>
                       ) : (
-                        <span className="text-gray-400 font-mono">(You)</span>
+                        <span className="text-base-content/40 font-mono text-xs">(You)</span>
                       )}
                     </td>
                   </tr>
@@ -391,7 +397,7 @@ export default function Profile() {
 
       {/* User's Posts list */}
       <div>
-        <h3 className="text-sm font-bold border-b border-gray-300 dark:border-gray-800 pb-2 mb-4 uppercase tracking-wide">
+        <h3 className="text-sm font-bold border-b border-base-300 pb-2 mb-4 uppercase tracking-wide opacity-85">
           Posts by {profileUser.userName} ({userPosts.length})
         </h3>
 

@@ -73,46 +73,46 @@ function AppLayout() {
   };
 
   return (
-    <div className="flex-1 flex flex-col">
-      {/* GNU-Style Minimalist Navigation Header */}
-      <header className="bg-gray-100 border-b border-gray-300 dark:bg-gray-900 dark:border-gray-800 py-3 px-4">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <Link to="/" className="text-xl font-bold tracking-tight text-black dark:text-white hover:underline">
+    <div className="flex-1 flex flex-col bg-base-100 text-base-content min-h-screen">
+      {/* Minimalist Navigation Header with daisyUI */}
+      <header className="bg-base-200 border-b border-base-300 py-1">
+        <div className="navbar max-w-5xl mx-auto px-4">
+          <div className="navbar-start gap-2">
+            <Link to="/" className="text-xl font-bold tracking-tight hover:opacity-90">
               AX Microblog
             </Link>
-            <span className="text-xs text-gray-500 font-mono">v1.1</span>
+            <span className="badge badge-sm font-mono opacity-60">v1.1</span>
           </div>
 
-          <nav className="flex items-center gap-4 text-sm font-medium">
-            <Link to="/" className="hover:underline">Timeline</Link>
-            <Link to="/trending" className="hover:underline">Trending</Link>
-            {user?.isAdmin && <Link to="/files" className="hover:underline">Files</Link>}
-            <Link to="/profile" className="hover:underline">Profile</Link>
+          <div className="navbar-end">
+            <nav className="flex items-center gap-4 text-sm font-medium">
+              <Link to="/" className="hover:text-primary transition-colors">Timeline</Link>
+              <Link to="/trending" className="hover:text-primary transition-colors">Trending</Link>
+              {user?.isAdmin && <Link to="/files" className="hover:text-primary transition-colors">Files</Link>}
+              <Link to="/profile" className="hover:text-primary transition-colors">Profile</Link>
 
-            <span className="text-gray-300 dark:text-gray-700">|</span>
+              <span className="opacity-20">|</span>
 
-            {loading ? (
-              <span className="text-xs text-gray-500 font-mono">Loading...</span>
-            ) : user ? (
-              <div className="flex items-center gap-2">
-                <span className="text-gray-700 dark:text-gray-300">
-                  {user.userName}
-                </span>
-                <button
-                  onClick={() => logout()}
-                  className="text-red-600 hover:text-red-700 hover:underline cursor-pointer font-bold"
-                >
-                  [Logout]
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Link to="/login" className="text-blue-600 hover:underline font-bold">[Login]</Link>
-                <Link to="/register" className="text-blue-600 hover:underline font-bold">[Register]</Link>
-              </div>
-            )}
-          </nav>
+              {loading ? (
+                <span className="loading loading-spinner loading-xs text-base-content/50"></span>
+              ) : user ? (
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-sm opacity-80">{user.userName}</span>
+                  <button
+                    onClick={() => logout()}
+                    className="btn btn-ghost btn-xs text-error font-bold"
+                  >
+                    [Logout]
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1">
+                  <Link to="/login" className="btn btn-ghost btn-xs text-primary font-bold">[Login]</Link>
+                  <Link to="/register" className="btn btn-ghost btn-xs text-primary font-bold">[Register]</Link>
+                </div>
+              )}
+            </nav>
+          </div>
         </div>
       </header>
 
@@ -121,8 +121,8 @@ function AppLayout() {
         <Outlet />
       </main>
 
-      {/* GNU-Style Minimalist Footer */}
-      <footer className="bg-gray-50 border-t border-gray-200 dark:bg-gray-950 dark:border-gray-900 py-6 px-4 text-center text-xs text-gray-500 font-mono mt-auto">
+      {/* Footer using daisyUI footer */}
+      <footer className="footer footer-center p-6 bg-base-200 text-base-content/70 border-t border-base-300 font-mono text-xs mt-auto">
         <div className="max-w-5xl mx-auto flex flex-col gap-2">
           <p>
             AX Microblog is free software. You can redistribute it and/or modify it under the terms of the GNU General Public License.
@@ -136,9 +136,9 @@ function AppLayout() {
       {showScrollTop && (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-6 right-6 z-50 cursor-pointer border border-gray-400 dark:border-gray-700 bg-gray-100 hover:bg-gray-200 dark:bg-gray-900 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200 font-mono text-xs px-3 py-1.5 font-bold shadow-none rounded-none"
+          className="btn btn-neutral btn-sm fixed bottom-6 right-6 z-50 cursor-pointer shadow-md"
         >
-          [↑ Top]
+          ↑ Top
         </button>
       )}
     </div>
@@ -162,14 +162,18 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   }
 
   return (
-    <main className="max-w-5xl mx-auto p-8 py-16 text-center">
-      <h1 className="text-2xl font-bold text-red-600 mb-4">{message}</h1>
-      <p className="text-gray-700 dark:text-gray-300 mb-6">{details}</p>
-      <Link to="/" className="text-blue-600 hover:underline font-mono">
+    <main className="max-w-xl mx-auto p-8 py-16 text-center">
+      <div className="alert alert-error mb-6 text-left">
+        <div>
+          <h3 className="font-bold text-lg mb-1">{message}</h3>
+          <p className="text-xs opacity-90">{details}</p>
+        </div>
+      </div>
+      <Link to="/" className="btn btn-neutral btn-sm font-mono">
         [Back to Timeline]
       </Link>
       {stack && (
-        <pre className="w-full mt-8 p-4 bg-gray-100 dark:bg-gray-900 border border-gray-300 dark:border-gray-800 text-left overflow-x-auto text-xs font-mono">
+        <pre className="w-full mt-8 p-4 bg-base-200 border border-base-300 text-left overflow-x-auto text-xs font-mono rounded-box">
           <code>{stack}</code>
         </pre>
       )}

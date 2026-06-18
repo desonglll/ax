@@ -34,20 +34,20 @@ export default function Trending() {
 
   return (
     <div className="flex flex-col gap-4 font-mono">
-      <h2 className="text-lg font-bold border-b border-gray-300 dark:border-gray-800 pb-2 mb-4 uppercase tracking-wide">
+      <h2 className="text-lg font-bold border-b border-base-300 pb-2 mb-4 uppercase tracking-wide opacity-85">
         Trending / Recommended Posts
       </h2>
 
       {error && (
-        <div className="bg-red-50 text-red-700 border border-red-300 p-3 text-sm">
+        <div role="alert" className="alert alert-error text-xs mb-4">
           Error: {error}
         </div>
       )}
 
       {loading ? (
-        <div className="text-center py-8 text-sm text-gray-500 font-mono">Loading trending posts...</div>
+        <div className="text-center py-8 text-sm opacity-50 font-mono">Loading trending posts...</div>
       ) : posts.length === 0 ? (
-        <div className="text-center py-8 text-sm text-gray-500 font-mono">No trending posts found.</div>
+        <div className="text-center py-8 text-sm opacity-50 font-mono">No trending posts found.</div>
       ) : (
         <div className="flex flex-col">
           {posts.map((post) => (
