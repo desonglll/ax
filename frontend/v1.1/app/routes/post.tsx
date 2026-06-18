@@ -26,6 +26,16 @@ export default function PostDetail() {
   const [totalComments, setTotalComments] = useState(0);
   const [hasMore, setHasMore] = useState(true);
 
+  // Track previous offset to detect page changes
+  const [prevOffset, setPrevOffset] = useState(offset);
+  useEffect(() => {
+    if (offset !== prevOffset) {
+      sessionStorage.removeItem(`scroll_position_post_${parsedPostId}_${offset}`);
+      window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+      setPrevOffset(offset);
+    }
+  }, [offset, prevOffset, parsedPostId]);
+
   const fetchPostDetail = async () => {
     if (!parsedPostId) {
       setError("Invalid post ID.");
@@ -197,12 +207,12 @@ export default function PostDetail() {
                     Prev Comments
                   </span>
                 ) : (
-                  <a
-                    href={`/posts/${post.id}?offset=${Math.max(0, offset - limit)}`}
+                  <Link
+                    to={`/posts/${post.id}?offset=${Math.max(0, offset - limit)}`}
                     className="join-item btn btn-outline btn-xs"
                   >
                     Prev Comments
-                  </a>
+                  </Link>
                 )}
 
                 {!hasMore ? (
@@ -210,12 +220,12 @@ export default function PostDetail() {
                     Next Comments
                   </span>
                 ) : (
-                  <a
-                    href={`/posts/${post.id}?offset=${offset + limit}`}
+                  <Link
+                    to={`/posts/${post.id}?offset=${offset + limit}`}
                     className="join-item btn btn-outline btn-xs"
                   >
                     Next Comments
-                  </a>
+                  </Link>
                 )}
               </div>
 
@@ -227,7 +237,9 @@ export default function PostDetail() {
                     onChange={(e) => {
                       const pageNum = Number(e.target.value);
                       const newOffset = (pageNum - 1) * limit;
-                      window.location.href = `/posts/${post.id}?offset=${newOffset}`;
+                      const nextParams = new URLSearchParams(searchParams);
+                      nextParams.set("offset", newOffset.toString());
+                      setSearchParams(nextParams);
                     }}
                     className="select select-bordered select-xs font-mono"
                   >

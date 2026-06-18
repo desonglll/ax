@@ -88,6 +88,16 @@ export default function Home() {
   const [totalCount, setTotalCount] = useState(0);
   const [hasMore, setHasMore] = useState(true);
 
+  // Track previous offset to detect page changes
+  const [prevOffset, setPrevOffset] = useState(offset);
+  useEffect(() => {
+    if (offset !== prevOffset) {
+      sessionStorage.removeItem(`scroll_position_home_${offset}_${searchQuery}`);
+      window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+      setPrevOffset(offset);
+    }
+  }, [offset, prevOffset, searchQuery]);
+
   const fetchPosts = async (currentOffset: number, queryText: string) => {
     setLoading(true);
     try {
@@ -382,12 +392,12 @@ export default function Home() {
                       Prev Page
                     </span>
                   ) : (
-                    <a
-                      href={`/?offset=${Math.max(0, offset - limit)}${searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : ""}`}
+                    <Link
+                      to={`/?offset=${Math.max(0, offset - limit)}${searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : ""}`}
                       className="join-item btn btn-outline btn-sm"
                     >
                       Prev Page
-                    </a>
+                    </Link>
                   )}
 
                   {!hasMore ? (
@@ -395,12 +405,12 @@ export default function Home() {
                       Next Page
                     </span>
                   ) : (
-                    <a
-                      href={`/?offset=${offset + limit}${searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : ""}`}
+                    <Link
+                      to={`/?offset=${offset + limit}${searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : ""}`}
                       className="join-item btn btn-outline btn-sm"
                     >
                       Next Page
-                    </a>
+                    </Link>
                   )}
                 </div>
 
@@ -412,8 +422,9 @@ export default function Home() {
                       onChange={(e) => {
                         const pageNum = Number(e.target.value);
                         const newOffset = (pageNum - 1) * limit;
-                        const searchSuffix = searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : "";
-                        window.location.href = `/?offset=${newOffset}${searchSuffix}`;
+                        const nextParams = new URLSearchParams(searchParams);
+                        nextParams.set("offset", newOffset.toString());
+                        setSearchParams(nextParams);
                       }}
                       className="select select-bordered select-xs font-mono"
                     >
