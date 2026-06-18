@@ -53,19 +53,37 @@ pub async fn insert_new_post(
     let user_id = session.get::<i32>("user_id").unwrap().unwrap_or(0);
     new_post.set_user_id(user_id);
 
+    let attachments = new_post.attachments.clone();
     let is_title_empty = new_post.title.as_ref().map(|t| t.trim().is_empty()).unwrap_or(true);
 
-    insert_post_db(&app_state.db, new_post).await.map(|post| {
-        if is_title_empty {
-            let _ = app_state.queue_sender.send(post.id);
+    let post = insert_post_db(&app_state.db, new_post).await?;
+
+    if let Some(attachments_list) = attachments {
+        for file_id in attachments_list {
+            let _ = sqlx::query!(
+                "UPDATE files SET post_id = $1 WHERE id = $2 AND user_id = $3",
+                post.id,
+                file_id,
+                user_id
+            )
+            .execute(&app_state.db)
+            .await;
         }
-        let api_response = ApiResponse::new(
-            200,
-            "Insert Post Successful".to_string(),
-            Some(DataBuilder::new().set_data(post).build()),
-        );
-        HttpResponse::Ok().json(api_response)
-    })
+    }
+
+    if is_title_empty {
+        let _ = app_state.queue_sender.send(post.id);
+    }
+
+    let files = crate::dbaccess::file::get_file_attachments_by_post_db(&app_state.db, post.id).await.unwrap_or_default();
+    let post_detail = crate::models::post::PostDetail { post, attachments: files };
+
+    let api_response = ApiResponse::new(
+        200,
+        "Insert Post Successful".to_string(),
+        Some(DataBuilder::new().set_data(post_detail).build()),
+    );
+    Ok(HttpResponse::Ok().json(api_response))
 }
 
 // Read
@@ -90,16 +108,15 @@ pub async fn get_post_detail(
 ) -> Result<HttpResponse, AxError> {
     app_state.add_request_count();
     let (post_id,) = path.into_inner();
-    get_post_detail_db(&app_state.db, post_id)
-        .await
-        .map(|resp| {
-            let api_response = ApiResponse::new(
-                200,
-                "Get Post Successful".to_string(),
-                Some(DataBuilder::new().set_data(resp).build()),
-            );
-            HttpResponse::Ok().json(api_response)
-        })
+    let post = get_post_detail_db(&app_state.db, post_id).await?;
+    let files = crate::dbaccess::file::get_file_attachments_by_post_db(&app_state.db, post.id).await.unwrap_or_default();
+    let post_detail = crate::models::post::PostDetail { post, attachments: files };
+    let api_response = ApiResponse::new(
+        200,
+        "Get Post Successful".to_string(),
+        Some(DataBuilder::new().set_data(post_detail).build()),
+    );
+    Ok(HttpResponse::Ok().json(api_response))
 }
 /*
 curl -X GET http://localhost:8000/api/posts/get
@@ -122,19 +139,24 @@ pub async fn get_post_list(
 ) -> Result<HttpResponse, AxError> {
     app_state.add_request_count();
 
-    get_post_list_db(&app_state.db, query).await.map(|resp| {
-        let api_response = ApiResponse::new(
-            200,
-            "Success".to_string(),
-            Some(
-                PostListDataBuilder::new()
-                    .set_data(resp.0)
-                    .set_pagination(resp.1)
-                    .build(),
-            ),
-        );
-        HttpResponse::Ok().json(api_response)
-    })
+    let (posts, pagination) = get_post_list_db(&app_state.db, query).await?;
+    let mut posts_with_files = Vec::new();
+    for post in posts {
+        let files = crate::dbaccess::file::get_file_attachments_by_post_db(&app_state.db, post.id).await.unwrap_or_default();
+        posts_with_files.push(crate::models::post::PostDetail { post, attachments: files });
+    }
+
+    let api_response = ApiResponse::new(
+        200,
+        "Success".to_string(),
+        Some(
+            PostListDataBuilder::new()
+                .set_data(posts_with_files)
+                .set_pagination(pagination)
+                .build(),
+        ),
+    );
+    Ok(HttpResponse::Ok().json(api_response))
 }
 
 /// Retrieve recommended/trending posts for the active user.
@@ -170,11 +192,16 @@ pub async fn get_trending_posts(
 
     // Fetch post records for the recommended identifiers.
     let posts = get_posts_by_ids(&app_state.db, recommended_post_ids).await?;
+    let mut posts_with_files = Vec::new();
+    for post in posts {
+        let files = crate::dbaccess::file::get_file_attachments_by_post_db(&app_state.db, post.id).await.unwrap_or_default();
+        posts_with_files.push(crate::models::post::PostDetail { post, attachments: files });
+    }
 
     let api_response = ApiResponse::new(
         200,
         "Success".to_string(),
-        Some(DataBuilder::new().set_data(posts).build()),
+        Some(DataBuilder::new().set_data(posts_with_files).build()),
     );
 
     Ok(HttpResponse::Ok().json(api_response))

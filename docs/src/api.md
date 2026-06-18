@@ -100,11 +100,47 @@ Creates a new post. Requires authentication.
 - **Request Body**:
   ```json
   {
-    "content": "Hello world"
+    "title": "Catchy Title (Optional)",
+    "content": "Hello world",
+    "attachments": [
+      "d78f2379-cb4a-4467-bc18-97c7e5cb2fb6"
+    ]
   }
   ```
 - **Response (200 OK)**:
-  Returns the created post record.
+  Returns the created post record with its attachments list.
+  ```json
+  {
+    "id": "76495db6-0cb2-4a00-9844-4638706d87e0",
+    "title": "Catchy Title (Optional)",
+    "content": "Hello world",
+    "createdAt": "2026-06-18T18:00:00Z",
+    "updatedAt": "2026-06-18T18:00:00Z",
+    "userId": 1,
+    "replyTo": null,
+    "userName": "root",
+    "likeCount": 0,
+    "dislikeCount": 0,
+    "engagementRate": 0.0,
+    "attachments": [
+      {
+        "id": "d78f2379-cb4a-4467-bc18-97c7e5cb2fb6",
+        "name": "image.png",
+        "path": "/uploads/image.png",
+        "size": 1024,
+        "mime": "image/png",
+        "userId": 1,
+        "userName": "root",
+        "createdAt": "2026-06-18T18:00:00Z",
+        "updatedAt": "2026-06-18T18:00:00Z",
+        "isDeleted": false,
+        "isPublic": true,
+        "md5": "d41d8cd98f00b204e9800998ecf8427e",
+        "postId": "76495db6-0cb2-4a00-9844-4638706d87e0"
+      }
+    ]
+  }
+  ```
 
 ### GET /api/posts/get
 Retrieves the paginated list of posts.
@@ -114,28 +150,29 @@ Retrieves the paginated list of posts.
   - `order_by` (default: "id")
   - `sort` (default: "desc")
 - **Response (200 OK)**:
-  Returns a list of posts and a pagination metadata object.
+  Returns a list of post details (each including an `attachments` array) and a pagination metadata object.
 
 ### GET /api/posts/get/{post_id}
 Retrieves a post by its ID.
 - **Response (200 OK)**:
-  Returns the post record.
+  Returns the post detail record including its `attachments` array.
 
 ### GET /api/posts/trending
 Retrieves trending posts recommended for the current user.
 - **Response (200 OK)**:
-  Returns recommended post array.
+  Returns recommended post detail array including nested `attachments`.
 
 ### PUT /api/posts/put/{post_id}
-Updates the content of a post. The request must originate from the post owner or an administrator.
+Updates the title or content of a post. The request must originate from the post owner or an administrator.
 - **Request Body**:
   ```json
   {
+    "title": "New Title",
     "content": "Updated content"
   }
   ```
 - **Response (200 OK)**:
-  Returns the updated post record.
+  Returns the updated post detail record with its `attachments`.
 
 ### DELETE /api/posts/delete/{post_id}
 Deletes the post. The request must originate from the post owner or an administrator.

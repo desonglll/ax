@@ -69,7 +69,7 @@ function AppLayout() {
           <nav className="flex items-center gap-4 text-sm font-medium">
             <Link to="/" className="hover:underline">Timeline</Link>
             <Link to="/trending" className="hover:underline">Trending</Link>
-            <Link to="/files" className="hover:underline">Files</Link>
+            {user?.isAdmin && <Link to="/files" className="hover:underline">Files</Link>}
             <Link to="/profile" className="hover:underline">Profile</Link>
 
             <span className="text-gray-300 dark:text-gray-700">|</span>

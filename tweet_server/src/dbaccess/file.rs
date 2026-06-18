@@ -19,10 +19,22 @@ use crate::{errors::AxError, models::file::File};
 pub async fn insert_file_db(pool: &PgPool, create_file: File) -> Result<File, AxError> {
     let file_row = sqlx::query_as!(
         File,
-        "insert into files (id, name, path, size, content_type, created_at, updated_at, user_id, description, checksum, is_deleted, is_pub) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) returning id, name, path, size, content_type, created_at, updated_at, user_id, description, checksum, is_deleted, is_pub",
-      create_file.id, create_file.name, create_file.path, create_file.size, create_file.content_type, create_file.created_at, create_file.updated_at, create_file.user_id, create_file.description, create_file.checksum, create_file.is_deleted, create_file.is_pub
+        "insert into files (id, name, path, size, content_type, created_at, updated_at, user_id, description, checksum, is_deleted, is_pub, post_id) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) returning id, name, path, size, content_type, created_at, updated_at, user_id, description, checksum, is_deleted, is_pub, post_id",
+      create_file.id, create_file.name, create_file.path, create_file.size, create_file.content_type, create_file.created_at, create_file.updated_at, create_file.user_id, create_file.description, create_file.checksum, create_file.is_deleted, create_file.is_pub, create_file.post_id
     ).fetch_one(pool).await?;
     Ok(file_row)
+}
+
+/// Retrieve all attachments associated with a given post.
+pub async fn get_file_attachments_by_post_db(pool: &PgPool, post_id: Uuid) -> Result<Vec<File>, AxError> {
+    let files = sqlx::query_as!(
+        File,
+        "select id, name, path, size, content_type, created_at, updated_at, user_id, description, checksum, is_deleted, is_pub, post_id from files where post_id = $1 and is_deleted = false",
+        post_id
+    )
+    .fetch_all(pool)
+    .await?;
+    Ok(files)
 }
 
 /// Retrieve details of a file by its identifier.
@@ -119,7 +131,7 @@ pub async fn set_file_deleted_by_checksum_db(
 ) -> Result<File, AxError> {
     let file_row = sqlx::query_as!(
         File,
-        "update files set is_deleted = $1 where checksum = $2 returning id, name, path, size, content_type, created_at, updated_at, user_id, description, checksum, is_deleted, is_pub",
+        "update files set is_deleted = $1 where checksum = $2 returning id, name, path, size, content_type, created_at, updated_at, user_id, description, checksum, is_deleted, is_pub, post_id",
         true,
         checksum)
         .fetch_one(pool)

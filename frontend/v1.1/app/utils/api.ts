@@ -41,6 +41,7 @@ export interface Post {
   likeCount?: number;
   dislikeCount?: number;
   engagementRate?: number;
+  attachments?: FileRecord[];
 }
 
 export interface Comment {
@@ -147,8 +148,8 @@ export const userApi = {
 // Post Endpoints
 // ============================================================================
 export const postApi = {
-  create: async (content: string, title: string): Promise<ApiResponse<Post>> => {
-    const response = await api.post("/posts/post", { content, title });
+  create: async (content: string, title: string, attachments?: string[]): Promise<ApiResponse<Post>> => {
+    const response = await api.post("/posts/post", { content, title, attachments });
     return response.data;
   },
   list: async (params?: { limit?: number; offset?: number; order_by?: string; sort?: string; search?: string }): Promise<ApiResponse<Post[]>> => {
@@ -246,13 +247,13 @@ export const fileApi = {
     const response = await api.get("/files/pub");
     return response.data;
   },
-  uploadPublic: async (formData: FormData): Promise<ApiResponse<FileRecord>> => {
+  uploadPublic: async (formData: FormData): Promise<ApiResponse<FileRecord[]>> => {
     const response = await api.post("/files/upload-public", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return response.data;
   },
-  uploadPrivate: async (formData: FormData): Promise<ApiResponse<FileRecord>> => {
+  uploadPrivate: async (formData: FormData): Promise<ApiResponse<FileRecord[]>> => {
     const response = await api.post("/files/upload-private", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });

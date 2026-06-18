@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { postApi, getSystemStats, type Post } from "../utils/api";
+import { postApi, fileApi, getSystemStats, type Post } from "../utils/api";
 import { useScrollPreservation } from "../utils/scroll";
 import { useAuth } from "../contexts/AuthContext";
 import { PostItem } from "../components/PostItem";
@@ -62,6 +62,7 @@ export default function Home() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [newContent, setNewContent] = useState("");
   const [newTitle, setNewTitle] = useState("");
+  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -118,10 +119,28 @@ export default function Home() {
     setError(null);
 
     try {
-      const res = await postApi.create(newContent.trim(), newTitle.trim());
+      let attachmentIds: string[] = [];
+      if (selectedFiles && selectedFiles.length > 0) {
+        const formData = new FormData();
+        for (let i = 0; i < selectedFiles.length; i++) {
+          formData.append("file", selectedFiles[i]);
+        }
+        const uploadRes = await fileApi.uploadPublic(formData);
+        if (uploadRes.code === 200 && uploadRes.body.data) {
+          attachmentIds = uploadRes.body.data.map((file) => file.id);
+        } else {
+          throw new Error("Failed to upload attachments.");
+        }
+      }
+
+      const res = await postApi.create(newContent.trim(), newTitle.trim(), attachmentIds);
       if (res.code === 200 && res.body.data) {
         setNewContent("");
         setNewTitle("");
+        setSelectedFiles(null);
+        const fileInput = document.getElementById("post-files") as HTMLInputElement;
+        if (fileInput) fileInput.value = "";
+
         // Reset to first page to see the new post
         if (offset === 0 && !searchQuery) {
           fetchPosts(0, "");
@@ -207,6 +226,17 @@ export default function Home() {
               className="w-full border border-gray-300 dark:border-gray-800 p-2 text-sm bg-gray-50 dark:bg-gray-900 focus:outline-none focus:border-black dark:focus:border-white mb-3 resize-y font-sans text-gray-800 dark:text-gray-200"
               required
             />
+            <div className="mb-4">
+              <label className="block text-xs font-bold uppercase mb-1">Attachments (optional):</label>
+              <input
+                id="post-files"
+                type="file"
+                multiple
+                disabled={submitting}
+                onChange={(e) => setSelectedFiles(e.target.files)}
+                className="w-full text-xs font-sans text-gray-700 dark:text-gray-300 file:mr-2 file:py-1 file:px-2 file:border file:border-gray-300 dark:file:border-gray-800 file:bg-gray-100 dark:file:bg-gray-900 file:text-xs file:font-mono hover:file:bg-gray-200 cursor-pointer focus:outline-none"
+              />
+            </div>
             <div className="flex justify-end">
               <button
                 type="submit"

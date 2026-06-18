@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { postApi, reactionApi, type Post } from "../utils/api";
+import { postApi, fileApi, reactionApi, type Post } from "../utils/api";
 import { useAuth } from "../contexts/AuthContext";
 
 interface PostItemProps {
@@ -241,6 +241,49 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onDeleteSuccess, isDet
               </>
             );
           })()}
+        </div>
+      )}
+
+      {/* Attachments list */}
+      {post.attachments && post.attachments.length > 0 && (
+        <div className="border-t border-dashed border-gray-200 dark:border-gray-800 pt-3 pb-2 mb-4">
+          <span className="text-[10px] font-bold uppercase block text-gray-500 mb-2 font-mono">Attachments:</span>
+          <div className="flex flex-col gap-2">
+            {post.attachments.map((file) => {
+              const isImage = file.contentType.startsWith("image/");
+              const downloadUrl = fileApi.getDownloadUrl(file.id);
+              return (
+                <div key={file.id} className="flex flex-col items-start gap-1 font-mono text-xs">
+                  {isImage ? (
+                    <div className="max-w-full">
+                      <a href={downloadUrl} target="_blank" rel="noopener noreferrer">
+                        <img
+                          src={downloadUrl}
+                          alt={file.name}
+                          className="max-w-md max-h-96 border border-gray-300 dark:border-gray-800 object-contain hover:opacity-95"
+                        />
+                      </a>
+                      <span className="text-[10px] text-gray-400 mt-1 block">
+                        {file.name} ({Math.round(file.size / 1024)} KB)
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5 border border-gray-300 dark:border-gray-800 p-2 bg-gray-50 dark:bg-gray-900 rounded-sm">
+                      <span className="text-gray-500">📄</span>
+                      <a
+                        href={downloadUrl}
+                        download
+                        className="text-blue-600 hover:underline font-bold"
+                      >
+                        {file.name}
+                      </a>
+                      <span className="text-gray-400">({Math.round(file.size / 1024)} KB)</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 

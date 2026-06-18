@@ -10,9 +10,11 @@ This document logs the development history and version alterations of Project Ax
 - Added integration test coverage (`test_queue_worker_process_post`) to verify correct enqueuing, mock OpenAI API response processing, and post title updating.
 - Implemented text-based post search functionality. Extended the database query in `post.rs` to support dynamic query keyword filtering using `content ILIKE $1` on the PostgreSQL level, and added a search input bar above the home page timeline.
 - Added direct page selection jumping. Configured a `<select>` dropdown next to timeline and comments pagination controls to allow standard HTTP page-reload navigation directly to any page number while preserving active search query filters.
+- Implemented multi-file attachments support for posts. Users can upload and link multiple public files when publishing a post, which are stored and associated via a new `post_id` column in the `files` table.
 
 ### Changed
 - Configured post titles to be optional in the frontend creation form and editing view, removing the `required` HTML attributes and updating validation logic.
+- Restricted access to the files list manager (`/files` page and navbar tab) exclusively to administrators. Regular users can upload files through post attachments but cannot view the overall files list.
 
 ### Fixed
 - Fixed comment creation API payload field mismatch in `commentApi.create` where the frontend sent `replyType` instead of `replyToType`, causing the backend to reject replies with HTTP status code 400.

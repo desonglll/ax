@@ -60,6 +60,21 @@ Stores aggregated statistics for user activity.
 - `recent_activity_score` (FLOAT)
 - `engagement_rate` (FLOAT)
 
+### 6. `files`
+Stores file metadata for user uploads and post attachments.
+- `id` (UUID, Primary Key): Unique identifier.
+- `name` (VARCHAR): Original filename.
+- `path` (VARCHAR): Storage path on disk.
+- `size` (BIGINT): File size in bytes.
+- `content_type` (VARCHAR): MIME content type.
+- `created_at`, `updated_at` (TIMESTAMPTZ)
+- `user_id` (INTEGER): Uploader's user ID.
+- `description` (TEXT): Optional description.
+- `checksum` (VARCHAR): SHA-256 hash.
+- `is_deleted` (BOOLEAN): Soft delete flag.
+- `is_pub` (BOOLEAN): Publicly readable flag.
+- `post_id` (UUID, Foreign Key referencing `posts(id)`): Attached post ID (optional).
+
 ---
 
 ## Triggers and Stored Procedures

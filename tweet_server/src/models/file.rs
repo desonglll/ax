@@ -6,7 +6,7 @@ use uuid::Uuid;
 /// File metadata data model.
 ///
 /// This struct corresponds to records in the `files` database table.
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct File {
     pub id: Uuid,
@@ -21,6 +21,7 @@ pub struct File {
     pub checksum: String,
     pub is_deleted: bool,
     pub is_pub: bool,
+    pub post_id: Option<Uuid>,
 }
 
 impl File {
@@ -68,6 +69,7 @@ impl File {
             checksum,
             is_deleted: false,
             is_pub,
+            post_id: None,
         }
     }
 }

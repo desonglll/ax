@@ -7,6 +7,20 @@ import { Link } from "react-router";
 export default function Files() {
   const { user } = useAuth();
 
+  if (!user || !user.isAdmin) {
+    return (
+      <div className="max-w-5xl mx-auto p-4 font-mono">
+        <div className="border border-red-500 bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300 p-4 text-center">
+          <h2 className="font-bold mb-2 uppercase text-sm">Access Denied</h2>
+          <p className="text-xs">You do not have permission to view or manage files.</p>
+          <div className="mt-4 text-xs">
+            <Link to="/" className="underline font-bold">[Back to Timeline]</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const [publicFiles, setPublicFiles] = useState<FileRecord[]>([]);
   const [userFiles, setUserFiles] = useState<FileRecord[]>([]);
   const [allFiles, setAllFiles] = useState<FileRecord[]>([]); // For admin

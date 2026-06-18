@@ -34,6 +34,7 @@ pub struct CreatePost {
     pub user_id: Option<i32>,
     pub reply_to: Option<uuid::Uuid>,
     pub user_name: Option<String>,
+    pub attachments: Option<Vec<uuid::Uuid>>,
 }
 
 impl CreatePost {
@@ -51,6 +52,7 @@ impl CreatePost {
             user_id: Some(1),
             reply_to: Some(uuid::Uuid::nil()),
             user_name: Some(String::from("")),
+            attachments: None,
         }
     }
 }
@@ -63,6 +65,7 @@ impl From<web::Json<CreatePost>> for CreatePost {
             user_id: value.user_id,
             reply_to: value.reply_to,
             user_name: value.user_name.clone(),
+            attachments: value.attachments.clone(),
         }
     }
 }
@@ -84,4 +87,13 @@ impl From<web::Json<UpdatePost>> for UpdatePost {
             content: value.content.clone(),
         }
     }
+}
+
+/// Detailed post view with flattened post fields and attached file records.
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct PostDetail {
+    #[serde(flatten)]
+    pub post: Post,
+    pub attachments: Vec<crate::models::file::File>,
 }
