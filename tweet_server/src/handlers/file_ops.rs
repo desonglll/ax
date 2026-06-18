@@ -10,10 +10,10 @@ use actix_web::{web, HttpResponse, Responder};
 use futures::StreamExt;
 use percent_encoding::{percent_encode, NON_ALPHANUMERIC};
 use sha2::{Digest, Sha256};
+use uuid::Uuid;
 
 use crate::{
     dbaccess::file::{insert_file_db, set_file_deleted_by_checksum_db},
-    errors::AxError,
     models::file::File,
     state::AppState,
 };
@@ -52,6 +52,8 @@ pub async fn upload(
         Log::info(format!("User {} logged in.", user_name));
 
         let mut result: Vec<File> = Vec::new();
+        let mut description: Option<String> = None;
+        let mut uploaded_files: Vec<(String, String, usize, String, String)> = Vec::new();
 
         while let Some(item) = payload.next().await {
             let mut field = item?;
@@ -59,13 +61,61 @@ pub async fn upload(
 
             if let Some(content_disposition) = content_disposition {
                 if let Some(file_name) = content_disposition.get_filename() {
-                    let file_result =
-                        process_file_field(&mut field, file_name, is_pub, &session, &app_state)
-                            .await;
-                    result.push(file_result.unwrap());
+                    let file_name = file_name.to_string();
+                    let temp_id = Uuid::new_v4();
+                    let tmp_full_path = get_path(format!("{}.tmp", temp_id));
+                    
+                    let mut file = StdFile::create(tmp_full_path.clone())
+                        .map_err(|e| {
+                            eprintln!("Error creating file: {:?}", e);
+                            actix_web::error::ErrorInternalServerError(e)
+                        })?;
+                    
+                    let (size, hash_hex) = write_chunks_to_file(&mut field, &mut file).await?;
+                    let content_type = field.content_type().unwrap().to_string();
+                    
+                    uploaded_files.push((file_name, tmp_full_path, size, content_type, hash_hex));
                 } else if let Some(name) = content_disposition.get_name() {
                     let value_str = process_text_field(&mut field).await;
-                    println!("Field Name: {}, Value: {}", name, value_str);
+                    if name == "description" {
+                        description = Some(value_str);
+                    }
+                }
+            }
+        }
+
+        for (file_name, tmp_path, size, content_type, checksum) in uploaded_files {
+            // Instantiate File model (generates Uuid and final storage path)
+            let new_file = File::new(
+                &session,
+                file_name,
+                size as i64,
+                content_type,
+                description.clone(),
+                checksum.clone(),
+                is_pub,
+            );
+
+            // Rename file to its final UUID-based path
+            if let Err(e) = std::fs::rename(tmp_path.clone(), new_file.path.clone()) {
+                eprintln!("Error renaming file from temp to final path: {:?}", e);
+                let _ = std::fs::remove_file(tmp_path);
+                return Ok(HttpResponse::InternalServerError().finish());
+            }
+
+            // Soft-delete older duplicate if any
+            if let Ok(_) = set_file_deleted_by_checksum_db(&app_state.db, new_file.checksum.clone()).await {
+                Log::info("Deleted existing record.".to_string());
+            }
+
+            Log::info("Inserting into File table.".to_string());
+            match insert_file_db(&app_state.db, new_file).await {
+                Ok(saved_file) => {
+                    result.push(saved_file);
+                }
+                Err(e) => {
+                    eprintln!("Error inserting file to db: {:?}", e);
+                    return Err(e.into());
                 }
             }
         }
@@ -87,65 +137,6 @@ pub async fn upload(
     }
 }
 
-/// Process a file field from a multipart request.
-///
-/// This helper writes file content to a temporary location, renames it upon successful write,
-/// calculates its SHA-256 checksum, soft-deletes older duplicates, and inserts the metadata
-/// record into the database.
-///
-/// # Parameters
-///
-/// - `field`: Reference to the multipart field object.
-/// - `file_name`: The name of the file.
-/// - `is_pub`: Boolean indicating if the file is public.
-/// - `session`: Reference to the request session.
-/// - `app_state`: Reference to the shared state.
-///
-/// # Returns
-///
-/// The inserted [`File`] record on success, or an [`AxError`] on failure.
-async fn process_file_field(
-    field: &mut Field,
-    file_name: &str,
-    is_pub: bool,
-    session: &Session,
-    app_state: &web::Data<AppState>,
-) -> Result<File, AxError> {
-    let file_name = file_name.to_string();
-    let full_path = get_path(file_name.clone());
-    let tmp_full_path = get_path(format!("{}.tmp", file_name.clone()));
-
-    Log::info(format!("tmp_full_path: {}", tmp_full_path));
-
-    let mut file = StdFile::create(tmp_full_path.clone())
-        .map_err(|e| {
-            eprintln!("Error creating file: {:?}", e);
-            HttpResponse::InternalServerError().finish()
-        })
-        .unwrap();
-
-    let (size, hash_hex) = write_chunks_to_file(field, &mut file).await?;
-    rename_file(tmp_full_path, full_path.clone())?;
-
-    let content_type = field.content_type().unwrap().to_string();
-    let new_file = File::new(
-        session,
-        file_name,
-        size.try_into().unwrap(),
-        content_type,
-        Some(String::from("")),
-        hash_hex,
-        is_pub,
-    );
-
-    if (set_file_deleted_by_checksum_db(&app_state.db, new_file.checksum.clone()).await).is_ok() {
-        Log::info("Deleted existing record.".to_string())
-    }
-
-    Log::info("Inserting into File table.".to_string());
-    insert_file_db(&app_state.db, new_file).await
-}
-
 /// Write multipart data chunks to a file.
 ///
 /// This function reads chunks from FIELD, writes them into FILE, and updates
@@ -153,8 +144,8 @@ async fn process_file_field(
 ///
 /// # Parameters
 ///
-/// - `FIELD`: Reference to the multipart field.
-/// - `FILE`: Reference to the target standard file handle.
+/// - `field`: Reference to the multipart field.
+/// - `file`: Reference to the target standard file handle.
 ///
 /// # Returns
 ///
@@ -180,40 +171,16 @@ async fn write_chunks_to_file(
         file.write_all(&chunk)
             .map_err(|e| {
                 eprintln!("Error writing to file: {:?}", e);
-                HttpResponse::InternalServerError().finish()
-            })
-            .unwrap();
+                actix_web::error::ErrorInternalServerError(e)
+            })?;
 
         hasher.update(&chunk);
     }
 
-    let hash_hex = hex::encode(format!("{:x}", hasher.finalize()));
+    let hash_hex = hex::encode(hasher.finalize());
     Log::info("File writing successful.".to_string());
 
     Ok((size, hash_hex))
-}
-
-/// Rename a file on disk.
-///
-/// This helper renames a file from OLD_PATH to NEW_PATH.
-///
-/// # Parameters
-///
-/// - `old_path`: The current file path.
-/// - `new_path`: The target file path.
-///
-/// # Returns
-///
-/// `Ok(())` on success, or an `actix_web::Error`.
-fn rename_file(old_path: String, new_path: String) -> Result<(), actix_web::Error> {
-    std::fs::rename(old_path.clone(), new_path.clone())
-        .map_err(|e| {
-            eprintln!("Error renaming file: {:?}", e);
-            HttpResponse::InternalServerError().finish()
-        })
-        .unwrap();
-    Log::info("File renamed successfully.".to_string());
-    Ok(())
 }
 
 /// Read text data from a multipart field.

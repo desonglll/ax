@@ -53,9 +53,10 @@ impl File {
             .to_str()
             .unwrap()
             .to_string();
-        let path = format!("{}/uploads/{}", base_url, name);
+        let id = Uuid::new_v4();
+        let path = format!("{}/uploads/{}", base_url, id);
         Self {
-            id: Uuid::new_v4(),
+            id,
             name,
             path,
             size,

@@ -16,8 +16,9 @@ use crate::{
     state::AppState,
 };
 
-use super::auth::check_login;
+use super::auth::login_in_unauthentic;
 use super::file_ops::{encode_filename, upload};
+use crate::extractors::{api_response::ApiResponse, data::DataBuilder};
 
 /// Retrieve the list of all files (Administrator only).
 ///
@@ -36,17 +37,23 @@ pub async fn get_file_list(
     session: Session,
     app_state: web::Data<AppState>,
 ) -> Result<HttpResponse, AxError> {
-    if check_login(&session).await.unwrap_or(false) {
-        if is_admin(session).await.unwrap_or(false) {
-            get_file_list_db(&app_state.db)
-                .await
-                .map(|resp| HttpResponse::Ok().json(resp))
-        } else {
-            Ok(HttpResponse::BadRequest()
-                .json(AxError::AuthenticationError("Not admin".to_owned())))
-        }
+    if let Ok(resp) = login_in_unauthentic(&session).await {
+        return Ok(resp);
+    }
+    if is_admin(session).await.unwrap_or(false) {
+        let resp = get_file_list_db(&app_state.db).await?;
+        let api_response = ApiResponse::new(
+            200,
+            "Query successful".to_string(),
+            Some(DataBuilder::new().set_data(resp).build()),
+        );
+        Ok(HttpResponse::Ok().json(api_response))
     } else {
-        Ok(HttpResponse::BadRequest().json(AxError::AuthenticationError("Not login".to_owned())))
+        Ok(HttpResponse::Forbidden().json(ApiResponse::<()>::new(
+            403,
+            "Not admin".to_owned(),
+            None,
+        )))
     }
 }
 
@@ -69,16 +76,19 @@ pub async fn get_user_file(
     app_state: web::Data<AppState>,
     query: web::Query<FileFilter>,
 ) -> Result<HttpResponse, AxError> {
-    if check_login(&session).await.unwrap_or(false) {
-        let user_id = query.user_id.unwrap_or_else(|| {
-            session.get::<i32>("user_id").unwrap_or_default().unwrap_or(0)
-        });
-        get_file_private_list_db(&app_state.db, user_id)
-            .await
-            .map(|resp| HttpResponse::Ok().json(resp))
-    } else {
-        Ok(HttpResponse::BadRequest().json(AxError::AuthenticationError("Not login".to_owned())))
+    if let Ok(resp) = login_in_unauthentic(&session).await {
+        return Ok(resp);
     }
+    let user_id = query.user_id.unwrap_or_else(|| {
+        session.get::<i32>("user_id").unwrap_or_default().unwrap_or(0)
+    });
+    let resp = get_file_private_list_db(&app_state.db, user_id).await?;
+    let api_response = ApiResponse::new(
+        200,
+        "Query successful".to_string(),
+        Some(DataBuilder::new().set_data(resp).build()),
+    );
+    Ok(HttpResponse::Ok().json(api_response))
 }
 
 /// Retrieve all public files.
@@ -95,16 +105,16 @@ pub async fn get_user_file(
 ///
 /// An HTTP response enclosing public file records on success, or an authentication error.
 pub async fn get_pub_file_list(
-    session: Session,
+    _session: Session,
     app_state: web::Data<AppState>,
 ) -> Result<HttpResponse, AxError> {
-    if check_login(&session).await.unwrap_or(false) {
-        get_file_public_list_db(&app_state.db)
-            .await
-            .map(|resp| HttpResponse::Ok().json(resp))
-    } else {
-        Ok(HttpResponse::BadRequest().json(AxError::AuthenticationError("Not login".to_owned())))
-    }
+    let resp = get_file_public_list_db(&app_state.db).await?;
+    let api_response = ApiResponse::new(
+        200,
+        "Query successful".to_string(),
+        Some(DataBuilder::new().set_data(resp).build()),
+    );
+    Ok(HttpResponse::Ok().json(api_response))
 }
 
 /// Download a file by its identifier.
@@ -359,9 +369,10 @@ mod tests {
         let app_state = get_demo_state().await;
         let session = get_demo_session().await;
         let resp = get_file_list(session, app_state).await.unwrap();
-        assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
+        assert_eq!(resp.status(), StatusCode::FORBIDDEN);
         let body_json: Value = http_response_to_json(resp).await;
-        assert_eq!(body_json["AuthenticationError"], "Not admin");
+        assert_eq!(body_json["code"], 403);
+        assert_eq!(body_json["message"], "Not admin");
     }
 
     #[actix_rt::test]
@@ -370,11 +381,10 @@ mod tests {
         let req = actix_web::test::TestRequest::get().to_http_request();
         let session = actix_session::SessionExt::get_session(&req);
         let resp = get_file_list(session, app_state).await.unwrap();
-        assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
+        assert_eq!(resp.status(), StatusCode::OK);
         let body_json: Value = http_response_to_json(resp).await;
-        // check_login matches Ok(_) on empty session (Ok(None)), so it passes login check
-        // but is_admin returns false, yielding "Not admin"
-        assert_eq!(body_json["AuthenticationError"], "Not admin");
+        assert_eq!(body_json["code"], 401);
+        assert_eq!(body_json["message"], "Please Login");
     }
 
     #[actix_rt::test]
@@ -391,6 +401,8 @@ mod tests {
         let query = web::Query(filter);
         let resp = get_user_file(session, app_state, query).await.unwrap();
         assert_eq!(resp.status(), StatusCode::OK);
+        let body_json: Value = http_response_to_json(resp).await;
+        assert_eq!(body_json["code"], 200);
     }
 
     #[actix_rt::test]
@@ -407,9 +419,10 @@ mod tests {
         };
         let query = web::Query(filter);
         let resp = get_user_file(session, app_state, query).await.unwrap();
-        // check_login returns true for empty session (Ok(None) matches Ok(_)),
-        // so this actually passes login check and returns 200
         assert_eq!(resp.status(), StatusCode::OK);
+        let body_json: Value = http_response_to_json(resp).await;
+        assert_eq!(body_json["code"], 401);
+        assert_eq!(body_json["message"], "Please Login");
     }
 
     #[actix_rt::test]
@@ -418,6 +431,8 @@ mod tests {
         let session = get_demo_session().await;
         let resp = get_pub_file_list(session, app_state).await.unwrap();
         assert_eq!(resp.status(), StatusCode::OK);
+        let body_json: Value = http_response_to_json(resp).await;
+        assert_eq!(body_json["code"], 200);
     }
 
     #[actix_rt::test]
@@ -426,8 +441,8 @@ mod tests {
         let req = actix_web::test::TestRequest::get().to_http_request();
         let session = actix_session::SessionExt::get_session(&req);
         let resp = get_pub_file_list(session, app_state).await.unwrap();
-        // check_login returns true for empty session (Ok(None) matches Ok(_)),
-        // so this actually passes login check and returns 200
         assert_eq!(resp.status(), StatusCode::OK);
+        let body_json: Value = http_response_to_json(resp).await;
+        assert_eq!(body_json["code"], 200);
     }
 }
