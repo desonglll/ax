@@ -122,7 +122,8 @@ When working on the frontend of Project Ax under `frontend/v1.1`, you MUST:
 ## 9. Documentation Synchronicity Rule
 
 > [!CAUTION]
-> **CRITICAL REQUIREMENT**: Whenever you modify the codebase, you MUST update all relevant documentation.
+> **CRITICAL REQUIREMENT**: Whenever you modify or add features to the codebase, you MUST update all relevant documentation and markdown files.
+> - **Feature Documentation**: Always document the new feature's contents, detailed description, usage guidelines, and debugging methods.
 > - If an API path, query param, request/response body, or status code changes: update `docs/src/api.md`.
 > - If database tables, schemas, or database triggers change: update `docs/src/database.md`.
 > - If frontend pages, flows, or design configurations change: update `docs/src/frontend_development.md`.

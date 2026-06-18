@@ -33,3 +33,37 @@ A typical request progresses through the following stages:
 6. The handler makes a parameterized database call through the appropriate module in `src/dbaccess`.
 7. SQLx executes the query against the PostgreSQL database.
 8. The handler returns a formatted JSON response wrapped in `ApiResponse`.
+
+---
+
+## Background Services & Task Queues
+
+Project Ax includes lightweight background services to handle asynchronous, non-blocking operations like AI-powered content completion.
+
+### AI Post Title Completion Queue
+
+1. **Description**:
+   An asynchronous in-memory task queue implemented using `tokio::sync::mpsc::unbounded_channel`. 
+   - A background thread runs the `QueueWorker` loop, receiving post UUIDs.
+   - For each UUID, the worker retrieves the post content, invokes the Local AI library (`ai` crate), and writes the generated title back to PostgreSQL.
+   - When a post is created via `/api/posts/post` without a title, the post ID is pushed onto the queue.
+   - On server startup, a database scanner (`scan_and_enqueue_empty_titles`) runs once, enqueuing all historical posts without a title (`title = ''` or `title IS NULL`).
+
+2. **Usage**:
+   - Create a post without specifying a title. The title will automatically populate in the background within seconds.
+   - Restart the server. Any post that was left with a blank title will be automatically processed.
+
+3. **Debugging & Monitoring**:
+   - **Console Logs**: The queue worker outputs system logs at each processing step:
+     - `Queue Worker: Processing post_id=...`
+     - `Queue Worker: Calling AI API to generate title...`
+     - `Queue Worker: Successfully updated title for post_id=...`
+   - **Database State**: Inspect queue progress by querying for empty titles:
+     ```sql
+     SELECT id, title, content FROM posts WHERE title = '';
+     ```
+   - **Isolated Testing**: Run the mock-server integration test suite:
+     ```bash
+     cargo nextest run services::queue::tests::test_queue_worker_process_post --nocapture
+     ```
+

@@ -34,7 +34,8 @@ This chapter defines the code quality, safety, and documentation updating standa
 ## Documentation Requirement
 
 Whenever code modifications are introduced to the project:
-1. Update `docs/src/api.md` if routes, query parameters, payloads, or HTTP response formats change.
-2. Update `docs/src/database.md` if database tables, schema, triggers, or indexes are added or changed.
-3. Update `CHANGELOG.md` with version numbers, dates, and detailed lists of additions, alterations, and bug fixes.
-4. Ensure all documentation matches the GNU style, maintaining third-person narrative, objective descriptions, and clean plain formats.
+1. **Feature Documentation**: Always document the new feature's contents, detailed description, usage guidelines, and debugging methods.
+2. Update `docs/src/api.md` if routes, query parameters, payloads, or HTTP response formats change.
+3. Update `docs/src/database.md` if database tables, schema, triggers, or indexes are added or changed.
+4. Update `CHANGELOG.md` with version numbers, dates, and detailed lists of additions, alterations, and bug fixes.
+5. Ensure all documentation matches the GNU style, maintaining third-person narrative, objective descriptions, and clean plain formats.
