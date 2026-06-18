@@ -93,7 +93,7 @@ export default function Home() {
       const res = await postApi.list({
         limit,
         offset: currentOffset,
-        order_by: "id",
+        order_by: "created_at",
         sort: "desc",
         search: queryText || undefined,
       });

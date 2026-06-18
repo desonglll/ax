@@ -22,6 +22,7 @@ This document logs the development history and version alterations of Project Ax
 
 ### Fixed
 - Fixed comment creation API payload field mismatch in `commentApi.create` where the frontend sent `replyType` instead of `replyToType`, causing the backend to reject replies with HTTP status code 400.
+- Fixed home timeline API query sorting parameters in `home.tsx` to request sorting by `created_at` DESC instead of arbitrary `id` values, ensuring correct chronological order.
 
 ## [0.3.2] - 2026-06-17
 
