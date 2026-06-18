@@ -46,9 +46,9 @@ function SystemStatsWidget() {
         {Object.entries(stats.responseTimes).map(([route, times]) => {
           const avgTime = times.length > 0 ? Math.round(times.reduce((a, b) => a + b, 0) / times.length) : 0;
           return (
-            <li key={route} className="truncate flex items-center justify-between">
-              <span className="opacity-80 truncate">{route}</span>
-              <span className="badge badge-neutral font-bold">{avgTime} us</span>
+            <li key={route} className="flex items-center justify-between min-w-0 text-[11px] gap-2">
+              <span className="opacity-80 truncate min-w-0 flex-1" title={route}>{route}</span>
+              <span className="badge badge-neutral font-bold flex-shrink-0">{avgTime} us</span>
             </li>
           );
         })}

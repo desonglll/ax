@@ -172,7 +172,7 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onDeleteSuccess, isDet
 
   return (
     <div className="card card-border bg-base-100 p-4 mb-4 font-mono">
-      <div className="flex justify-between items-center text-xs opacity-60 border-b border-base-200 pb-2 mb-3">
+      <div className="flex flex-wrap justify-between items-center gap-1.5 text-xs opacity-60 border-b border-base-200 pb-2 mb-3">
         <div>
           By:{" "}
           <Link to={`/profile/${post.userId}`} className="link link-primary font-bold">
@@ -225,9 +225,9 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onDeleteSuccess, isDet
                 {editAttachments.map((file) => (
                   <div
                     key={file.id}
-                    className="flex items-center justify-between border border-base-300 p-2 bg-base-100 rounded-btn"
+                    className="flex flex-wrap items-center justify-between gap-2 border border-base-300 p-2 bg-base-100 rounded-btn"
                   >
-                    <span className="truncate max-w-[80%] opacity-85">
+                    <span className="truncate flex-1 min-w-0 opacity-85 text-xs">
                       {file.name} ({Math.round(file.size / 1024)} KB)
                     </span>
                     <button
@@ -296,8 +296,8 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onDeleteSuccess, isDet
         </div>
       )}
 
-      <div className="flex items-center justify-between text-xs border-t border-base-200 pt-3">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-wrap gap-2 items-center justify-between text-xs border-t border-base-200 pt-3">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={handleLike}
             className={`btn btn-xs cursor-pointer ${
@@ -331,7 +331,7 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onDeleteSuccess, isDet
         </div>
 
         {isOwnerOrAdmin && (
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {!isEditing && (
               <button
                 onClick={() => {

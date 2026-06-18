@@ -222,7 +222,7 @@ export const CommentNode: React.FC<CommentNodeProps> = ({ comment, onDeleteSucce
     <div className={`${plClass} font-mono text-sm`}>
       <div className="card card-border bg-base-200/50 p-3">
         {/* Comment Header */}
-        <div className="flex justify-between items-center text-xs opacity-60 mb-2 border-b border-base-300 pb-1">
+        <div className="flex flex-wrap justify-between items-center gap-1.5 text-xs opacity-60 mb-2 border-b border-base-300 pb-1">
           <div>
             By:{" "}
             <Link to={`/profile/${comment.userId}`} className="link link-primary font-bold">
@@ -250,8 +250,8 @@ export const CommentNode: React.FC<CommentNodeProps> = ({ comment, onDeleteSucce
         )}
 
         {/* Comment Controls */}
-        <div className="flex items-center justify-between text-xs pt-1 border-t border-base-300 mt-2">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-wrap gap-2 items-center justify-between text-xs pt-1 border-t border-base-300 mt-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={handleLike}
               className={`btn btn-xs cursor-pointer ${
