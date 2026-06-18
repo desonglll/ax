@@ -76,22 +76,22 @@ function AppLayout() {
     <div className="flex-1 flex flex-col bg-base-100 text-base-content min-h-screen">
       {/* Minimalist Navigation Header with daisyUI */}
       <header className="bg-base-200 border-b border-base-300 py-1">
-        <div className="navbar max-w-5xl mx-auto px-4">
-          <div className="navbar-start gap-2">
+        <div className="navbar flex-col sm:flex-row gap-3 sm:gap-0 max-w-5xl mx-auto px-4">
+          <div className="navbar-start justify-center sm:justify-start w-full sm:w-auto gap-2">
             <Link to="/" className="text-xl font-bold tracking-tight hover:opacity-90">
               AX Microblog
             </Link>
             <span className="badge badge-sm font-mono opacity-60">v1.1</span>
           </div>
 
-          <div className="navbar-end">
-            <nav className="flex items-center gap-4 text-sm font-medium">
+          <div className="navbar-end justify-center sm:justify-end w-full sm:w-auto">
+            <nav className="flex flex-wrap items-center justify-center sm:justify-end gap-x-4 gap-y-2 text-sm font-medium">
               <Link to="/" className="hover:text-primary transition-colors">Timeline</Link>
               <Link to="/trending" className="hover:text-primary transition-colors">Trending</Link>
               {user?.isAdmin && <Link to="/files" className="hover:text-primary transition-colors">Files</Link>}
               <Link to="/profile" className="hover:text-primary transition-colors">Profile</Link>
 
-              <span className="opacity-20">|</span>
+              <span className="opacity-20 hidden sm:inline">|</span>
 
               {loading ? (
                 <span className="loading loading-spinner loading-xs text-base-content/50"></span>
