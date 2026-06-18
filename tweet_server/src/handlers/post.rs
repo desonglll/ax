@@ -292,6 +292,7 @@ mod tests {
     use crate::{
         handlers::post::{
             delete_post, get_post_detail, get_post_list, insert_new_post, insert_post_db, update_post_details,
+            get_trending_posts,
         },
         models::post::{CreatePost, UpdatePost},
         state::{get_demo_state, AppState},
@@ -437,5 +438,15 @@ mod tests {
         assert_eq!(resp.status(), StatusCode::OK);
         let body: Value = crate::utils::test::http_response_to_json(resp).await;
         assert_eq!(body["code"], 401);
+    }
+
+    #[actix_rt::test]
+    async fn test_get_trending_posts() {
+        let app_state: web::Data<AppState> = get_demo_state().await;
+        let session = get_demo_session().await;
+        let resp = get_trending_posts(session, app_state, None).await.unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
+        let body: Value = crate::utils::test::http_response_to_json(resp).await;
+        assert_eq!(body["code"], 200);
     }
 }

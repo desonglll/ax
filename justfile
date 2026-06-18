@@ -45,3 +45,11 @@ fe-check:
 fe-build:
 	cd frontend/v1.1 && bun run build
 
+# Install model server python dependencies
+rec-install:
+	pip install -r model_server/requirements.txt
+
+# Run the model server locally
+rec-run:
+	uvicorn model_server.main:app --host 127.0.0.1 --port 8001 --reload
+

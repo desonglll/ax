@@ -26,7 +26,15 @@ pub async fn recommend_posts(
     let model_input = get_user_features(&app_state.db, user_id).await?;
 
     // Invoke the prediction service.
-    let recommended_ids = predict(model_input).await?;
-
-    Ok(recommended_ids)
+    match predict(model_input).await {
+        Ok(recommended_ids) => Ok(recommended_ids),
+        Err(e) => {
+            crate::infra::log::Log::warning(format!(
+                "Prediction service failed (error: {:?}). Falling back to database heuristic.",
+                e
+            ));
+            // Call the database fallback query
+            crate::dbaccess::post::get_trending_posts_fallback_db(&app_state.db).await
+        }
+    }
 }

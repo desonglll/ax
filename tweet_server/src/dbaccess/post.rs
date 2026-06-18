@@ -272,3 +272,19 @@ pub async fn update_post_db(
         Err(AxError::NotFound("Post id not found".into()))
     }
 }
+
+/// Retrieve a list of trending post identifiers using database heuristics.
+///
+/// This serves as a fallback recommendation when the machine learning service is offline.
+pub async fn get_trending_posts_fallback_db(pool: &PgPool) -> Result<Vec<uuid::Uuid>, AxError> {
+    let rows = sqlx::query!(
+        "SELECT id
+         FROM posts
+         WHERE reply_to IS NULL
+         ORDER BY (like_count * 2 - dislike_count + (SELECT COUNT(*) FROM comments WHERE comments.reply_to = posts.id) * 3) DESC, created_at DESC
+         LIMIT 10"
+    )
+    .fetch_all(pool)
+    .await?;
+    Ok(rows.into_iter().map(|r| r.id).collect())
+}
