@@ -29,7 +29,7 @@ Project Ax adopts a minimalist, content-focused, lightweight design layout inspi
 ## Client Directories & Routing
 
 All source files are nested within the `app/` folder:
-- **`root.tsx`**: Sets up global HTML shell, attaches `<AuthProvider>` for auth context, and renders the master header/footer navigation layout. The "Files" navbar tab link is restricted to administrator users (`user?.isAdmin` is true) to prevent standard users from seeing the files list.
+- **`root.tsx`**: Sets up global HTML shell, attaches `<AuthProvider>` for auth context, and renders the master header/footer navigation layout. The "Files" navbar tab link is restricted to administrator users (`user?.isAdmin` is true) to prevent standard users from seeing the files list. It also features a global floating scroll-to-top button (`[↑ Top]`) that becomes visible once the viewport is scrolled down beyond 300px.
 - **`routes.ts`**: The central routing registry table.
 - **`app.css`**: Configures TailwindCSS imports and basic color schemes.
 - **`contexts/AuthContext.tsx`**: Exposes authentication actions (`login`, `logout`, `register`) and keeps the current user reference synced.

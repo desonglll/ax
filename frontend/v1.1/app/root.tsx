@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   isRouteErrorResponse,
   Links,
@@ -53,6 +54,23 @@ export default function App() {
 
 function AppLayout() {
   const { user, loading, logout } = useAuth();
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowScrollTop(true);
+      } else {
+        setShowScrollTop(false);
+      }
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
     <div className="flex-1 flex flex-col">
@@ -114,6 +132,15 @@ function AppLayout() {
           </p>
         </div>
       </footer>
+
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-6 right-6 z-50 cursor-pointer border border-gray-400 dark:border-gray-700 bg-gray-100 hover:bg-gray-200 dark:bg-gray-900 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200 font-mono text-xs px-3 py-1.5 font-bold shadow-none rounded-none"
+        >
+          [↑ Top]
+        </button>
+      )}
     </div>
   );
 }
