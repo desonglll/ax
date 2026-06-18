@@ -11,12 +11,14 @@ This document logs the development history and version alterations of Project Ax
 - Implemented text-based post search functionality. Extended the database query in `post.rs` to support dynamic query keyword filtering using `content ILIKE $1` on the PostgreSQL level, and added a search input bar above the home page timeline.
 - Added direct page selection jumping. Configured a `<select>` dropdown next to timeline and comments pagination controls to allow standard HTTP page-reload navigation directly to any page number while preserving active search query filters.
 - Implemented multi-file attachments support for posts. Users can upload and link multiple public files when publishing a post, which are stored and associated via a new `post_id` column in the `files` table.
-- Extended post attachments timeline rendering to support inline video players for video content types.
 
 ### Changed
+- Configured the default sorting column of the post list database query to fallback to `created_at` instead of random `id` (UUID), sorting timeline posts chronologically by default.
 - Configured post titles to be optional in the frontend creation form and editing view, removing the `required` HTML attributes and updating validation logic.
 - Restricted access to the files list manager (`/files` page and navbar tab) exclusively to administrators. Regular users can upload files through post attachments but cannot view the overall files list.
+- Replaced immediate timeline media rendering with user-triggered stateful previews using expand/collapse buttons to keep the layout compact.
 - Replaced standard file input state mapping with an accumulated list interface in the post composer to allow uploading multiple files across multiple selection triggers, removing individual attachments, and restricting thumbnail previews exclusively to image and video types.
+- Extended post editing handlers and components to manage attachments, permitting the user to remove existing linked files when updating a post.
 
 ### Fixed
 - Fixed comment creation API payload field mismatch in `commentApi.create` where the frontend sent `replyType` instead of `replyToType`, causing the backend to reject replies with HTTP status code 400.

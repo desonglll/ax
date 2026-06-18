@@ -163,12 +163,15 @@ Retrieves trending posts recommended for the current user.
   Returns recommended post detail array including nested `attachments`.
 
 ### PUT /api/posts/put/{post_id}
-Updates the title or content of a post. The request must originate from the post owner or an administrator.
+Updates the title, content, or attachments of a post. The request must originate from the post owner or an administrator.
 - **Request Body**:
   ```json
   {
     "title": "New Title",
-    "content": "Updated content"
+    "content": "Updated content",
+    "attachments": [
+      "d78f2379-cb4a-4467-bc18-97c7e5cb2fb6"
+    ]
   }
   ```
 - **Response (200 OK)**:

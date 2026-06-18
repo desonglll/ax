@@ -254,15 +254,40 @@ pub async fn update_post_details(
         )));
     }
 
-    update_post_db(&app_state.db, post_id, update_post.into())
-        .await
-        .map(|post| {
-            HttpResponse::Ok().json(ApiResponse::new(
-                200,
-                "Update Successful".to_string(),
-                Some(DataBuilder::new().set_data(post).build()),
-            ))
-        })
+    let attachments = update_post.attachments.clone();
+    let post = update_post_db(&app_state.db, post_id, update_post.into()).await?;
+
+    if let Some(attachments_list) = attachments {
+        // Unlink all current files associated with this post
+        let _ = sqlx::query!(
+            "UPDATE files SET post_id = NULL WHERE post_id = $1",
+            post.id
+        )
+        .execute(&app_state.db)
+        .await;
+
+        // Link the files in the new list
+        for file_id in attachments_list {
+            let _ = sqlx::query!(
+                "UPDATE files SET post_id = $1 WHERE id = $2 AND user_id = $3",
+                post.id,
+                file_id,
+                user_id
+            )
+            .execute(&app_state.db)
+            .await;
+        }
+    }
+
+    let files = crate::dbaccess::file::get_file_attachments_by_post_db(&app_state.db, post.id).await.unwrap_or_default();
+    let post_detail = crate::models::post::PostDetail { post, attachments: files };
+
+    let api_response = ApiResponse::new(
+        200,
+        "Update Successful".to_string(),
+        Some(DataBuilder::new().set_data(post_detail).build()),
+    );
+    Ok(HttpResponse::Ok().json(api_response))
 }
 
 // Delete
@@ -388,6 +413,7 @@ mod tests {
         let update_post_msg = UpdatePost {
             title: Some(String::from("test_update_title_after")),
             content: Some(String::from("test_update_post_after")),
+            attachments: None,
         };
         let parameters: web::Path<(uuid::Uuid,)> = web::Path::from((insert_result.id,));
         let update_param = web::Json(update_post_msg);

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { postApi, fileApi, reactionApi, type Post } from "../utils/api";
+import { postApi, fileApi, reactionApi, type Post, type FileRecord } from "../utils/api";
 import { useAuth } from "../contexts/AuthContext";
 
 interface PostItemProps {
@@ -22,9 +22,11 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onDeleteSuccess, isDet
   // Inline post editing states
   const [postContent, setPostContent] = useState(post.content);
   const [postTitle, setPostTitle] = useState(post.title);
+  const [postAttachments, setPostAttachments] = useState<FileRecord[]>(post.attachments || []);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(post.content);
   const [editTitle, setEditTitle] = useState(post.title);
+  const [editAttachments, setEditAttachments] = useState<FileRecord[]>(post.attachments || []);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -32,17 +34,26 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onDeleteSuccess, isDet
     setEditContent(post.content);
     setPostTitle(post.title);
     setEditTitle(post.title);
-  }, [post.content, post.title]);
+    setPostAttachments(post.attachments || []);
+    setEditAttachments(post.attachments || []);
+  }, [post.content, post.title, post.attachments]);
 
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editContent.trim()) return;
     setSaving(true);
     try {
-      const res = await postApi.update(post.id, editContent.trim(), editTitle.trim());
-      if (res.code === 200) {
+      const attachmentIds = editAttachments.map((a) => a.id);
+      const res = await postApi.update(
+        post.id,
+        editContent.trim(),
+        editTitle.trim(),
+        attachmentIds
+      );
+      if (res.code === 200 && res.body.data) {
         setPostContent(editContent.trim());
         setPostTitle(editTitle.trim());
+        setPostAttachments(res.body.data.attachments || []);
         setIsEditing(false);
       }
     } catch (err) {
@@ -203,6 +214,35 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onDeleteSuccess, isDet
             rows={4}
             required
           />
+
+          {/* Edit attachments list (remove items) */}
+          {editAttachments.length > 0 && (
+            <div className="mb-3 p-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-800 font-mono text-xs">
+              <span className="text-[10px] font-bold uppercase block text-gray-500 mb-2">
+                Current Attachments ({editAttachments.length}):
+              </span>
+              <div className="flex flex-col gap-2">
+                {editAttachments.map((file) => (
+                  <div
+                    key={file.id}
+                    className="flex items-center justify-between border border-gray-300 dark:border-gray-800 p-2 bg-white dark:bg-gray-950 rounded-sm"
+                  >
+                    <span className="truncate max-w-[80%] text-gray-700 dark:text-gray-300">
+                      {file.name} ({Math.round(file.size / 1024)} KB)
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setEditAttachments((prev) => prev.filter((a) => a.id !== file.id))}
+                      className="text-red-650 hover:underline font-bold"
+                    >
+                      [Remove]
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="flex gap-2 mb-3">
             <button
               type="submit"
@@ -245,56 +285,13 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onDeleteSuccess, isDet
       )}
 
       {/* Attachments list */}
-      {post.attachments && post.attachments.length > 0 && (
+      {postAttachments && postAttachments.length > 0 && (
         <div className="border-t border-dashed border-gray-200 dark:border-gray-800 pt-3 pb-2 mb-4">
           <span className="text-[10px] font-bold uppercase block text-gray-500 mb-2 font-mono">Attachments:</span>
           <div className="flex flex-col gap-2">
-            {post.attachments.map((file) => {
-              const isImage = file.contentType.startsWith("image/");
-              const isVideo = file.contentType.startsWith("video/");
-              const downloadUrl = fileApi.getDownloadUrl(file.id);
-              return (
-                <div key={file.id} className="flex flex-col items-start gap-1 font-mono text-xs">
-                  {isImage ? (
-                    <div className="max-w-full">
-                      <a href={downloadUrl} target="_blank" rel="noopener noreferrer">
-                        <img
-                          src={downloadUrl}
-                          alt={file.name}
-                          className="max-w-md max-h-96 border border-gray-300 dark:border-gray-800 object-contain hover:opacity-95"
-                        />
-                      </a>
-                      <span className="text-[10px] text-gray-400 mt-1 block">
-                        {file.name} ({Math.round(file.size / 1024)} KB)
-                      </span>
-                    </div>
-                  ) : isVideo ? (
-                    <div className="max-w-full">
-                      <video
-                        src={downloadUrl}
-                        controls
-                        className="max-w-md max-h-96 border border-gray-300 dark:border-gray-800 object-contain"
-                      />
-                      <span className="text-[10px] text-gray-400 mt-1 block">
-                        {file.name} ({Math.round(file.size / 1024)} KB)
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1.5 border border-gray-300 dark:border-gray-800 p-2 bg-gray-50 dark:bg-gray-900 rounded-sm">
-                      <span className="text-gray-500">📄</span>
-                      <a
-                        href={downloadUrl}
-                        download
-                        className="text-blue-600 hover:underline font-bold"
-                      >
-                        {file.name}
-                      </a>
-                      <span className="text-gray-400">({Math.round(file.size / 1024)} KB)</span>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+            {postAttachments.map((file) => (
+              <AttachmentItemRenderer key={file.id} file={file} />
+            ))}
           </div>
         </div>
       )}
@@ -340,9 +337,10 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onDeleteSuccess, isDet
                 onClick={() => {
                   setEditContent(postContent);
                   setEditTitle(postTitle);
+                  setEditAttachments(postAttachments);
                   setIsEditing(true);
                 }}
-                className="border border-gray-300 dark:border-gray-800 px-2.5 py-1 text-xs font-mono text-gray-650 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 cursor-pointer"
+                className="border border-gray-300 dark:border-gray-800 px-2.5 py-1 text-xs font-mono text-gray-655 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 cursor-pointer"
               >
                 ✎ Edit
               </button>
@@ -357,6 +355,77 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onDeleteSuccess, isDet
           </div>
         )}
       </div>
+    </div>
+  );
+};
+
+// Helper component for rendering attachments with stateful preview toggle
+const AttachmentItemRenderer: React.FC<{ file: FileRecord }> = ({ file }) => {
+  const [showPreview, setShowPreview] = useState(false);
+  const isImage = file.contentType.startsWith("image/");
+  const isVideo = file.contentType.startsWith("video/");
+  const downloadUrl = fileApi.getDownloadUrl(file.id);
+
+  if (!isImage && !isVideo) {
+    return (
+      <div className="flex items-center gap-1.5 border border-gray-300 dark:border-gray-800 p-2 bg-gray-50 dark:bg-gray-900 rounded-sm font-mono text-xs w-full max-w-md">
+        <span className="text-gray-500">📄</span>
+        <a
+          href={downloadUrl}
+          download
+          className="text-blue-600 hover:underline font-bold"
+        >
+          {file.name}
+        </a>
+        <span className="text-gray-400">({Math.round(file.size / 1024)} KB)</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-start gap-2 border border-gray-300 dark:border-gray-800 p-2 bg-gray-50 dark:bg-gray-900 rounded-sm font-mono text-xs w-full max-w-md">
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-gray-500">{isImage ? "🖼️" : "🎥"}</span>
+        <a
+          href={downloadUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-600 hover:underline font-bold truncate max-w-[200px]"
+          title={file.name}
+        >
+          {file.name}
+        </a>
+        <span className="text-gray-400">({Math.round(file.size / 1024)} KB)</span>
+        <button
+          type="button"
+          onClick={() => setShowPreview(!showPreview)}
+          className="bg-gray-200 dark:bg-gray-850 border border-gray-300 dark:border-gray-700 px-2 py-0.5 text-[10px] font-bold hover:bg-gray-300 dark:hover:bg-gray-750 text-gray-800 dark:text-gray-200 cursor-pointer"
+        >
+          {showPreview ? "[Hide Preview]" : "[Show Preview]"}
+        </button>
+      </div>
+
+      {showPreview && isImage && (
+        <div className="mt-1 max-w-full">
+          <a href={downloadUrl} target="_blank" rel="noopener noreferrer">
+            <img
+              src={downloadUrl}
+              alt={file.name}
+              className="max-w-full max-h-96 border border-gray-300 dark:border-gray-800 object-contain hover:opacity-95 bg-white dark:bg-black"
+            />
+          </a>
+        </div>
+      )}
+
+      {showPreview && isVideo && (
+        <div className="mt-1 w-full">
+          <video
+            src={downloadUrl}
+            controls
+            className="max-w-full max-h-96 border border-gray-300 dark:border-gray-800 object-contain bg-white dark:bg-black"
+          />
+        </div>
+      )}
     </div>
   );
 };

@@ -79,7 +79,7 @@ pub async fn get_post_list_db(
     query: Option<web::Query<HashMap<String, String>>>,
 ) -> Result<(Vec<Post>, Pagination), AxError> {
     let query_map = query.map(|q| q.into_inner()).unwrap_or_default();
-    let order_by = query_map.get("order_by").map(|s| s.as_str()).unwrap_or("id");
+    let order_by = query_map.get("order_by").map(|s| s.as_str()).unwrap_or("created_at");
     let valid_order_by = ["id", "created_at", "updated_at", "like_count", "dislike_count", "engagement_rate"];
     if !valid_order_by.contains(&order_by) {
         return Err(AxError::InvalidInput(format!("Invalid order_by field: {}", order_by)));

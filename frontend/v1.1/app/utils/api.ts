@@ -164,8 +164,8 @@ export const postApi = {
     const response = await api.get("/posts/trending");
     return response.data;
   },
-  update: async (postId: string, content: string, title?: string): Promise<ApiResponse<Post>> => {
-    const response = await api.put(`/posts/put/${postId}`, { content, title });
+  update: async (postId: string, content: string, title?: string, attachments?: string[]): Promise<ApiResponse<Post>> => {
+    const response = await api.put(`/posts/put/${postId}`, { content, title, attachments });
     return response.data;
   },
   delete: async (postId: string): Promise<ApiResponse<Post>> => {

@@ -70,14 +70,12 @@ impl From<web::Json<CreatePost>> for CreatePost {
     }
 }
 
-/// Request payload structure for updating a post.
-///
-/// This structure encapsulates fields that are allowed to be modified on an existing post.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdatePost {
     pub title: Option<String>,
     pub content: Option<String>,
+    pub attachments: Option<Vec<uuid::Uuid>>,
 }
 
 impl From<web::Json<UpdatePost>> for UpdatePost {
@@ -85,6 +83,7 @@ impl From<web::Json<UpdatePost>> for UpdatePost {
         UpdatePost {
             title: value.title.clone(),
             content: value.content.clone(),
+            attachments: value.attachments.clone(),
         }
     }
 }
