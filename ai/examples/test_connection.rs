@@ -42,8 +42,10 @@ async fn main() {
         None => OpenAiClient::new(api_key),
     };
 
-    // Prompt selection: can specify a model from environment or fallback to standard
-    let model = env::var("AI_MODEL").unwrap_or_else(|_| "gpt-4o-mini".to_string());
+    // Try to load model from OPENAI_MODEL, then fallback to MODEL, then default to gpt-4o-mini
+    let model = env::var("OPENAI_MODEL")
+        .or_else(|_| env::var("MODEL"))
+        .unwrap_or_else(|_| "gpt-4o-mini".to_string());
     println!("✓ Targeting Model: {}", model);
     println!("----------------------------------------------------");
     println!("Sending chat completion request...");
