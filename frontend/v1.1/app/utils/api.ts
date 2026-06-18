@@ -92,8 +92,15 @@ export interface UserStats {
 }
 
 // Axios Instance
+const getDefaultBaseURL = () => {
+  if (typeof window !== "undefined") {
+    return `${window.location.protocol}//${window.location.hostname}:8000/api`;
+  }
+  return "http://localhost:8000/api";
+};
+
 const api = axios.create({
-  baseURL: (import.meta.env.VITE_API_URL as string) || "http://localhost:8000/api",
+  baseURL: (import.meta.env.VITE_API_URL as string) || getDefaultBaseURL(),
   withCredentials: true,
 });
 
