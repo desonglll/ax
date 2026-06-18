@@ -36,7 +36,7 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onDeleteSuccess, isDet
 
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editContent.trim() || !editTitle.trim()) return;
+    if (!editContent.trim()) return;
     setSaving(true);
     try {
       const res = await postApi.update(post.id, editContent.trim(), editTitle.trim());
@@ -193,9 +193,8 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onDeleteSuccess, isDet
             value={editTitle}
             onChange={(e) => setEditTitle(e.target.value)}
             disabled={saving}
-            placeholder="Title"
+            placeholder="Title (optional)"
             className="w-full border border-gray-300 dark:border-gray-800 p-2 text-sm bg-gray-50 dark:bg-gray-900 focus:outline-none focus:border-black dark:focus:border-white mb-2 font-sans text-gray-800 dark:text-gray-200"
-            required
           />
           <textarea
             value={editContent}

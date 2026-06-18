@@ -195,9 +195,8 @@ export default function Home() {
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
               disabled={submitting}
-              placeholder="Title"
+              placeholder="Title (optional)"
               className="w-full border border-gray-300 dark:border-gray-800 p-2 text-sm bg-gray-50 dark:bg-gray-900 focus:outline-none focus:border-black dark:focus:border-white mb-3 font-sans text-gray-800 dark:text-gray-200"
-              required
             />
             <textarea
               value={newContent}
