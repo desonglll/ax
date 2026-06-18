@@ -5,6 +5,8 @@ This document logs the development history and version alterations of Project Ax
 ## [0.4.0] - 2026-06-18
 
 ### Added
+- Added Dockerfile (`tweet_server/Dockerfile`) for compiling and packaging the Rust backend server.
+- Added GitHub Actions CI/CD workflow `.github/workflows/deploy.yml` to automatically build, tag, and publish the backend, frontend, and AI model-server Docker images to the GitHub Container Registry (GHCR) on pushes to the main branch.
 - Implemented file attachments support for comments. Users can upload and associate multiple public files when publishing a comment or nested reply, which are stored and associated via a new `comment_id` column in the `files` table.
 - Created database migration `20260618190000_add_comment_id_to_files.sql` to add the `comment_id` column referencing `comments(id)` to the `files` table.
 - Added `CommentDetail` data transfer model on the backend and updated comment retrieval/creation API endpoints to fetch and return comments along with their nested attachments.
@@ -17,6 +19,7 @@ This document logs the development history and version alterations of Project Ax
 - Added a global floating scroll-to-top button in the master application layout (`root.tsx`) that appears when scrolling down past 300px.
 
 ### Changed
+- Refactored the frontend container image build (`frontend/v1.1/Dockerfile`) to use Bun instead of npm, ensuring alignment with the project lockfile (`bun.lock`) and dev environment, reducing the final image footprint.
 - Extended frontend comment components (`post.tsx` and `CommentNode.tsx`) to manage comment attachments. Users can now select and upload files during comment creation and replies, and view attachments directly under comments with toggleable previews.
 - Exported and reused `AttachmentItemRenderer` component from `PostItem.tsx` to display file attachments consistently for both posts and comments.
 - Configured the navigation header (`root.tsx`) to wrap and stack layout elements dynamically on narrow mobile viewports, resolving layout overlaps.
