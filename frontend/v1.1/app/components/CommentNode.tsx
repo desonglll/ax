@@ -5,7 +5,7 @@ import { useAuth } from "../contexts/AuthContext";
 
 interface CommentNodeProps {
   comment: Comment;
-  onDeleteSuccess: (commentId: number) => void;
+  onDeleteSuccess: (commentId: string) => void;
   depth?: number;
 }
 
@@ -160,7 +160,7 @@ export const CommentNode: React.FC<CommentNodeProps> = ({ comment, onDeleteSucce
     }
   };
 
-  const handleChildDeleteSuccess = (childId: number) => {
+  const handleChildDeleteSuccess = (childId: string) => {
     setReplies((prev) => prev.filter((r) => r.id !== childId));
   };
 

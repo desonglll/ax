@@ -167,7 +167,7 @@ export default function Profile() {
     }
   };
 
-  const handlePostDeleteSuccess = (deletedId: number) => {
+  const handlePostDeleteSuccess = (deletedId: string) => {
     setUserPosts((prev) => prev.filter((p) => p.id !== deletedId));
     // Re-evaluate stats locally
     const filtered = userPosts.filter((p) => p.id !== deletedId);

@@ -17,7 +17,7 @@ use crate::services::features::UserFeatures;
 /// # Returns
 ///
 /// A vector of recommended post IDs on success, or an [`AxError`] on failure.
-pub async fn predict(user_features: UserFeatures) -> Result<Vec<i32>, AxError> {
+pub async fn predict(user_features: UserFeatures) -> Result<Vec<uuid::Uuid>, AxError> {
     let client = Client::builder().no_proxy().build()?;
     let response = client
         .post("http://127.0.0.1:8001/predict")
@@ -41,7 +41,7 @@ pub async fn predict(user_features: UserFeatures) -> Result<Vec<i32>, AxError> {
 struct ModelApiResponse {
     #[allow(dead_code)]
     message: String,
-    data: Vec<i32>,
+    data: Vec<uuid::Uuid>,
 }
 
 #[cfg(test)]

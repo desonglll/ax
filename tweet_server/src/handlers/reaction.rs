@@ -40,8 +40,8 @@ pub async fn insert_like_reaction(
     let user_id = session.get::<i32>("user_id").unwrap().unwrap_or(0);
     let to_id = query_map
         .get("toId")
-        .and_then(|s| s.parse::<i32>().ok())
-        .unwrap_or(0);
+        .and_then(|s| s.parse::<uuid::Uuid>().ok())
+        .unwrap_or_else(uuid::Uuid::nil);
     let to_type = query_map.get("toType").unwrap_or(&"post".to_string()).clone();
 
     let new_reaction = CreateReaction {
@@ -88,12 +88,11 @@ pub async fn insert_dislike_reaction(
         return Ok(resp);
     }
     let query_map = query.map(|q| q.into_inner()).unwrap_or_default();
-    println!("{:?}", query_map);
     let user_id = session.get::<i32>("user_id").unwrap().unwrap_or(0);
     let to_id = query_map
         .get("toId")
-        .and_then(|s| s.parse::<i32>().ok())
-        .unwrap_or(0);
+        .and_then(|s| s.parse::<uuid::Uuid>().ok())
+        .unwrap_or_else(uuid::Uuid::nil);
     let to_type = query_map.get("toType").unwrap_or(&"post".to_string()).clone();
     println!("to_type: {:?}", to_type);
     let new_reaction = CreateReaction {
@@ -244,7 +243,7 @@ mod tests {
         let app_state: web::Data<AppState> = get_demo_state().await;
         let session = get_demo_session().await;
         let mut query_map = HashMap::new();
-        query_map.insert("toId".to_string(), "1".to_string());
+        query_map.insert("toId".to_string(), uuid::Uuid::new_v4().to_string());
         query_map.insert("toType".to_string(), "post".to_string());
         let query = Some(web::Query(query_map));
         
@@ -269,7 +268,7 @@ mod tests {
         let app_state: web::Data<AppState> = get_demo_state().await;
         let session = get_demo_session().await;
         let mut query_map = HashMap::new();
-        query_map.insert("toId".to_string(), "1".to_string());
+        query_map.insert("toId".to_string(), uuid::Uuid::new_v4().to_string());
         query_map.insert("toType".to_string(), "post".to_string());
         let query = Some(web::Query(query_map));
 
@@ -296,7 +295,7 @@ mod tests {
 
         // First insert a like
         let mut query_map = HashMap::new();
-        query_map.insert("toId".to_string(), "9999".to_string());
+        query_map.insert("toId".to_string(), uuid::Uuid::new_v4().to_string());
         query_map.insert("toType".to_string(), "post".to_string());
         let insert_resp = insert_like_reaction(session, app_state.clone(), Some(web::Query(query_map.clone())))
             .await
@@ -329,7 +328,7 @@ mod tests {
 
         // First insert a like
         let mut query_map = HashMap::new();
-        query_map.insert("toId".to_string(), "8888".to_string());
+        query_map.insert("toId".to_string(), uuid::Uuid::new_v4().to_string());
         query_map.insert("toType".to_string(), "post".to_string());
         let insert_resp = insert_like_reaction(session.clone(), app_state.clone(), Some(web::Query(query_map)))
             .await

@@ -8,9 +8,9 @@ use sqlx::types::chrono;
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Comment {
-    pub id: i32,
+    pub id: uuid::Uuid,
     pub content: String,
-    pub reply_to: i32,
+    pub reply_to: uuid::Uuid,
     pub user_id: i32,
     pub user_name: String,
     pub created_at: DateTime<chrono::Utc>,
@@ -26,7 +26,7 @@ pub struct Comment {
 #[serde(rename_all = "camelCase")]
 pub struct CreateComment {
     content: String,
-    reply_to: i32,
+    reply_to: uuid::Uuid,
     user_id: Option<i32>,
     reply_to_type: String,
 }
@@ -35,7 +35,7 @@ impl CreateComment {
     /// Create a new CreateComment request payload.
     pub fn new(
         content: String,
-        reply_to: i32,
+        reply_to: uuid::Uuid,
         user_id: Option<i32>,
         reply_to_type: String,
     ) -> Self {
@@ -53,7 +53,7 @@ impl CreateComment {
     }
 
     /// Set the identifier of the target item being replied to.
-    pub fn set_reply_to(&mut self, reply_to: i32) {
+    pub fn set_reply_to(&mut self, reply_to: uuid::Uuid) {
         self.reply_to = reply_to;
     }
 
@@ -73,7 +73,7 @@ impl CreateComment {
     }
 
     /// Retrieve the identifier of the target item.
-    pub fn reply_to(&self) -> i32 {
+    pub fn reply_to(&self) -> uuid::Uuid {
         self.reply_to
     }
 
@@ -91,7 +91,7 @@ impl CreateComment {
     pub fn demo() -> Self {
         CreateComment {
             content: "demo".to_string(),
-            reply_to: 0,
+            reply_to: uuid::Uuid::nil(),
             user_id: None,
             reply_to_type: "post".to_string(),
         }

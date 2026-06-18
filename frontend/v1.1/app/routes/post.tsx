@@ -9,7 +9,7 @@ import { CommentNode } from "../components/CommentNode";
 export default function PostDetail() {
   const { postId } = useParams<{ postId: string }>();
   const { user } = useAuth();
-  const parsedPostId = Number(postId);
+  const parsedPostId = postId || "";
 
   const [post, setPost] = useState<Post | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -27,7 +27,7 @@ export default function PostDetail() {
   const [hasMore, setHasMore] = useState(true);
 
   const fetchPostDetail = async () => {
-    if (isNaN(parsedPostId)) {
+    if (!parsedPostId) {
       setError("Invalid post ID.");
       setLoadingPost(false);
       return;
@@ -47,7 +47,7 @@ export default function PostDetail() {
   };
 
   const fetchComments = async (currentOffset: number) => {
-    if (isNaN(parsedPostId)) return;
+    if (!parsedPostId) return;
     setLoadingComments(true);
     try {
       const res = await commentApi.list({
@@ -81,7 +81,7 @@ export default function PostDetail() {
 
   const handleCreateComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCommentText.trim() || isNaN(parsedPostId)) return;
+    if (!newCommentText.trim() || !parsedPostId) return;
 
     setSubmittingComment(true);
     try {
@@ -102,7 +102,7 @@ export default function PostDetail() {
     }
   };
 
-  const handleCommentDeleteSuccess = (deletedId: number) => {
+  const handleCommentDeleteSuccess = (deletedId: string) => {
     setComments((prev) => prev.filter((c) => c.id !== deletedId));
   };
 

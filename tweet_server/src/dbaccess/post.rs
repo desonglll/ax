@@ -51,7 +51,7 @@ pub async fn insert_post_db(pool: &PgPool, create_post: CreatePost) -> Result<Po
 /// # Returns
 ///
 /// The matching [`Post`] record on success, or an [`AxError`] on database failure.
-pub async fn get_post_detail_db(pool: &PgPool, post_id: i32) -> Result<Post, AxError> {
+pub async fn get_post_detail_db(pool: &PgPool, post_id: uuid::Uuid) -> Result<Post, AxError> {
     let post_row = sqlx::query_as!(Post, "select * from posts where id = $1", post_id)
         .fetch_one(pool)
         .await?;
@@ -160,7 +160,7 @@ pub async fn get_post_list_db(
 ///
 /// A vector of matching [`Post`] records aligned to the order of IDS on success,
 /// or an [`AxError`] on failure.
-pub async fn get_posts_by_ids(pool: &PgPool, ids: Vec<i32>) -> Result<Vec<Post>, AxError> {
+pub async fn get_posts_by_ids(pool: &PgPool, ids: Vec<uuid::Uuid>) -> Result<Vec<Post>, AxError> {
     println!("ids: {:?}", ids);
 
     // Generate parameter placeholders, for example $1, $2, $3...
@@ -177,7 +177,7 @@ pub async fn get_posts_by_ids(pool: &PgPool, ids: Vec<i32>) -> Result<Vec<Post>,
         placeholders,
         ids.iter()
             .enumerate()
-            .map(|(i, id)| format!("WHEN {} THEN {}", id, i)) // Maintain the input ordering.
+            .map(|(i, id)| format!("WHEN '{}' THEN {}", id, i)) // Maintain the input ordering.
             .collect::<Vec<_>>()
             .join(" ")
     );
@@ -212,7 +212,7 @@ pub async fn get_posts_by_ids(pool: &PgPool, ids: Vec<i32>) -> Result<Vec<Post>,
 /// # Returns
 ///
 /// The deleted [`Post`] record on success, or an [`AxError`] on failure.
-pub async fn delete_post_db(pool: &PgPool, post_id: i32) -> Result<Post, AxError> {
+pub async fn delete_post_db(pool: &PgPool, post_id: uuid::Uuid) -> Result<Post, AxError> {
     let post_row = sqlx::query_as!(
         Post,
         "delete from posts where id = $1 returning id, content, created_at, updated_at, user_id, reply_to, user_name, like_count, dislike_count, engagement_rate",
@@ -238,7 +238,7 @@ pub async fn delete_post_db(pool: &PgPool, post_id: i32) -> Result<Post, AxError
 /// The updated [`Post`] record on success, or an [`AxError`] on failure.
 pub async fn update_post_db(
     pool: &PgPool,
-    post_id: i32,
+    post_id: uuid::Uuid,
     update_post: UpdatePost,
 ) -> Result<Post, AxError> {
     // Retrieve current record.

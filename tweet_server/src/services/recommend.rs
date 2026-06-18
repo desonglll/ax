@@ -21,7 +21,7 @@ use crate::state::AppState;
 pub async fn recommend_posts(
     app_state: web::Data<AppState>,
     user_id: i32,
-) -> Result<Vec<i32>, AxError> {
+) -> Result<Vec<uuid::Uuid>, AxError> {
     // Construct model features from user stats.
     let model_input = get_user_features(&app_state.db, user_id).await?;
 

@@ -30,12 +30,12 @@ export interface User {
 }
 
 export interface Post {
-  id: number;
+  id: string;
   content: string;
   createdAt: string;
   updatedAt: string;
   userId: number;
-  replyTo?: number;
+  replyTo?: string;
   userName: string;
   likeCount?: number;
   dislikeCount?: number;
@@ -43,9 +43,9 @@ export interface Post {
 }
 
 export interface Comment {
-  id: number;
+  id: string;
   content: string;
-  replyTo: number;
+  replyTo: string;
   userId: number;
   userName: string;
   createdAt: string;
@@ -56,7 +56,7 @@ export interface Comment {
 export interface Reaction {
   id: number;
   userId: number;
-  toId: number;
+  toId: string;
   createdAt: string;
   reactionName: "Like" | "Dislike";
   toType: "post" | "comment";
@@ -155,7 +155,7 @@ export const postApi = {
     const response = await api.get("/posts/get", { params });
     return response.data;
   },
-  getById: async (postId: number): Promise<ApiResponse<Post>> => {
+  getById: async (postId: string): Promise<ApiResponse<Post>> => {
     const response = await api.get(`/posts/get/${postId}`);
     return response.data;
   },
@@ -163,11 +163,11 @@ export const postApi = {
     const response = await api.get("/posts/trending");
     return response.data;
   },
-  update: async (postId: number, content: string): Promise<ApiResponse<Post>> => {
+  update: async (postId: string, content: string): Promise<ApiResponse<Post>> => {
     const response = await api.put(`/posts/put/${postId}`, { content });
     return response.data;
   },
-  delete: async (postId: number): Promise<ApiResponse<Post>> => {
+  delete: async (postId: string): Promise<ApiResponse<Post>> => {
     const response = await api.delete(`/posts/delete/${postId}`);
     return response.data;
   },
@@ -177,7 +177,7 @@ export const postApi = {
 // Comment Endpoints
 // ============================================================================
 export const commentApi = {
-  create: async (content: string, replyTo: number, replyToType: "post" | "comment"): Promise<ApiResponse<Comment>> => {
+  create: async (content: string, replyTo: string, replyToType: "post" | "comment"): Promise<ApiResponse<Comment>> => {
     const response = await api.post("/comments/post", {
       content,
       replyTo,
@@ -185,11 +185,11 @@ export const commentApi = {
     });
     return response.data;
   },
-  list: async (params: { commentId?: number; replyTo?: number; replyToType?: "post" | "comment"; limit?: number; offset?: number }): Promise<ApiResponse<Comment[]>> => {
+  list: async (params: { commentId?: string; replyTo?: string; replyToType?: "post" | "comment"; limit?: number; offset?: number }): Promise<ApiResponse<Comment[]>> => {
     const response = await api.get("/comments/get", { params });
     return response.data;
   },
-  delete: async (commentId: number): Promise<ApiResponse<Comment>> => {
+  delete: async (commentId: string): Promise<ApiResponse<Comment>> => {
     const response = await api.delete(`/comments/delete/${commentId}`);
     return response.data;
   },
@@ -199,25 +199,25 @@ export const commentApi = {
 // Reaction Endpoints
 // ============================================================================
 export const reactionApi = {
-  like: async (toId: number, toType: "post" | "comment"): Promise<ApiResponse<Reaction>> => {
+  like: async (toId: string, toType: "post" | "comment"): Promise<ApiResponse<Reaction>> => {
     const response = await api.post("/reactions/post/like", null, {
       params: { toId, toType },
     });
     return response.data;
   },
-  dislike: async (toId: number, toType: "post" | "comment"): Promise<ApiResponse<Reaction>> => {
+  dislike: async (toId: string, toType: "post" | "comment"): Promise<ApiResponse<Reaction>> => {
     const response = await api.post("/reactions/post/dislike", null, {
       params: { toId, toType },
     });
     return response.data;
   },
-  getTable: async (toId: number, toType: "post" | "comment"): Promise<ApiResponse<{ like: number; dislike: number; userReactionId?: number; userReactionType?: string }>> => {
+  getTable: async (toId: string, toType: "post" | "comment"): Promise<ApiResponse<{ like: number; dislike: number; userReactionId?: number; userReactionType?: string }>> => {
     const response = await api.get("/reactions/get-table", {
       params: { toId, toType },
     });
     return response.data;
   },
-  getReactions: async (params?: { toId?: number; toType?: "post" | "comment"; reactionName?: "Like" | "Dislike"; userId?: number }): Promise<ApiResponse<Reaction[]>> => {
+  getReactions: async (params?: { toId?: string; toType?: "post" | "comment"; reactionName?: "Like" | "Dislike"; userId?: number }): Promise<ApiResponse<Reaction[]>> => {
     const response = await api.get("/reactions/get", { params });
     return response.data;
   },

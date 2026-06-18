@@ -5,7 +5,7 @@ import { useAuth } from "../contexts/AuthContext";
 
 interface PostItemProps {
   post: Post;
-  onDeleteSuccess?: (postId: number) => void;
+  onDeleteSuccess?: (postId: string) => void;
   isDetail?: boolean;
 }
 

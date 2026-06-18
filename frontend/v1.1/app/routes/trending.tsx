@@ -28,7 +28,7 @@ export default function Trending() {
 
   useScrollPreservation("trending", loading, posts.length > 0);
 
-  const handleDeleteSuccess = (deletedId: number) => {
+  const handleDeleteSuccess = (deletedId: string) => {
     setPosts((prev) => prev.filter((p) => p.id !== deletedId));
   };
 

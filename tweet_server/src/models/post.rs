@@ -9,12 +9,12 @@ use sqlx::prelude::FromRow;
 #[derive(Debug, Serialize, Deserialize, Clone, FromRow, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct Post {
-    pub id: i32,
+    pub id: uuid::Uuid,
     pub content: String,
     pub created_at: DateTime<chrono::Utc>,
     pub updated_at: DateTime<chrono::Utc>,
     pub user_id: i32,
-    pub reply_to: Option<i32>,
+    pub reply_to: Option<uuid::Uuid>,
     pub user_name: String,
     pub like_count: Option<i32>,
     pub dislike_count: Option<i32>,
@@ -30,7 +30,7 @@ pub struct Post {
 pub struct CreatePost {
     pub content: String,
     pub user_id: Option<i32>,
-    pub reply_to: Option<i32>,
+    pub reply_to: Option<uuid::Uuid>,
     pub user_name: Option<String>,
 }
 
@@ -46,7 +46,7 @@ impl CreatePost {
         CreatePost {
             content: String::from(""),
             user_id: Some(1),
-            reply_to: Some(1),
+            reply_to: Some(uuid::Uuid::nil()),
             user_name: Some(String::from("")),
         }
     }

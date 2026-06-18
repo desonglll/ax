@@ -144,7 +144,7 @@ export default function Home() {
     }
   };
 
-  const handleDeleteSuccess = (deletedId: number) => {
+  const handleDeleteSuccess = (deletedId: string) => {
     setPosts((prev) => prev.filter((p) => p.id !== deletedId));
   };
 

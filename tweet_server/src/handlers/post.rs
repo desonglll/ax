@@ -81,7 +81,7 @@ curl -X GET http://localhost:8000/api/posts/get/1
 /// An HTTP response enclosing the post details on success, or an [`AxError`] on failure.
 pub async fn get_post_detail(
     app_state: web::Data<AppState>,
-    path: web::Path<(i32,)>,
+    path: web::Path<(uuid::Uuid,)>,
 ) -> Result<HttpResponse, AxError> {
     app_state.add_request_count();
     let (post_id,) = path.into_inner();
@@ -201,7 +201,7 @@ curl -X PUT localhost:8000/api/posts/1 \
 pub async fn update_post_details(
     session: Session,
     app_state: web::Data<AppState>,
-    path: web::Path<(i32,)>,
+    path: web::Path<(uuid::Uuid,)>,
     update_post: web::Json<UpdatePost>,
 ) -> Result<HttpResponse, AxError> {
     app_state.add_request_count();
@@ -254,7 +254,7 @@ curl -X DELETE http://localhost:8000/api/posts/1
 pub async fn delete_post(
     session: Session,
     app_state: web::Data<AppState>,
-    path: web::Path<(i32,)>,
+    path: web::Path<(uuid::Uuid,)>,
 ) -> Result<HttpResponse, AxError> {
     app_state.add_request_count();
     if let Ok(resp) = login_in_unauthentic(&session).await {
@@ -317,9 +317,10 @@ mod tests {
         let body_json: Value = serde_json::from_slice(&body_bytes).unwrap();
 
         // Extract the id field from the JSON object.
-        let post_id = body_json["body"]["data"]["id"]
-            .as_i64()
-            .expect("id not found or not an integer") as i32;
+        let post_id_str = body_json["body"]["data"]["id"]
+            .as_str()
+            .expect("id not found or not a string");
+        let post_id = uuid::Uuid::parse_str(post_id_str).expect("not a valid UUID");
 
         // Clean up the post inserted for testing.
         sqlx::query!("DELETE FROM posts WHERE id = $1", post_id)
@@ -337,7 +338,7 @@ mod tests {
         let insert_result = insert_post_db(&app_state.db, post.clone()).await.unwrap();
         assert_eq!(post.content, insert_result.content);
         // Delete test post.
-        let delete_params: web::Path<(i32,)> = web::Path::from((insert_result.id,));
+        let delete_params: web::Path<(uuid::Uuid,)> = web::Path::from((insert_result.id,));
         let resp = delete_post(session, app_state.clone(), delete_params)
             .await
             .unwrap();
@@ -354,7 +355,7 @@ mod tests {
         let update_post_msg = UpdatePost {
             content: Some(String::from("test_update_post_after")),
         };
-        let parameters: web::Path<(i32,)> = web::Path::from((insert_result.id,));
+        let parameters: web::Path<(uuid::Uuid,)> = web::Path::from((insert_result.id,));
         let update_param = web::Json(update_post_msg);
         // Set up session data before sending the request.
         let session = get_demo_session().await;
@@ -379,7 +380,7 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(&new_post_msg.content, &result.content);
-        let parameters: web::Path<(i32,)> = web::Path::from((result.id,));
+        let parameters: web::Path<(uuid::Uuid,)> = web::Path::from((result.id,));
         let resp = get_post_detail(app_state.clone(), parameters).await;
         match resp {
             Ok(_) => println!("Something wrong"),

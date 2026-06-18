@@ -51,7 +51,7 @@ pub async fn insert_comment_db(
 ///
 /// The deleted [`Comment`] record on success, or an [`AxError`] if the record
 /// is not found or database execution fails.
-pub async fn delete_comment_by_id_db(pool: &PgPool, id: i32) -> Result<Comment, AxError> {
+pub async fn delete_comment_by_id_db(pool: &PgPool, id: uuid::Uuid) -> Result<Comment, AxError> {
     let row = sqlx::query_as!(
         Comment,
         "delete from comments where id = $1 returning id, content, reply_to, user_id, user_name, created_at, updated_at, reply_to_type",
@@ -79,16 +79,16 @@ pub async fn get_comment_by_query_db(
     pool: &PgPool,
     query: web::Query<HashMap<String, String>>,
 ) -> Result<(Vec<Comment>, Pagination), AxError> {
-    let id = query.get("commentId").and_then(|s| s.parse::<i32>().ok());
+    let id = query.get("commentId").and_then(|s| s.parse::<uuid::Uuid>().ok());
     let default_type = String::from("post");
     let reply_to_type = query.get("replyToType").unwrap_or(&default_type);
-    let reply_to = query.get("replyTo").and_then(|s| s.parse::<i32>().ok());
+    let reply_to = query.get("replyTo").and_then(|s| s.parse::<uuid::Uuid>().ok());
     let limit = query.get("limit").and_then(|s| s.parse::<i64>().ok()).unwrap_or(10);
     let offset = query.get("offset").and_then(|s| s.parse::<i64>().ok()).unwrap_or(0);
 
     let rows = sqlx::query_as!(
         Comment,
-        "select * from comments where reply_to_type = $1 and ($2::int is null or reply_to = $2) and ($3::int is null or id = $3) limit $4 offset $5",
+        "select * from comments where reply_to_type = $1 and ($2::uuid is null or reply_to = $2) and ($3::uuid is null or id = $3) limit $4 offset $5",
         reply_to_type,
         reply_to,
         id,
@@ -97,7 +97,7 @@ pub async fn get_comment_by_query_db(
     ).fetch_all(pool).await?;
 
     let count = sqlx::query_scalar!(
-        "select count(*) from comments where reply_to_type = $1 and ($2::int is null or reply_to = $2) and ($3::int is null or id = $3)",
+        "select count(*) from comments where reply_to_type = $1 and ($2::uuid is null or reply_to = $2) and ($3::uuid is null or id = $3)",
         reply_to_type,
         reply_to,
         id

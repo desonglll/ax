@@ -75,7 +75,7 @@ pub async fn insert_comment(
 pub async fn delete_comment(
     session: Session,
     app_state: web::Data<AppState>,
-    params: web::Path<(i32,)>,
+    params: web::Path<(uuid::Uuid,)>,
 ) -> Result<HttpResponse, AxError> {
     // Perform authentication check.
     if let Ok(resp) = login_in_unauthentic(&session).await {
@@ -166,9 +166,10 @@ mod tests {
             .unwrap();
         assert_eq!(resp.status(), StatusCode::OK);
         let body_json: Value = http_response_to_json(resp).await;
-        let comment_id = body_json["body"]["data"]["id"]
-            .as_i64()
-            .expect("id not found or not an integer") as i32;
+        let comment_id_str = body_json["body"]["data"]["id"]
+            .as_str()
+            .expect("id not found or not a string");
+        let comment_id = uuid::Uuid::parse_str(comment_id_str).expect("not a valid UUID");
         // Clean up the comment inserted for testing.
         sqlx::query!("DELETE FROM comments WHERE id = $1", comment_id)
             .execute(&app_state.db)
@@ -186,10 +187,11 @@ mod tests {
             .unwrap();
         assert_eq!(resp.status(), StatusCode::OK);
         let body_json: Value = http_response_to_json(resp).await;
-        let comment_id = body_json["body"]["data"]["id"]
-            .as_i64()
-            .expect("id not found or not an integer") as i32;
-        let params = actix_web::web::Path::<(i32,)>::from((comment_id,));
+        let comment_id_str = body_json["body"]["data"]["id"]
+            .as_str()
+            .expect("id not found or not a string");
+        let comment_id = uuid::Uuid::parse_str(comment_id_str).expect("not a valid UUID");
+        let params = actix_web::web::Path::<(uuid::Uuid,)>::from((comment_id,));
         let del_resp = delete_comment(session.clone(), app_state.clone(), params)
             .await
             .unwrap();
@@ -206,9 +208,10 @@ mod tests {
             .unwrap();
         assert_eq!(resp.status(), StatusCode::OK);
         let body_json: Value = http_response_to_json(resp).await;
-        let comment_id = body_json["body"]["data"]["id"]
-            .as_i64()
-            .expect("id not found or not an integer") as i32;
+        let comment_id_str = body_json["body"]["data"]["id"]
+            .as_str()
+            .expect("id not found or not a string");
+        let comment_id = uuid::Uuid::parse_str(comment_id_str).expect("not a valid UUID");
         let mut query = HashMap::<String, String>::new();
         query.insert("commentId".to_string(), comment_id.to_string());
 
@@ -218,9 +221,10 @@ mod tests {
             .unwrap();
         let get_body_json: Value = http_response_to_json(get_resp).await;
         println!("{:?}", get_body_json);
-        let get_comment_id = get_body_json["body"]["data"][0]["id"]
-            .as_i64()
-            .expect("id not found or not an integer") as i32;
+        let get_comment_id_str = get_body_json["body"]["data"][0]["id"]
+            .as_str()
+            .expect("id not found or not a string");
+        let get_comment_id = uuid::Uuid::parse_str(get_comment_id_str).expect("not a valid UUID");
         assert_eq!(comment_id, get_comment_id);
 
         // Clean up the comment inserted for testing.
@@ -240,9 +244,10 @@ mod tests {
             .unwrap();
         assert_eq!(resp.status(), StatusCode::OK);
         let body_json: Value = http_response_to_json(resp).await;
-        let comment_id = body_json["body"]["data"]["id"]
-            .as_i64()
-            .expect("id not found or not an integer") as i32;
+        let comment_id_str = body_json["body"]["data"]["id"]
+            .as_str()
+            .expect("id not found or not a string");
+        let comment_id = uuid::Uuid::parse_str(comment_id_str).expect("not a valid UUID");
 
         // Query with pagination limit=1
         let mut query = HashMap::<String, String>::new();

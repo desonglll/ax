@@ -7,8 +7,8 @@ use serde::{Deserialize, Serialize};
 /// This lists the active interactive responses associated with target IDs.
 #[derive(Serialize, Deserialize, Debug)]
 pub enum ReactionName {
-    Like(i32),
-    Dislike(i32),
+    Like(uuid::Uuid),
+    Dislike(uuid::Uuid),
 }
 
 /// Reaction data model.
@@ -20,7 +20,7 @@ pub enum ReactionName {
 pub struct Reaction {
     pub id: i32,
     pub user_id: i32,
-    pub to_id: i32,
+    pub to_id: uuid::Uuid,
     pub created_at: DateTime<chrono::Utc>,
     pub reaction_name: String,
     pub to_type: String,
@@ -33,7 +33,7 @@ pub struct Reaction {
 #[serde(rename_all = "camelCase")]
 pub struct CreateReaction {
     pub user_id: i32,
-    pub to_id: i32,
+    pub to_id: uuid::Uuid,
     pub to_type: String,
 }
 
