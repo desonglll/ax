@@ -34,10 +34,10 @@ All source files are nested within the `app/` folder:
 - **`app.css`**: Configures TailwindCSS imports and basic color schemes.
 - **`contexts/AuthContext.tsx`**: Exposes authentication actions (`login`, `logout`, `register`) and keeps the current user reference synced.
 - **`components/`**: Houses reusable sub-components, such as:
-  - `PostItem.tsx`: Renders a post, handles deletions, loads reactions (Likes/Dislikes), and displays linked attachments (images are rendered inline; other file types are displayed as download links with corresponding icons).
+  - `PostItem.tsx`: Renders a post, handles deletions, loads reactions (Likes/Dislikes), and displays linked attachments (images and videos are previewed inline; other file types are displayed as download links with corresponding icons).
   - `CommentNode.tsx`: Recursively fetches and displays comments and replies in a threaded view.
 - **`routes/`**: Contains the route components:
-  - `home.tsx`: Displays the main timeline list (with pagination) and the post creator interface. The post creator includes a multiple file selector input. Selecting attachments uploads them concurrently upon submitting the post, collecting their UUIDs to associate them with the new post.
+  - `home.tsx`: Displays the main timeline list (with pagination) and the post creator interface. The post creator supports picking multiple attachments (accumulated across selection actions) with a visual list, individual "[Remove]" buttons, and inline previews restricted strictly to images and videos. Files are uploaded concurrently upon submission.
   - `trending.tsx`: Displays recommended trending posts.
   - `post.tsx`: Displays the post detail and nested comment threads.
   - `profile.tsx`: Displays user details, locally computes user statistics (total posts, average likes/dislikes, engagement rate), and handles profile updates. Admins can view and delete users here.

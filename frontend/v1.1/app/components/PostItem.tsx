@@ -251,6 +251,7 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onDeleteSuccess, isDet
           <div className="flex flex-col gap-2">
             {post.attachments.map((file) => {
               const isImage = file.contentType.startsWith("image/");
+              const isVideo = file.contentType.startsWith("video/");
               const downloadUrl = fileApi.getDownloadUrl(file.id);
               return (
                 <div key={file.id} className="flex flex-col items-start gap-1 font-mono text-xs">
@@ -263,6 +264,17 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onDeleteSuccess, isDet
                           className="max-w-md max-h-96 border border-gray-300 dark:border-gray-800 object-contain hover:opacity-95"
                         />
                       </a>
+                      <span className="text-[10px] text-gray-400 mt-1 block">
+                        {file.name} ({Math.round(file.size / 1024)} KB)
+                      </span>
+                    </div>
+                  ) : isVideo ? (
+                    <div className="max-w-full">
+                      <video
+                        src={downloadUrl}
+                        controls
+                        className="max-w-md max-h-96 border border-gray-300 dark:border-gray-800 object-contain"
+                      />
                       <span className="text-[10px] text-gray-400 mt-1 block">
                         {file.name} ({Math.round(file.size / 1024)} KB)
                       </span>

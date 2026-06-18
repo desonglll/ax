@@ -62,7 +62,12 @@ export default function Home() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [newContent, setNewContent] = useState("");
   const [newTitle, setNewTitle] = useState("");
-  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
+  interface AttachmentItem {
+    id: string;
+    file: File;
+    previewUrl?: string;
+  }
+  const [selectedFiles, setSelectedFiles] = useState<AttachmentItem[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -111,6 +116,33 @@ export default function Home() {
 
   useScrollPreservation(`home_${offset}_${searchQuery}`, loading, posts.length > 0);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const filesArray = Array.from(e.target.files);
+      const newItems = filesArray.map((file) => {
+        const isImage = file.type.startsWith("image/");
+        const isVideo = file.type.startsWith("video/");
+        return {
+          id: Math.random().toString(36).substring(2, 9),
+          file,
+          previewUrl: (isImage || isVideo) ? URL.createObjectURL(file) : undefined,
+        };
+      });
+      setSelectedFiles((prev) => [...prev, ...newItems]);
+    }
+    e.target.value = "";
+  };
+
+  const handleRemoveFile = (id: string) => {
+    setSelectedFiles((prev) => {
+      const target = prev.find((item) => item.id === id);
+      if (target?.previewUrl) {
+        URL.revokeObjectURL(target.previewUrl);
+      }
+      return prev.filter((item) => item.id !== id);
+    });
+  };
+
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newContent.trim()) return;
@@ -120,10 +152,10 @@ export default function Home() {
 
     try {
       let attachmentIds: string[] = [];
-      if (selectedFiles && selectedFiles.length > 0) {
+      if (selectedFiles.length > 0) {
         const formData = new FormData();
         for (let i = 0; i < selectedFiles.length; i++) {
-          formData.append("file", selectedFiles[i]);
+          formData.append("file", selectedFiles[i].file);
         }
         const uploadRes = await fileApi.uploadPublic(formData);
         if (uploadRes.code === 200 && uploadRes.body.data) {
@@ -137,7 +169,13 @@ export default function Home() {
       if (res.code === 200 && res.body.data) {
         setNewContent("");
         setNewTitle("");
-        setSelectedFiles(null);
+        
+        // Clean up object URLs to prevent leaks
+        selectedFiles.forEach((item) => {
+          if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+        });
+        setSelectedFiles([]);
+
         const fileInput = document.getElementById("post-files") as HTMLInputElement;
         if (fileInput) fileInput.value = "";
 
@@ -233,10 +271,62 @@ export default function Home() {
                 type="file"
                 multiple
                 disabled={submitting}
-                onChange={(e) => setSelectedFiles(e.target.files)}
+                onChange={handleFileChange}
                 className="w-full text-xs font-sans text-gray-700 dark:text-gray-300 file:mr-2 file:py-1 file:px-2 file:border file:border-gray-300 dark:file:border-gray-800 file:bg-gray-100 dark:file:bg-gray-900 file:text-xs file:font-mono hover:file:bg-gray-200 cursor-pointer focus:outline-none"
               />
             </div>
+
+            {selectedFiles.length > 0 && (
+              <div className="mb-4 p-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-800">
+                <span className="text-[10px] font-bold uppercase block text-gray-500 mb-2 font-mono">
+                  Selected Attachments ({selectedFiles.length}):
+                </span>
+                <div className="flex flex-col gap-2">
+                  {selectedFiles.map((item) => {
+                    const isImage = item.file.type.startsWith("image/");
+                    const isVideo = item.file.type.startsWith("video/");
+                    return (
+                      <div
+                        key={item.id}
+                        className="flex flex-col gap-2 border border-gray-300 dark:border-gray-800 p-2 bg-white dark:bg-gray-950 rounded-sm"
+                      >
+                        <div className="flex items-center justify-between text-xs font-mono">
+                          <span className="truncate max-w-[80%] text-gray-700 dark:text-gray-300">
+                            {item.file.name} ({Math.round(item.file.size / 1024)} KB)
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveFile(item.id)}
+                            className="text-red-600 hover:underline font-bold"
+                          >
+                            [Remove]
+                          </button>
+                        </div>
+                        {isImage && item.previewUrl && (
+                          <div className="max-w-[120px]">
+                            <img
+                              src={item.previewUrl}
+                              alt={item.file.name}
+                              className="max-h-24 border border-gray-300 dark:border-gray-800 object-contain"
+                            />
+                          </div>
+                        )}
+                        {isVideo && item.previewUrl && (
+                          <div className="max-w-[120px]">
+                            <video
+                              src={item.previewUrl}
+                              controls
+                              muted
+                              className="max-h-24 border border-gray-300 dark:border-gray-800 object-contain"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             <div className="flex justify-end">
               <button
                 type="submit"
