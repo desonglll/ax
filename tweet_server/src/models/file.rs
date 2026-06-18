@@ -22,6 +22,7 @@ pub struct File {
     pub is_deleted: bool,
     pub is_pub: bool,
     pub post_id: Option<Uuid>,
+    pub comment_id: Option<Uuid>,
 }
 
 impl File {
@@ -70,6 +71,7 @@ impl File {
             is_deleted: false,
             is_pub,
             post_id: None,
+            comment_id: None,
         }
     }
 }

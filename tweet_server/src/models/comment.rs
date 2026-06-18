@@ -27,6 +27,7 @@ pub struct CreateComment {
     content: String,
     reply_to: uuid::Uuid,
     user_id: Option<i32>,
+    pub attachments: Option<Vec<uuid::Uuid>>,
 }
 
 impl CreateComment {
@@ -35,11 +36,13 @@ impl CreateComment {
         content: String,
         reply_to: uuid::Uuid,
         user_id: Option<i32>,
+        attachments: Option<Vec<uuid::Uuid>>,
     ) -> Self {
         Self {
             content,
             reply_to,
             user_id,
+            attachments,
         }
     }
 
@@ -79,6 +82,16 @@ impl CreateComment {
             content: "demo".to_string(),
             reply_to: uuid::Uuid::nil(),
             user_id: None,
+            attachments: None,
         }
     }
+}
+
+/// Detailed comment view with flattened comment fields and attached file records.
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct CommentDetail {
+    #[serde(flatten)]
+    pub comment: Comment,
+    pub attachments: Vec<crate::models::file::File>,
 }

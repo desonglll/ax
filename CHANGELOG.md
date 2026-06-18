@@ -5,6 +5,9 @@ This document logs the development history and version alterations of Project Ax
 ## [0.4.0] - 2026-06-18
 
 ### Added
+- Implemented file attachments support for comments. Users can upload and associate multiple public files when publishing a comment or nested reply, which are stored and associated via a new `comment_id` column in the `files` table.
+- Created database migration `20260618190000_add_comment_id_to_files.sql` to add the `comment_id` column referencing `comments(id)` to the `files` table.
+- Added `CommentDetail` data transfer model on the backend and updated comment retrieval/creation API endpoints to fetch and return comments along with their nested attachments.
 - Implemented an asynchronous background message queue (`QueueWorker`) using `tokio::sync::mpsc::unbounded_channel` to handle post title completion via the `ai` crate. When a post is created without a title, its ID is sent to the queue to generate a title from its content using the OpenAI Chat Completion API.
 - Added a database scanner (`scan_and_enqueue_empty_titles`) running on server startup to scan all posts with empty or null titles and enqueue them for background title completion.
 - Added integration test coverage (`test_queue_worker_process_post`) to verify correct enqueuing, mock OpenAI API response processing, and post title updating.
@@ -14,6 +17,8 @@ This document logs the development history and version alterations of Project Ax
 - Added a global floating scroll-to-top button in the master application layout (`root.tsx`) that appears when scrolling down past 300px.
 
 ### Changed
+- Extended frontend comment components (`post.tsx` and `CommentNode.tsx`) to manage comment attachments. Users can now select and upload files during comment creation and replies, and view attachments directly under comments with toggleable previews.
+- Exported and reused `AttachmentItemRenderer` component from `PostItem.tsx` to display file attachments consistently for both posts and comments.
 - Refactored the entire frontend page layouts, form inputs, buttons, tables, alerts, and stats panels to utilize standard, clean daisyUI components. Standardized the theme design to follow flat, content-focused minimalist principles without flashy gradients, animations, or shadows.
 - Configured the default sorting column of the post list database query to fallback to `created_at` instead of random `id` (UUID), sorting timeline posts chronologically by default.
 - Configured post titles to be optional in the frontend creation form and editing view, removing the `required` HTML attributes and updating validation logic.

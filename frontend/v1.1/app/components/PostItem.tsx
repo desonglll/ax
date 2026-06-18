@@ -360,7 +360,7 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onDeleteSuccess, isDet
 };
 
 // Helper component for rendering attachments with stateful preview toggle
-const AttachmentItemRenderer: React.FC<{ file: FileRecord }> = ({ file }) => {
+export const AttachmentItemRenderer: React.FC<{ file: FileRecord }> = ({ file }) => {
   const [showPreview, setShowPreview] = useState(false);
   const isImage = file.contentType.startsWith("image/");
   const isVideo = file.contentType.startsWith("video/");

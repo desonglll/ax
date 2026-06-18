@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useSearchParams } from "react-router";
-import { postApi, commentApi, type Post, type Comment } from "../utils/api";
+import { postApi, commentApi, fileApi, type Post, type Comment } from "../utils/api";
 import { useScrollPreservation } from "../utils/scroll";
 import { useAuth } from "../contexts/AuthContext";
 import { PostItem } from "../components/PostItem";
@@ -18,6 +18,7 @@ export default function PostDetail() {
   const [loadingComments, setLoadingComments] = useState(true);
   const [submittingComment, setSubmittingComment] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<{ id: string; file: File; previewUrl?: string }[]>([]);
 
   // Pagination for top-level comments bound to URL search parameter
   const [searchParams, setSearchParams] = useSearchParams();
@@ -88,15 +89,66 @@ export default function PostDetail() {
 
   useScrollPreservation(`post_${parsedPostId}_${offset}`, loadingPost || loadingComments, !!post);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const filesArray = Array.from(e.target.files);
+      const newItems = filesArray.map((file) => {
+        const isImage = file.type.startsWith("image/");
+        const isVideo = file.type.startsWith("video/");
+        return {
+          id: Math.random().toString(36).substring(2, 9),
+          file,
+          previewUrl: (isImage || isVideo) ? URL.createObjectURL(file) : undefined,
+        };
+      });
+      setSelectedFiles((prev) => [...prev, ...newItems]);
+    }
+    e.target.value = "";
+  };
+
+  const handleRemoveFile = (id: string) => {
+    setSelectedFiles((prev) => {
+      const target = prev.find((item) => item.id === id);
+      if (target?.previewUrl) {
+        URL.revokeObjectURL(target.previewUrl);
+      }
+      return prev.filter((item) => item.id !== id);
+    });
+  };
+
   const handleCreateComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCommentText.trim() || !parsedPostId) return;
 
     setSubmittingComment(true);
     try {
-      const res = await commentApi.create(newCommentText.trim(), parsedPostId);
+      let attachmentIds: string[] = [];
+      if (selectedFiles.length > 0) {
+        const formData = new FormData();
+        for (let i = 0; i < selectedFiles.length; i++) {
+          formData.append("file", selectedFiles[i].file);
+        }
+        const uploadRes = await fileApi.uploadPublic(formData);
+        if (uploadRes.code === 200 && uploadRes.body.data) {
+          attachmentIds = uploadRes.body.data.map((file) => file.id);
+        } else {
+          throw new Error("Failed to upload attachments.");
+        }
+      }
+
+      const res = await commentApi.create(newCommentText.trim(), parsedPostId, attachmentIds);
       if (res.code === 200 && res.body.data) {
         setNewCommentText("");
+
+        // Clean up object URLs to prevent leaks
+        selectedFiles.forEach((item) => {
+          if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+        });
+        setSelectedFiles([]);
+
+        const fileInput = document.getElementById("comment-files") as HTMLInputElement;
+        if (fileInput) fileInput.value = "";
+
         // Reset to first page of comments to see the new comment
         if (offset === 0) {
           fetchComments(0);
@@ -168,6 +220,67 @@ export default function PostDetail() {
               className="textarea textarea-bordered w-full font-sans text-xs"
               required
             />
+            <div className="mb-2">
+              <label className="block text-xs font-bold uppercase mb-1 opacity-70">Attachments (optional):</label>
+              <input
+                id="comment-files"
+                type="file"
+                multiple
+                disabled={submittingComment}
+                onChange={handleFileChange}
+                className="file-input file-input-bordered file-input-sm w-full text-xs font-sans"
+              />
+            </div>
+
+            {selectedFiles.length > 0 && (
+              <div className="mb-2 p-3 bg-base-200 border border-base-300 rounded-box">
+                <span className="text-[10px] font-bold uppercase block text-base-content/60 mb-2 font-mono">
+                  Selected Attachments ({selectedFiles.length}):
+                </span>
+                <div className="flex flex-col gap-2">
+                  {selectedFiles.map((item) => {
+                    const isImage = item.file.type.startsWith("image/");
+                    const isVideo = item.file.type.startsWith("video/");
+                    return (
+                      <div
+                        key={item.id}
+                        className="flex flex-col gap-2 border border-base-300 p-2 bg-base-100 rounded-btn"
+                      >
+                        <div className="flex items-center justify-between text-xs font-mono">
+                          <span className="truncate max-w-[80%] opacity-85 text-xs">
+                            {item.file.name} ({Math.round(item.file.size / 1024)} KB)
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveFile(item.id)}
+                            className="btn btn-ghost btn-xs text-error font-bold"
+                          >
+                            [Remove]
+                          </button>
+                        </div>
+                        {isImage && item.previewUrl && (
+                          <div className="max-w-[120px]">
+                            <img
+                              src={item.previewUrl}
+                              alt={item.file.name}
+                              className="max-w-full max-h-24 border border-base-300 object-contain bg-base-100 rounded"
+                            />
+                          </div>
+                        )}
+                        {isVideo && item.previewUrl && (
+                          <div className="max-w-[200px]">
+                            <video
+                              src={item.previewUrl}
+                              className="max-w-full max-h-32 border border-base-300 object-contain bg-base-100 rounded"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             <div className="flex justify-end">
               <button
                 type="submit"

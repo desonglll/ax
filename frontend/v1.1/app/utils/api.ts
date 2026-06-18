@@ -52,6 +52,7 @@ export interface Comment {
   userName: string;
   createdAt: string;
   updatedAt: string;
+  attachments?: FileRecord[];
 }
 
 export interface Reaction {
@@ -178,10 +179,11 @@ export const postApi = {
 // Comment Endpoints
 // ============================================================================
 export const commentApi = {
-  create: async (content: string, replyTo: string): Promise<ApiResponse<Comment>> => {
+  create: async (content: string, replyTo: string, attachments?: string[]): Promise<ApiResponse<Comment>> => {
     const response = await api.post("/comments/post", {
       content,
       replyTo,
+      attachments,
     });
     return response.data;
   },

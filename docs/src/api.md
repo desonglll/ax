@@ -187,28 +187,29 @@ Deletes the post. The request must originate from the post owner or an administr
 ## Comment Endpoints (`/api/comments`)
 
 ### POST /api/comments/post
-Creates a comment replying to a post or another comment.
+Creates a comment replying to a post or another comment. Requires authentication.
 - **Request Body**:
   ```json
   {
     "content": "Nice post!",
-    "replyTo": 1,
-    "replyType": "post"
+    "replyTo": "76495db6-0cb2-4a00-9844-4638706d87e0",
+    "attachments": [
+      "d78f2379-cb4a-4467-bc18-97c7e5cb2fb6"
+    ]
   }
   ```
 - **Response (200 OK)**:
-  Returns the created comment record.
+  Returns the created comment detail record (including nested `attachments`).
 
 ### GET /api/comments/get
 Retrieves comments matching the query. Supports pagination.
 - **Query Parameters**:
   - `commentId`: filter by comment ID
   - `replyTo`: filter by target ID
-  - `replyToType` (default: "post"): filter by reply target type
   - `limit` (default: 10)
   - `offset` (default: 0)
 - **Response (200 OK)**:
-  Returns a list of comments and a pagination metadata object.
+  Returns a list of comment detail records (each including an `attachments` array) and a pagination metadata object.
 
 ### DELETE /api/comments/delete/{id}
 Deletes the specified comment. The request must originate from the comment owner or an administrator.

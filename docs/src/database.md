@@ -74,6 +74,7 @@ Stores file metadata for user uploads and post attachments.
 - `is_deleted` (BOOLEAN): Soft delete flag.
 - `is_pub` (BOOLEAN): Publicly readable flag.
 - `post_id` (UUID, Foreign Key referencing `posts(id)`): Attached post ID (optional).
+- `comment_id` (UUID, Foreign Key referencing `comments(id)`): Attached comment ID (optional).
 
 ---
 

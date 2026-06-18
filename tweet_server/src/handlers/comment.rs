@@ -46,16 +46,33 @@ pub async fn insert_comment(
     let user_id: i32 = session.get::<i32>("user_id").unwrap().unwrap_or(0);
     let mut create_comment = create_comment.into_inner();
     create_comment.set_user_id(Some(user_id));
-    insert_comment_db(&app_state.db, create_comment)
-        .await
-        .map(|comment| {
-            let api_response = ApiResponse::new(
-                200,
-                "Create Comment Successful".to_string(),
-                Some(DataBuilder::new().set_data(comment).build()),
-            );
-            HttpResponse::Ok().json(api_response)
-        })
+
+    let attachments = create_comment.attachments.clone();
+
+    let comment = insert_comment_db(&app_state.db, create_comment).await?;
+
+    if let Some(attachments_list) = attachments {
+        for file_id in attachments_list {
+            let _ = sqlx::query!(
+                "UPDATE files SET comment_id = $1 WHERE id = $2 AND user_id = $3",
+                comment.id,
+                file_id,
+                user_id
+            )
+            .execute(&app_state.db)
+            .await;
+        }
+    }
+
+    let files = crate::dbaccess::file::get_file_attachments_by_comment_db(&app_state.db, comment.id).await.unwrap_or_default();
+    let comment_detail = crate::models::comment::CommentDetail { comment, attachments: files };
+
+    let api_response = ApiResponse::new(
+        200,
+        "Create Comment Successful".to_string(),
+        Some(DataBuilder::new().set_data(comment_detail).build()),
+    );
+    Ok(HttpResponse::Ok().json(api_response))
 }
 
 /// Delete a comment record by its identifier.
@@ -126,21 +143,24 @@ pub async fn get_comment_by_query(
     app_state: web::Data<AppState>,
     query: web::Query<HashMap<String, String>>,
 ) -> Result<HttpResponse, AxError> {
-    get_comment_by_query_db(&app_state.db, query)
-        .await
-        .map(|(comment, pagination)| {
-            let api_response = ApiResponse::new(
-                200,
-                "Get Comment Successful".to_string(),
-                Some(
-                    DataBuilder::new()
-                        .set_data(comment)
-                        .set_pagination(pagination)
-                        .build(),
-                ),
-            );
-            HttpResponse::Ok().json(api_response)
-        })
+    let (comments, pagination) = get_comment_by_query_db(&app_state.db, query).await?;
+    let mut comments_with_files = Vec::new();
+    for comment in comments {
+        let files = crate::dbaccess::file::get_file_attachments_by_comment_db(&app_state.db, comment.id).await.unwrap_or_default();
+        comments_with_files.push(crate::models::comment::CommentDetail { comment, attachments: files });
+    }
+
+    let api_response = ApiResponse::new(
+        200,
+        "Get Comment Successful".to_string(),
+        Some(
+            DataBuilder::new()
+                .set_data(comments_with_files)
+                .set_pagination(pagination)
+                .build(),
+        ),
+    );
+    Ok(HttpResponse::Ok().json(api_response))
 }
 
 #[cfg(test)]
