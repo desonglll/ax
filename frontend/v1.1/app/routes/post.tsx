@@ -23,6 +23,7 @@ export default function PostDetail() {
   const [searchParams, setSearchParams] = useSearchParams();
   const offset = Number(searchParams.get("offset") || "0");
   const limit = 5;
+  const [totalComments, setTotalComments] = useState(0);
   const [hasMore, setHasMore] = useState(true);
 
   const fetchPostDetail = async () => {
@@ -57,6 +58,8 @@ export default function PostDetail() {
       });
       if (res.code === 200 && res.body.data) {
         setComments(res.body.data);
+        const countVal = res.body.pagination?.count ?? 0;
+        setTotalComments(countVal);
         setHasMore(res.body.data.length === limit);
       }
     } catch (err: any) {
@@ -126,6 +129,9 @@ export default function PostDetail() {
     );
   }
 
+  const totalPages = Math.ceil(totalComments / limit);
+  const currentPage = Math.floor(offset / limit) + 1;
+
   return (
     <div className="flex flex-col gap-6 font-mono">
       <div>
@@ -187,36 +193,60 @@ export default function PostDetail() {
             ))}
 
             {/* Pagination Controls */}
-            <div className="flex items-center justify-between border-t border-gray-200 dark:border-gray-800 pt-3 mt-2">
-              {offset === 0 ? (
-                <span className="bg-gray-100 border border-gray-300 px-3 py-0.5 text-2xs font-bold dark:bg-gray-900 dark:border-gray-800 opacity-30 cursor-not-allowed text-gray-400">
-                  [Prev Comments]
-                </span>
-              ) : (
-                <a
-                  href={`/posts/${post.id}?offset=${Math.max(0, offset - limit)}`}
-                  className="bg-gray-100 border border-gray-300 px-3 py-0.5 text-2xs font-bold dark:bg-gray-900 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200 cursor-pointer"
-                >
-                  [Prev Comments]
-                </a>
+            <div className="flex items-center justify-between border-t border-gray-200 dark:border-gray-800 pt-3 mt-2 flex-wrap gap-4">
+              <div className="flex gap-2">
+                {offset === 0 ? (
+                  <span className="bg-gray-100 border border-gray-300 px-3 py-0.5 text-2xs font-bold dark:bg-gray-900 dark:border-gray-800 opacity-30 cursor-not-allowed text-gray-400">
+                    [Prev Comments]
+                  </span>
+                ) : (
+                  <a
+                    href={`/posts/${post.id}?offset=${Math.max(0, offset - limit)}`}
+                    className="bg-gray-100 border border-gray-300 px-3 py-0.5 text-2xs font-bold dark:bg-gray-900 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200 cursor-pointer"
+                  >
+                    [Prev Comments]
+                  </a>
+                )}
+
+                {!hasMore ? (
+                  <span className="bg-gray-100 border border-gray-300 px-3 py-0.5 text-2xs font-bold dark:bg-gray-900 dark:border-gray-800 opacity-30 cursor-not-allowed text-gray-400">
+                    [Next Comments]
+                  </span>
+                ) : (
+                  <a
+                    href={`/posts/${post.id}?offset=${offset + limit}`}
+                    className="bg-gray-100 border border-gray-300 px-3 py-0.5 text-2xs font-bold dark:bg-gray-900 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200 cursor-pointer"
+                  >
+                    [Next Comments]
+                  </a>
+                )}
+              </div>
+
+              {totalPages > 0 && (
+                <div className="flex items-center gap-2 text-2xs text-gray-700 dark:text-gray-300">
+                  <span>Page:</span>
+                  <select
+                    value={currentPage}
+                    onChange={(e) => {
+                      const pageNum = Number(e.target.value);
+                      const newOffset = (pageNum - 1) * limit;
+                      window.location.href = `/posts/${post.id}?offset=${newOffset}`;
+                    }}
+                    className="border border-gray-300 dark:border-gray-800 bg-white dark:bg-gray-950 px-2 py-0.5 text-2xs font-mono focus:outline-none text-gray-800 dark:text-gray-200"
+                  >
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((pNum) => (
+                      <option key={pNum} value={pNum}>
+                        {pNum}
+                      </option>
+                    ))}
+                  </select>
+                  <span>of {totalPages}</span>
+                </div>
               )}
 
-              <span className="text-xs text-gray-500">
+              <span className="text-2xs text-gray-500">
                 Offset: {offset}
               </span>
-
-              {!hasMore ? (
-                <span className="bg-gray-100 border border-gray-300 px-3 py-0.5 text-2xs font-bold dark:bg-gray-900 dark:border-gray-800 opacity-30 cursor-not-allowed text-gray-400">
-                  [Next Comments]
-                </span>
-              ) : (
-                <a
-                  href={`/posts/${post.id}?offset=${offset + limit}`}
-                  className="bg-gray-100 border border-gray-300 px-3 py-0.5 text-2xs font-bold dark:bg-gray-900 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200 cursor-pointer"
-                >
-                  [Next Comments]
-                </a>
-              )}
             </div>
           </div>
         )}

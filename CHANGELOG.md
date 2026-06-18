@@ -2,6 +2,12 @@
 
 This document logs the development history and version alterations of Project Ax.
 
+## [0.4.0] - 2026-06-18
+
+### Added
+- Implemented text-based post search functionality. Extended the database query in `post.rs` to support dynamic query keyword filtering using `content ILIKE $1` on the PostgreSQL level, and added a search input bar above the home page timeline.
+- Added direct page selection jumping. Configured a `<select>` dropdown next to timeline and comments pagination controls to allow standard HTTP page-reload navigation directly to any page number while preserving active search query filters.
+
 ## [0.3.2] - 2026-06-17
 
 ### Added

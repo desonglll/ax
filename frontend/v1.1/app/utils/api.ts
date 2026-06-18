@@ -151,7 +151,7 @@ export const postApi = {
     const response = await api.post("/posts/post", { content });
     return response.data;
   },
-  list: async (params?: { limit?: number; offset?: number; order_by?: string; sort?: string }): Promise<ApiResponse<Post[]>> => {
+  list: async (params?: { limit?: number; offset?: number; order_by?: string; sort?: string; search?: string }): Promise<ApiResponse<Post[]>> => {
     const response = await api.get("/posts/get", { params });
     return response.data;
   },
@@ -181,7 +181,7 @@ export const commentApi = {
     const response = await api.post("/comments/post", {
       content,
       replyTo,
-      replyType: replyToType,
+      replyToType,
     });
     return response.data;
   },

@@ -97,32 +97,52 @@ pub async fn get_post_list_db(
         .and_then(|s| s.parse::<i64>().ok())
         .unwrap_or(0);
     println!("order_by: {:#?} sort: {:#?}", order_by, sort);
-    /*
-      The parameters ORDER_BY and SORT are directly interpolated into the query
-      string as they are part of the SQL syntax and cannot be bound dynamically.
-     */
-    // Construct the SQL query string.
-    let sql = format!(
-        "SELECT * FROM posts ORDER BY {} {} LIMIT $1 OFFSET $2",
-        order_by,
-        sort
-    );
 
-    // Execute the database query.
-    let posts = sqlx::query_as::<_, Post>(&sql)
-        .bind(limit) // Bind the limit parameter.
-        .bind(offset) // Bind the offset parameter.
-        .fetch_all(pool)
-        .await?;
+    let search = query_map.get("search").map(|s| s.trim()).filter(|s| !s.is_empty());
 
-    let count = sqlx::query_scalar!("select count(*) from posts")
-        .fetch_one(pool)
-        .await?;
+    let (posts, count) = if let Some(keyword) = search {
+        let like_pattern = format!("%{}%", keyword);
+        let sql = format!(
+            "SELECT * FROM posts WHERE content ILIKE $1 ORDER BY {} {} LIMIT $2 OFFSET $3",
+            order_by,
+            sort
+        );
+        let posts = sqlx::query_as::<_, Post>(&sql)
+            .bind(&like_pattern)
+            .bind(limit)
+            .bind(offset)
+            .fetch_all(pool)
+            .await?;
+
+        let count = sqlx::query_scalar::<_, i64>("SELECT count(*) FROM posts WHERE content ILIKE $1")
+            .bind(&like_pattern)
+            .fetch_one(pool)
+            .await?;
+
+        (posts, count)
+    } else {
+        let sql = format!(
+            "SELECT * FROM posts ORDER BY {} {} LIMIT $1 OFFSET $2",
+            order_by,
+            sort
+        );
+        let posts = sqlx::query_as::<_, Post>(&sql)
+            .bind(limit)
+            .bind(offset)
+            .fetch_all(pool)
+            .await?;
+
+        let count = sqlx::query_scalar::<_, i64>("SELECT count(*) FROM posts")
+            .fetch_one(pool)
+            .await?;
+
+        (posts, count)
+    };
+
     let pagination = PaginationBuilder::new(limit, offset)
-        .set_count(count.unwrap_or(0))
+        .set_count(count)
         .build();
 
-    // unimplemented!();
     Ok((posts, pagination))
 }
 
