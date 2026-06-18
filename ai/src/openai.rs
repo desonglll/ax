@@ -10,8 +10,17 @@ pub struct OpenAiClient {
 }
 
 impl OpenAiClient {
-    pub fn new(api_key: String, base_url: Option<String>) -> Self {
-        let base_url = base_url.unwrap_or_else(|| "https://api.openai.com/v1".to_string());
+    /// Create a client with default OpenAI endpoint (https://api.openai.com/v1)
+    pub fn new(api_key: String) -> Self {
+        Self {
+            client: Client::new(),
+            api_key,
+            base_url: "https://api.openai.com/v1".to_string(),
+        }
+    }
+
+    /// Create a client with a custom base URL (e.g. for third-party platforms)
+    pub fn new_with_base_url(api_key: String, base_url: String) -> Self {
         Self {
             client: Client::new(),
             api_key,
@@ -99,9 +108,9 @@ mod tests {
         });
 
         // Instantiate OpenAiClient targeting the mock server
-        let client = OpenAiClient::new(
+        let client = OpenAiClient::new_with_base_url(
             "mock-api-key".to_string(),
-            Some(format!("http://127.0.0.1:{}", port))
+            format!("http://127.0.0.1:{}", port)
         );
 
         let request = ChatCompletionRequest {
