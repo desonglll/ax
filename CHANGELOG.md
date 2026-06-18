@@ -5,6 +5,9 @@ This document logs the development history and version alterations of Project Ax
 ## [0.4.0] - 2026-06-18
 
 ### Added
+- Implemented an asynchronous background message queue (`QueueWorker`) using `tokio::sync::mpsc::unbounded_channel` to handle post title completion via the `ai` crate. When a post is created without a title, its ID is sent to the queue to generate a title from its content using the OpenAI Chat Completion API.
+- Added a database scanner (`scan_and_enqueue_empty_titles`) running on server startup to scan all posts with empty or null titles and enqueue them for background title completion.
+- Added integration test coverage (`test_queue_worker_process_post`) to verify correct enqueuing, mock OpenAI API response processing, and post title updating.
 - Implemented text-based post search functionality. Extended the database query in `post.rs` to support dynamic query keyword filtering using `content ILIKE $1` on the PostgreSQL level, and added a search input bar above the home page timeline.
 - Added direct page selection jumping. Configured a `<select>` dropdown next to timeline and comments pagination controls to allow standard HTTP page-reload navigation directly to any page number while preserving active search query filters.
 

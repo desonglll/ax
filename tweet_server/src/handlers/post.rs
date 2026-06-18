@@ -53,7 +53,12 @@ pub async fn insert_new_post(
     let user_id = session.get::<i32>("user_id").unwrap().unwrap_or(0);
     new_post.set_user_id(user_id);
 
+    let is_title_empty = new_post.title.as_ref().map(|t| t.trim().is_empty()).unwrap_or(true);
+
     insert_post_db(&app_state.db, new_post).await.map(|post| {
+        if is_title_empty {
+            let _ = app_state.queue_sender.send(post.id);
+        }
         let api_response = ApiResponse::new(
             200,
             "Insert Post Successful".to_string(),

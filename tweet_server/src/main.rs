@@ -27,10 +27,29 @@ async fn main() -> std::io::Result<()> {
     dotenv().ok();
 
     let db_pool = get_db_pool().await;
+
+    // Create the message channel for AI title completion
+    let (queue_sender, queue_receiver) = tokio::sync::mpsc::unbounded_channel::<uuid::Uuid>();
+
+    // Spawn the background queue worker
+    let worker_db = db_pool.clone();
+    tokio::spawn(async move {
+        let worker = tweet_server::services::queue::QueueWorker::new(worker_db, queue_receiver);
+        worker.run().await;
+    });
+
+    // Scan existing posts on startup and enqueue those without titles
+    let scanner_db = db_pool.clone();
+    let scanner_sender = queue_sender.clone();
+    tokio::spawn(async move {
+        tweet_server::services::queue::scan_and_enqueue_empty_titles(&scanner_db, &scanner_sender).await;
+    });
+
     let app_state = web::Data::new(AppState {
         db: db_pool,
         request_count: Mutex::new(0),
         response_times: Mutex::new(HashMap::new()),
+        queue_sender,
     });
     let store = RedisSessionStore::new(redis_connection_string)
         .await

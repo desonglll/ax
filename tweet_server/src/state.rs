@@ -14,6 +14,7 @@ pub struct AppState {
     pub db: PgPool,
     pub request_count: Mutex<u64>,
     pub response_times: Mutex<HashMap<String, Vec<u128>>>,
+    pub queue_sender: tokio::sync::mpsc::UnboundedSender<uuid::Uuid>,
 }
 
 /// Application statistics response structure.
@@ -52,10 +53,12 @@ impl AppState {
 /// A wrapped `web::Data<AppState>` instance.
 pub async fn get_demo_state() -> web::Data<AppState> {
     let pool: PgPool = get_db_pool().await;
+    let (tx, _rx) = tokio::sync::mpsc::unbounded_channel();
     let app_state: web::Data<AppState> = web::Data::new(AppState {
         db: pool,
         request_count: Mutex::new(0),
         response_times: Mutex::new(HashMap::new()),
+        queue_sender: tx,
     });
     app_state
 }
