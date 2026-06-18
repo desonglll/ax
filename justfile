@@ -57,3 +57,13 @@ rec-run:
 test-ai:
 	cargo run --package ai --example test_connection
 
+# Start all services (backend, frontend, recommendation) concurrently
+start:
+	@echo "Starting all services (backend, frontend, recommendation)..."
+	@trap 'kill 0' INT TERM EXIT; \
+	just run & \
+	just fe-dev & \
+	just rec-run & \
+	wait
+
+
