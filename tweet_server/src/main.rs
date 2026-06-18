@@ -22,7 +22,7 @@ async fn main() -> std::io::Result<()> {
     preload().await;
 
     let secret_key = Key::generate();
-    let redis_connection_string = "redis://127.0.0.1:6379";
+    let redis_connection_string = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
 
     dotenv().ok();
 
