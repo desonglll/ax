@@ -6,6 +6,10 @@ This is the official distribution of the Ax Project, a secure micro-blogging and
 
 The Ax Project provides a secure web server written in the Rust programming language utilizing the Actix-web framework. Data is persisted in a PostgreSQL database and session states are cached via Redis. Project documentation is managed through mdBook.
 
+## Screenshots
+
+<img width="1536" height="896" alt="image" src="https://github.com/user-attachments/assets/f1a60ad0-6097-446e-9ee6-b13c45ccf4e8" />
+
 ## Prerequisites
 
 To compile, build, and test this software, the following tools must be installed:
