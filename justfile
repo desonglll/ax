@@ -1,5 +1,7 @@
 # Project Ax Automation Recipes
 
+export PATH := env_var("PATH")
+
 # Default recipe: list available recipes
 default:
 	@just --list
