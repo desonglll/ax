@@ -10,13 +10,15 @@ WORKDIR /app
 
 # Copy the Cargo workspace configurations and the crates
 COPY Cargo.toml Cargo.lock ./
+COPY .sqlx ./.sqlx
 COPY ai ./ai
 COPY tweet_server ./tweet_server
 
 # Build the release binary
 WORKDIR /app/tweet_server
 ARG DATABASE_URL
-ENV DATABASE_URL=${DATABASE_URL}
+ARG SQLX_OFFLINE=false
+ENV SQLX_OFFLINE=${SQLX_OFFLINE}
 RUN cargo build --release
 
 # Stage 2: Minimal runtime container
