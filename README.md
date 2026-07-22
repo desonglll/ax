@@ -18,6 +18,7 @@ To compile, build, and test this software, the following tools must be installed
 - The `sqlx-cli` tool (compiled with Postgres support).
 - The `cargo-nextest` test runner.
 - The `mdbook` compiler (for documentation generation).
+- Bun 1.3 or newer for the Vue frontend.
 
 You may install the development tools with:
 ```bash
@@ -55,6 +56,14 @@ cargo install mdbook
    just run
    ```
 
+5. **Launch the Complete Development Stack**:
+   ```bash
+   just start
+   ```
+   The command starts the Vue v1.2 frontend, backend, and recommendation
+   service. The backend binds to a random available port and publishes it to
+   `.server-port`; Vite reads that file and configures its API proxy.
+
 ---
 
 ## Server Configuration
@@ -87,6 +96,10 @@ trending feed, the server provides:
   `POST /api/notifications/read/{id}`, `POST /api/notifications/read-all`. The
   frontend navbar shows an unread badge.
 - **Rate limiting** — per-IP token bucket on all endpoints.
+- **Vue frontend v1.2** — responsive Vue 3, TypeScript, Tailwind CSS 4 and
+  daisyUI interface covering feeds, search, posts, comments, reactions,
+  profiles, follows, notifications, files, account administration, and system
+  telemetry. Source and deployment files live in `frontend/v1.2`.
 
 ---
 

@@ -192,8 +192,7 @@ pub async fn get_reactions_by_query_db(
     let to_id = query.get("toId").and_then(|s| s.parse::<uuid::Uuid>().ok());
     let user_id = query.get("userId").and_then(|s| s.parse::<i32>().ok());
     let to_type = query.get("toType").map(String::as_str);
-    let default_reaction_name = String::from("Like");
-    let reaction_name = query.get("reactionName").unwrap_or(&default_reaction_name);
+    let reaction_name = query.get("reactionName").map(String::as_str);
     let row = sqlx::query_as!(
         Reaction,
         "select * from reactions where ($1::uuid is null or to_id = $1) and ($2::int is null or user_id = $2) and ($3::int is null or id = $3) and ($4::varchar is null or reaction_name = $4) and ($5::varchar is null or to_type = $5)",

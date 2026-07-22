@@ -31,21 +31,21 @@ doc-build:
 doc-serve:
 	mdbook serve docs
 
-# Install frontend dependencies (v1.1)
+# Install frontend dependencies (v1.2)
 fe-install:
-	cd frontend/v1.1 && bun install
+	cd frontend/v1.2 && bun install
 
-# Start frontend development server (v1.1)
+# Start frontend development server (v1.2)
 fe-dev:
-	cd frontend/v1.1 && bun run dev
+	cd frontend/v1.2 && bun run dev
 
-# Run frontend typescript typecheck (v1.1)
+# Run frontend typescript typecheck (v1.2)
 fe-check:
-	cd frontend/v1.1 && bun run typecheck
+	cd frontend/v1.2 && bun run typecheck
 
-# Build frontend production bundle (v1.1)
+# Build frontend production bundle (v1.2)
 fe-build:
-	cd frontend/v1.1 && bun run build
+	cd frontend/v1.2 && bun run build
 
 # Install model server python dependencies using uv
 rec-install:
@@ -65,7 +65,12 @@ start:
 	@rm -f .server-port; \
 	trap 'kill 0' INT TERM EXIT; \
 	PORT=0 PORT_FILE=.server-port just run & \
-	for attempt in $(seq 1 100); do test -s .server-port && break; sleep 0.1; done; \
+	backend_pid=$!; \
+	for attempt in $(seq 1 600); do \
+		test -s .server-port && break; \
+		kill -0 $backend_pid 2>/dev/null || { echo "Backend exited before publishing its port" >&2; exit 1; }; \
+		sleep 0.1; \
+	done; \
 	test -s .server-port || { echo "Backend did not publish its port" >&2; exit 1; }; \
 	echo "Backend port: $(cat .server-port)"; \
 	just fe-dev & \
