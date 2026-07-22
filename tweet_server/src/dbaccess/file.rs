@@ -26,7 +26,10 @@ pub async fn insert_file_db(pool: &PgPool, create_file: File) -> Result<File, Ax
 }
 
 /// Retrieve all attachments associated with a given post.
-pub async fn get_file_attachments_by_post_db(pool: &PgPool, post_id: Uuid) -> Result<Vec<File>, AxError> {
+pub async fn get_file_attachments_by_post_db(
+    pool: &PgPool,
+    post_id: Uuid,
+) -> Result<Vec<File>, AxError> {
     let files = sqlx::query_as!(
         File,
         "select id, name, path, size, content_type, created_at, updated_at, user_id, description, checksum, is_deleted, is_pub, post_id, comment_id from files where post_id = $1 and is_deleted = false",
@@ -37,8 +40,62 @@ pub async fn get_file_attachments_by_post_db(pool: &PgPool, post_id: Uuid) -> Re
     Ok(files)
 }
 
+/// Retrieve attachments for many posts in a single query.
+///
+/// Returns a map keyed by post id so callers can assemble post lists without
+/// issuing one attachment query per post.
+pub async fn get_file_attachments_by_posts_db(
+    pool: &PgPool,
+    post_ids: &[Uuid],
+) -> Result<std::collections::HashMap<Uuid, Vec<File>>, AxError> {
+    if post_ids.is_empty() {
+        return Ok(Default::default());
+    }
+    let files = sqlx::query_as!(
+        File,
+        "select id, name, path, size, content_type, created_at, updated_at, user_id, description, checksum, is_deleted, is_pub, post_id, comment_id from files where post_id = any($1) and is_deleted = false",
+        post_ids
+    )
+    .fetch_all(pool)
+    .await?;
+    let mut map: std::collections::HashMap<Uuid, Vec<File>> = Default::default();
+    for file in files {
+        if let Some(post_id) = file.post_id {
+            map.entry(post_id).or_default().push(file);
+        }
+    }
+    Ok(map)
+}
+
+/// Retrieve attachments for many comments in a single query, keyed by comment id.
+pub async fn get_file_attachments_by_comments_db(
+    pool: &PgPool,
+    comment_ids: &[Uuid],
+) -> Result<std::collections::HashMap<Uuid, Vec<File>>, AxError> {
+    if comment_ids.is_empty() {
+        return Ok(Default::default());
+    }
+    let files = sqlx::query_as!(
+        File,
+        "select id, name, path, size, content_type, created_at, updated_at, user_id, description, checksum, is_deleted, is_pub, post_id, comment_id from files where comment_id = any($1) and is_deleted = false",
+        comment_ids
+    )
+    .fetch_all(pool)
+    .await?;
+    let mut map: std::collections::HashMap<Uuid, Vec<File>> = Default::default();
+    for file in files {
+        if let Some(comment_id) = file.comment_id {
+            map.entry(comment_id).or_default().push(file);
+        }
+    }
+    Ok(map)
+}
+
 /// Retrieve all attachments associated with a given comment.
-pub async fn get_file_attachments_by_comment_db(pool: &PgPool, comment_id: Uuid) -> Result<Vec<File>, AxError> {
+pub async fn get_file_attachments_by_comment_db(
+    pool: &PgPool,
+    comment_id: Uuid,
+) -> Result<Vec<File>, AxError> {
     let files = sqlx::query_as!(
         File,
         "select id, name, path, size, content_type, created_at, updated_at, user_id, description, checksum, is_deleted, is_pub, post_id, comment_id from files where comment_id = $1 and is_deleted = false",

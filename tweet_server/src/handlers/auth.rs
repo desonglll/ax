@@ -29,8 +29,9 @@ use crate::{
 /// - If the session contains `user_name`, it returns `200 OK` with a welcome message.
 /// - If the session does not contain `user_name`, it returns `401 Unauthorized` prompting login.
 pub async fn index(session: Session) -> impl Responder {
-    // Retrieve the `user_name` field from the session.
-    if let Some(user_name) = session.get::<String>("user_name").unwrap() {
+    // Retrieve the `user_name` field from the session; a corrupt session is
+    // treated as not logged in rather than panicking the worker.
+    if let Some(user_name) = session.get::<String>("user_name").ok().flatten() {
         // HttpResponse::Ok().json(format!("Welcome back! {}", user_name))
         HttpResponse::Ok().json(ApiResponse::<()>::new(
             200,
@@ -164,7 +165,7 @@ pub async fn login(
 /// - If the session does not contain `user_name` or session clearing fails, it returns a warning response.
 pub async fn logout(session: Session) -> Result<impl Responder, AxError> {
     // Attempt to retrieve the `user_name` from the session
-    if let Some(user_name) = session.get::<String>("user_name").unwrap() {
+    if let Some(user_name) = session.get::<String>("user_name").ok().flatten() {
         Log::info(format!("Attempting to log out user `{}`", user_name));
         session.clear();
         Log::info(format!("User `{}` logged out successfully", user_name));
@@ -189,7 +190,7 @@ pub async fn logout(session: Session) -> Result<impl Responder, AxError> {
 /// `Ok(true)` if the session contains `user_name`, or `Ok(false)` otherwise.
 pub async fn check_login(session: &Session) -> Result<bool, AxError> {
     match session.get::<String>("user_name") {
-        Ok(_user_name) => Ok(true),
+        Ok(Some(_)) => Ok(true),
         _ => Ok(false),
     }
 }
@@ -207,10 +208,9 @@ pub async fn check_login(session: &Session) -> Result<bool, AxError> {
 ///
 /// `Ok(HttpResponse)` with status 401 if the user is not logged in, otherwise an [`AxError`].
 pub async fn login_in_unauthentic(session: &Session) -> Result<HttpResponse, AxError> {
-    if !is_active(session).await.unwrap() {
+    if !is_active(session).await.unwrap_or(false) {
         // Not Login
         let api_response = ApiResponse::<()>::new(401, "Please Login".to_string(), None);
-        println!("Please login");
         Ok(HttpResponse::Ok().json(api_response))
     } else {
         Err(AxError::ActixError(
@@ -221,7 +221,7 @@ pub async fn login_in_unauthentic(session: &Session) -> Result<HttpResponse, AxE
 
 #[cfg(test)]
 mod tests {
-    use actix_session::storage::RedisSessionStore;
+    use actix_session::storage::CookieSessionStore;
     use actix_session::SessionMiddleware;
     use actix_web::{cookie::Key, http::StatusCode, test, web, App};
     use serde_json::Value;
@@ -236,9 +236,7 @@ mod tests {
     async fn test_index_not_logged_in() {
         let app_state = get_demo_state().await;
         let secret_key = Key::generate();
-        let store = RedisSessionStore::new("redis://127.0.0.1:6379")
-            .await
-            .unwrap();
+        let store = CookieSessionStore::default();
         let app = test::init_service(
             App::new()
                 .app_data(app_state)
@@ -262,9 +260,7 @@ mod tests {
     async fn test_login_no_params() {
         let app_state = get_demo_state().await;
         let secret_key = Key::generate();
-        let store = RedisSessionStore::new("redis://127.0.0.1:6379")
-            .await
-            .unwrap();
+        let store = CookieSessionStore::default();
         let app = test::init_service(
             App::new()
                 .app_data(app_state)
@@ -288,9 +284,7 @@ mod tests {
     async fn test_login_wrong_password() {
         let app_state = get_demo_state().await;
         let secret_key = Key::generate();
-        let store = RedisSessionStore::new("redis://127.0.0.1:6379")
-            .await
-            .unwrap();
+        let store = CookieSessionStore::default();
         let app = test::init_service(
             App::new()
                 .app_data(app_state)
@@ -321,9 +315,7 @@ mod tests {
     async fn test_logout_not_logged_in() {
         let app_state = get_demo_state().await;
         let secret_key = Key::generate();
-        let store = RedisSessionStore::new("redis://127.0.0.1:6379")
-            .await
-            .unwrap();
+        let store = CookieSessionStore::default();
         let app = test::init_service(
             App::new()
                 .app_data(app_state)
@@ -345,9 +337,7 @@ mod tests {
     async fn test_login_in_unauthentic_not_logged_in() {
         let app_state = get_demo_state().await;
         let secret_key = Key::generate();
-        let store = RedisSessionStore::new("redis://127.0.0.1:6379")
-            .await
-            .unwrap();
+        let store = CookieSessionStore::default();
         let app = test::init_service(
             App::new()
                 .app_data(app_state)
@@ -374,8 +364,7 @@ mod tests {
             &actix_web::test::TestRequest::get().to_http_request(),
         );
         let result = check_login(&session).await.unwrap();
-        // empty session -> check_login returns true because Ok(None) matches Ok(_)
-        // this is a known behavior issue in check_login
-        assert!(result);
+        // An empty session is not logged in.
+        assert!(!result);
     }
 }

@@ -1,8 +1,6 @@
 use actix_web::web;
 
-use crate::handlers::reaction::{
-    delete_reaction_by_id, insert_like_reaction,
-};
+use crate::handlers::reaction::{delete_reaction_by_id, insert_like_reaction};
 use crate::handlers::reaction::{
     get_reactions_by_query, get_single_reaction_table_by_query, insert_dislike_reaction,
 };

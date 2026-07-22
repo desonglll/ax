@@ -12,6 +12,7 @@ import {
 import type { Route } from "./+types/root";
 import "./app.css";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { NotificationBell } from "./components/NotificationBell";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -97,6 +98,7 @@ function AppLayout() {
                 <span className="loading loading-spinner loading-xs text-base-content/50"></span>
               ) : user ? (
                 <div className="flex items-center gap-2">
+                  <NotificationBell />
                   <span className="font-mono text-sm opacity-80">{user.userName}</span>
                   <button
                     onClick={() => logout()}

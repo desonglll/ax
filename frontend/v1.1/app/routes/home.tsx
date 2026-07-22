@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { postApi, fileApi, getSystemStats, type Post } from "../utils/api";
+import { postApi, fileApi, followApi, getSystemStats, type Post } from "../utils/api";
 import { useScrollPreservation } from "../utils/scroll";
 import { useAuth } from "../contexts/AuthContext";
 import { PostItem } from "../components/PostItem";
@@ -82,6 +82,9 @@ export default function Home() {
     setSearchInput(searchQuery);
   }, [searchQuery]);
 
+  // Timeline tab: "all" (everything) or "following" (feed of followed users)
+  const tab = searchParams.get("tab") === "following" ? "following" : "all";
+
   // Pagination states bound to URL query parameter
   const offset = Number(searchParams.get("offset") || "0");
   const limit = 10;
@@ -101,13 +104,16 @@ export default function Home() {
   const fetchPosts = async (currentOffset: number, queryText: string) => {
     setLoading(true);
     try {
-      const res = await postApi.list({
-        limit,
-        offset: currentOffset,
-        order_by: "created_at",
-        sort: "desc",
-        search: queryText || undefined,
-      });
+      const res =
+        tab === "following"
+          ? await followApi.feed({ limit, offset: currentOffset })
+          : await postApi.list({
+              limit,
+              offset: currentOffset,
+              order_by: "created_at",
+              sort: "desc",
+              search: queryText || undefined,
+            });
       if (res.code === 200 && res.body.data) {
         setPosts(res.body.data);
         const countVal = res.body.pagination?.count ?? 0;
@@ -123,7 +129,7 @@ export default function Home() {
 
   useEffect(() => {
     fetchPosts(offset, searchQuery);
-  }, [offset, searchQuery]);
+  }, [offset, searchQuery, tab]);
 
   useScrollPreservation(`home_${offset}_${searchQuery}`, loading, posts.length > 0);
 
@@ -370,14 +376,36 @@ export default function Home() {
 
         {/* Timeline List */}
         <div>
-          <h2 className="text-lg font-bold border-b border-base-300 pb-2 mb-4 uppercase tracking-wide font-mono opacity-85">
-            {searchQuery ? `Search Results for "${searchQuery}"` : "Timeline"}
-          </h2>
+          <div className="flex items-center justify-between border-b border-base-300 pb-2 mb-4">
+            <h2 className="text-lg font-bold uppercase tracking-wide font-mono opacity-85">
+              {searchQuery ? `Search Results for "${searchQuery}"` : "Timeline"}
+            </h2>
+            {user && !searchQuery && (
+              <div className="tabs tabs-boxed tabs-xs font-mono">
+                <button
+                  className={`tab ${tab === "all" ? "tab-active" : ""}`}
+                  onClick={() => setSearchParams({})}
+                >
+                  All
+                </button>
+                <button
+                  className={`tab ${tab === "following" ? "tab-active" : ""}`}
+                  onClick={() => setSearchParams({ tab: "following" })}
+                >
+                  Following
+                </button>
+              </div>
+            )}
+          </div>
 
           {loading && posts.length === 0 ? (
             <div className="text-center py-8 text-sm opacity-50 font-mono">Loading posts...</div>
           ) : posts.length === 0 ? (
-            <div className="text-center py-8 text-sm opacity-50 font-mono">No posts found.</div>
+            <div className="text-center py-8 text-sm opacity-50 font-mono">
+              {tab === "following"
+                ? "Nothing here yet — follow some users to build your feed."
+                : "No posts found."}
+            </div>
           ) : (
             <div className="flex flex-col gap-4">
               {posts.map((post) => (

@@ -14,6 +14,8 @@ pub struct User {
     pub id: i32,
     pub user_name: String,
     pub email: String,
+    // Never serialized into API responses; the hash must stay server-side.
+    #[serde(skip_serializing, default)]
     pub password_hash: String,
     pub full_name: Option<String>,
     pub phone: Option<String>,
@@ -56,6 +58,23 @@ pub struct UpdateUser {
     pub is_active: Option<bool>,
     pub is_admin: Option<bool>,
     pub profile_picture: Option<Uuid>,
+}
+
+impl CreateUser {
+    /// Basic server-side validation for the public registration endpoint.
+    pub fn validate(&self) -> Result<(), String> {
+        let name = self.user_name.trim();
+        if name.len() < 3 || name.len() > 32 {
+            return Err("userName must be between 3 and 32 characters".to_string());
+        }
+        if !self.email.contains('@') || self.email.len() > 254 {
+            return Err("email is not a valid address".to_string());
+        }
+        if self.password.len() < 8 || self.password.len() > 128 {
+            return Err("password must be between 8 and 128 characters".to_string());
+        }
+        Ok(())
+    }
 }
 
 impl From<web::Json<CreateUser>> for CreateUser {

@@ -103,12 +103,8 @@ pub fn insert_user_to_redis(session: Session, user: &User) {
     if let Err(err) = session.insert("email", &user.email) {
         Log::error(format!("Failed to set session for `email`: {}", err));
     }
-    if let Err(err) = session.insert("password_hash", &user.password_hash) {
-        Log::error(format!(
-            "Failed to set session for `password_hash`: {}",
-            err
-        ));
-    }
+    // Deliberately NOT storing password_hash: the session only needs identity
+    // and authorization flags, and credential material must stay out of Redis.
     if let Err(err) = session.insert("full_name", user.full_name.as_deref().unwrap_or("")) {
         Log::error(format!("Failed to set session for `full_name`: {}", err));
     }

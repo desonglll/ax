@@ -91,16 +91,8 @@ export interface UserStats {
   updatedAt: string;
 }
 
-// Axios Instance
-const getDefaultBaseURL = () => {
-  if (typeof window !== "undefined") {
-    return `${window.location.protocol}//${window.location.hostname}:8000/api`;
-  }
-  return "http://localhost:8000/api";
-};
-
 const api = axios.create({
-  baseURL: (import.meta.env.VITE_API_URL as string) || getDefaultBaseURL(),
+  baseURL: (import.meta.env.VITE_API_URL as string) || "/api",
   withCredentials: true,
 });
 
@@ -153,6 +145,77 @@ export const userApi = {
 };
 
 // ============================================================================
+// Follow Endpoints
+// ============================================================================
+export interface FollowStats {
+  userId: number;
+  followersCount: number;
+  followingCount: number;
+  isFollowing: boolean;
+}
+
+export const followApi = {
+  follow: async (userId: number): Promise<ApiResponse<FollowStats>> => {
+    const response = await api.post(`/users/${userId}/follow`);
+    return response.data;
+  },
+  unfollow: async (userId: number): Promise<ApiResponse<FollowStats>> => {
+    const response = await api.delete(`/users/${userId}/follow`);
+    return response.data;
+  },
+  stats: async (userId: number): Promise<ApiResponse<FollowStats>> => {
+    const response = await api.get(`/users/${userId}/follow-stats`);
+    return response.data;
+  },
+  followers: async (userId: number, params?: { limit?: number; offset?: number }): Promise<ApiResponse<User[]>> => {
+    const response = await api.get(`/users/${userId}/followers`, { params });
+    return response.data;
+  },
+  following: async (userId: number, params?: { limit?: number; offset?: number }): Promise<ApiResponse<User[]>> => {
+    const response = await api.get(`/users/${userId}/following`, { params });
+    return response.data;
+  },
+  feed: async (params?: { limit?: number; offset?: number }): Promise<ApiResponse<Post[]>> => {
+    const response = await api.get("/posts/feed", { params });
+    return response.data;
+  },
+};
+
+// ============================================================================
+// Notification Endpoints
+// ============================================================================
+export interface Notification {
+  id: number;
+  userId: number;
+  actorId: number;
+  actorName?: string;
+  kind: "follow" | "comment" | "reaction";
+  postId?: string | null;
+  commentId?: string | null;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export const notificationApi = {
+  list: async (params?: { limit?: number; offset?: number }): Promise<ApiResponse<Notification[]>> => {
+    const response = await api.get("/notifications/get", { params });
+    return response.data;
+  },
+  unreadCount: async (): Promise<ApiResponse<number>> => {
+    const response = await api.get("/notifications/unread-count");
+    return response.data;
+  },
+  markRead: async (id: number): Promise<ApiResponse<void>> => {
+    const response = await api.post(`/notifications/read/${id}`);
+    return response.data;
+  },
+  markAllRead: async (): Promise<ApiResponse<number>> => {
+    const response = await api.post("/notifications/read-all");
+    return response.data;
+  },
+};
+
+// ============================================================================
 // Post Endpoints
 // ============================================================================
 export const postApi = {
@@ -160,7 +223,7 @@ export const postApi = {
     const response = await api.post("/posts/post", { content, title, attachments });
     return response.data;
   },
-  list: async (params?: { limit?: number; offset?: number; order_by?: string; sort?: string; search?: string }): Promise<ApiResponse<Post[]>> => {
+  list: async (params?: { limit?: number; offset?: number; order_by?: string; sort?: string; search?: string; user_id?: number }): Promise<ApiResponse<Post[]>> => {
     const response = await api.get("/posts/get", { params });
     return response.data;
   },
@@ -274,7 +337,7 @@ export const fileApi = {
 };
 
 export const getSystemStats = async (): Promise<{ requestCount: number; responseTimes: Record<string, number[]> }> => {
-  const statsUrl = (api.defaults.baseURL || "http://localhost:8000/api").replace(/\/api$/, "") + "/stats";
+  const statsUrl = (api.defaults.baseURL || "/api").replace(/\/api$/, "") + "/stats";
   const response = await axios.get(statsUrl);
   return {
     requestCount: response.data.request_count ?? 0,

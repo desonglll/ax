@@ -1,8 +1,6 @@
-use std::{
-    fs::File as StdFile,
-    io::Write,
-    sync::atomic::{AtomicUsize, Ordering},
-};
+use std::sync::atomic::{AtomicUsize, Ordering};
+
+use tokio::io::AsyncWriteExt;
 
 use actix_multipart::{Field, Multipart};
 use actix_session::Session;
@@ -47,8 +45,17 @@ pub async fn upload(
 ) -> actix_web::Result<impl Responder> {
     Log::info("Accessing upload API.".to_string());
 
-    if session.get::<bool>("is_active").unwrap().unwrap_or(false) {
-        let user_name = session.get::<String>("user_name").unwrap().unwrap();
+    if session
+        .get::<bool>("is_active")
+        .ok()
+        .flatten()
+        .unwrap_or(false)
+    {
+        let user_name = session
+            .get::<String>("user_name")
+            .ok()
+            .flatten()
+            .unwrap_or_default();
         Log::info(format!("User {} logged in.", user_name));
 
         let mut result: Vec<File> = Vec::new();
@@ -64,16 +71,17 @@ pub async fn upload(
                     let file_name = file_name.to_string();
                     let temp_id = Uuid::new_v4();
                     let tmp_full_path = get_path(format!("{}.tmp", temp_id));
-                    
-                    let mut file = StdFile::create(tmp_full_path.clone())
+
+                    let mut file = tokio::fs::File::create(tmp_full_path.clone())
+                        .await
                         .map_err(|e| {
-                            eprintln!("Error creating file: {:?}", e);
+                            Log::error(format!("Error creating file: {:?}", e));
                             actix_web::error::ErrorInternalServerError(e)
                         })?;
-                    
+
                     let (size, hash_hex) = write_chunks_to_file(&mut field, &mut file).await?;
                     let content_type = field.content_type().unwrap().to_string();
-                    
+
                     uploaded_files.push((file_name, tmp_full_path, size, content_type, hash_hex));
                 } else if let Some(name) = content_disposition.get_name() {
                     let value_str = process_text_field(&mut field).await;
@@ -97,14 +105,20 @@ pub async fn upload(
             );
 
             // Rename file to its final UUID-based path
-            if let Err(e) = std::fs::rename(tmp_path.clone(), new_file.path.clone()) {
-                eprintln!("Error renaming file from temp to final path: {:?}", e);
-                let _ = std::fs::remove_file(tmp_path);
+            if let Err(e) = tokio::fs::rename(tmp_path.clone(), new_file.path.clone()).await {
+                Log::error(format!(
+                    "Error renaming file from temp to final path: {:?}",
+                    e
+                ));
+                let _ = tokio::fs::remove_file(tmp_path).await;
                 return Ok(HttpResponse::InternalServerError().finish());
             }
 
             // Soft-delete older duplicate if any
-            if let Ok(_) = set_file_deleted_by_checksum_db(&app_state.db, new_file.checksum.clone()).await {
+            if set_file_deleted_by_checksum_db(&app_state.db, new_file.checksum.clone())
+                .await
+                .is_ok()
+            {
                 Log::info("Deleted existing record.".to_string());
             }
 
@@ -152,7 +166,7 @@ pub async fn upload(
 /// A tuple containing size and hash hex string on success, or an `actix_web::Error`.
 async fn write_chunks_to_file(
     field: &mut Field,
-    file: &mut StdFile,
+    file: &mut tokio::fs::File,
 ) -> Result<(usize, String), actix_web::Error> {
     let mut size = 0;
     let mut hasher = Sha256::new();
@@ -168,14 +182,20 @@ async fn write_chunks_to_file(
             LAST_LOGGED_SIZE_MB.store(size_mb as usize, Ordering::SeqCst);
         }
 
-        file.write_all(&chunk)
-            .map_err(|e| {
-                eprintln!("Error writing to file: {:?}", e);
-                actix_web::error::ErrorInternalServerError(e)
-            })?;
+        file.write_all(&chunk).await.map_err(|e| {
+            Log::error(format!("Error writing to file: {:?}", e));
+            actix_web::error::ErrorInternalServerError(e)
+        })?;
 
         hasher.update(&chunk);
     }
+
+    // tokio files do not flush on drop; make sure everything hits disk before
+    // the temp file is renamed into place.
+    file.flush().await.map_err(|e| {
+        Log::error(format!("Error flushing file: {:?}", e));
+        actix_web::error::ErrorInternalServerError(e)
+    })?;
 
     let hash_hex = hex::encode(hasher.finalize());
     Log::info("File writing successful.".to_string());

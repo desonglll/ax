@@ -5,7 +5,6 @@ use sqlx::PgPool;
 
 use crate::{
     errors::AxError,
-    infra::log::Log,
     models::reaction::{CreateReaction, Reaction, ReactionResponseTable},
 };
 
@@ -27,26 +26,25 @@ pub async fn insert_like_reaction_db(
     pool: &PgPool,
     create_reaction: CreateReaction,
 ) -> Result<Reaction, AxError> {
-    println!("{:#?}", create_reaction);
-    if let Ok(existed_dislike) = is_reaction_record_exists_db(
-        pool,
-        create_reaction.to_id,
-        create_reaction.user_id,
-        String::from("Dislike"),
-    )
-    .await
-    {
-        Log::info(String::from("existed_dislike, deleting..."));
-        let _ = delete_reaction_by_id_db(pool, existed_dislike.id).await;
-    }
+    upsert_reaction_db(pool, create_reaction, "Like").await
+}
 
+/// Insert or replace the caller's reaction in one database statement.
+async fn upsert_reaction_db(
+    pool: &PgPool,
+    create_reaction: CreateReaction,
+    name: &str,
+) -> Result<Reaction, AxError> {
     let reaction_row = sqlx::query_as!(
         Reaction,
-        "insert into reactions (user_id, to_id, reaction_name) values ($1, $2, $3) on conflict (user_id, to_id, reaction_name, to_type) do update set created_at = CURRENT_TIMESTAMP returning id, user_id, to_id, created_at, reaction_name, to_type",
+        "insert into reactions (user_id, to_id, reaction_name, to_type) values ($1, $2, $3, $4) on conflict (user_id, to_id, to_type) do update set reaction_name = excluded.reaction_name, created_at = CURRENT_TIMESTAMP returning id, user_id, to_id, created_at, reaction_name, to_type",
         create_reaction.user_id,
         create_reaction.to_id,
-        "Like"
-    ).fetch_one(pool).await?;
+        name,
+        create_reaction.to_type
+    )
+    .fetch_one(pool)
+    .await?;
     Ok(reaction_row)
 }
 
@@ -68,26 +66,7 @@ pub async fn insert_dislike_reaction_db(
     pool: &PgPool,
     create_reaction: CreateReaction,
 ) -> Result<Reaction, AxError> {
-    if let Ok(existed_like) = is_reaction_record_exists_db(
-        pool,
-        create_reaction.to_id,
-        create_reaction.user_id,
-        String::from("Like"),
-    )
-    .await
-    {
-        let _ = delete_reaction_by_id_db(pool, existed_like.id).await;
-    }
-    println!("{:?}", create_reaction);
-
-    let reaction_row = sqlx::query_as!(
-        Reaction,
-        "insert into reactions (user_id, to_id, reaction_name) values ($1, $2, $3) on conflict (user_id, to_id, reaction_name, to_type) do update set created_at = CURRENT_TIMESTAMP returning id, user_id, to_id, created_at, reaction_name, to_type",
-        create_reaction.user_id,
-        create_reaction.to_id,
-        "Dislike"
-    ).fetch_one(pool).await?;
-    Ok(reaction_row)
+    upsert_reaction_db(pool, create_reaction, "Dislike").await
 }
 
 /// Delete a reaction record from the database by its identifier.
@@ -103,12 +82,18 @@ pub async fn insert_dislike_reaction_db(
 /// # Returns
 ///
 /// The deleted [`Reaction`] record on success, or a [`sqlx::Error`] on database failure.
-pub async fn delete_reaction_by_id_db(pool: &PgPool, id: i32) -> Result<Reaction, sqlx::Error> {
-    println!("{:?}", id);
+pub async fn delete_reaction_by_id_db(
+    pool: &PgPool,
+    id: i32,
+    user_id: i32,
+    is_admin: bool,
+) -> Result<Reaction, sqlx::Error> {
     sqlx::query_as!(
         Reaction,
-        "delete from reactions where id = $1 returning id, to_id, user_id, created_at, reaction_name, to_type",
-        id
+        "delete from reactions where id = $1 and (user_id = $2 or $3) returning id, to_id, user_id, created_at, reaction_name, to_type",
+        id,
+        user_id,
+        is_admin
     ).fetch_one(pool).await
 }
 
@@ -141,8 +126,8 @@ pub async fn is_reaction_record_exists_db(
         user_id,
         reaction_name
     )
-        .fetch_one(pool)
-        .await
+    .fetch_one(pool)
+    .await
 }
 
 /// Retrieve the reaction statistics table matching the query parameter.
@@ -162,17 +147,20 @@ pub async fn get_reaction_table_by_query_db(
     query: Query<HashMap<String, String>>,
 ) -> Result<ReactionResponseTable, AxError> {
     let to_id = query.get("toId").and_then(|s| s.parse::<uuid::Uuid>().ok());
+    let to_type = query.get("toType").map(String::as_str).unwrap_or("post");
     let like_count = sqlx::query_scalar!(
-        "select count(*) from reactions where to_id = $1 and reaction_name = $2",
+        "select count(*) from reactions where to_id = $1 and reaction_name = $2 and to_type = $3",
         to_id,
-        "Like"
+        "Like",
+        to_type
     )
     .fetch_one(pool)
     .await?;
     let dislike_count = sqlx::query_scalar!(
-        "select count(*) from reactions where to_id = $1 and reaction_name = $2",
+        "select count(*) from reactions where to_id = $1 and reaction_name = $2 and to_type = $3",
         to_id,
-        "Dislike"
+        "Dislike",
+        to_type
     )
     .fetch_one(pool)
     .await?;
@@ -203,15 +191,17 @@ pub async fn get_reactions_by_query_db(
     let id = query.get("id").and_then(|s| s.parse::<i32>().ok());
     let to_id = query.get("toId").and_then(|s| s.parse::<uuid::Uuid>().ok());
     let user_id = query.get("userId").and_then(|s| s.parse::<i32>().ok());
+    let to_type = query.get("toType").map(String::as_str);
     let default_reaction_name = String::from("Like");
     let reaction_name = query.get("reactionName").unwrap_or(&default_reaction_name);
     let row = sqlx::query_as!(
         Reaction,
-        "select * from reactions where ($1::uuid is null or to_id = $1) and ($2::int is null or user_id = $2) and ($3::int is null or id = $3) and ($4::varchar is null or reaction_name = $4)",
+        "select * from reactions where ($1::uuid is null or to_id = $1) and ($2::int is null or user_id = $2) and ($3::int is null or id = $3) and ($4::varchar is null or reaction_name = $4) and ($5::varchar is null or to_type = $5)",
         to_id,
         user_id,
         id,
-        reaction_name
+        reaction_name,
+        to_type
     ).fetch_all(pool).await?;
     Ok(row)
 }

@@ -1,5 +1,3 @@
-use std::io::{Read, Seek, SeekFrom};
-
 use actix_multipart::Multipart;
 use actix_session::Session;
 use actix_web::{web, HttpResponse, Responder};
@@ -10,8 +8,8 @@ use crate::{
         get_file_details_db, get_file_list_db, get_file_private_list_db, get_file_public_list_db,
     },
     errors::AxError,
-    infra::log::Log,
     extractors::session::is_admin,
+    infra::log::Log,
     models::file::FileFilter,
     state::AppState,
 };
@@ -79,9 +77,26 @@ pub async fn get_user_file(
     if let Ok(resp) = login_in_unauthentic(&session).await {
         return Ok(resp);
     }
-    let user_id = query.user_id.unwrap_or_else(|| {
-        session.get::<i32>("user_id").unwrap_or_default().unwrap_or(0)
-    });
+    let session_user_id = session
+        .get::<i32>("user_id")
+        .unwrap_or_default()
+        .unwrap_or(0);
+    // Private listings are restricted to the session owner; only an admin may
+    // inspect another user's files via the `user_id` query parameter.
+    let user_id = match query.user_id {
+        Some(requested) if requested != session_user_id => {
+            if is_admin(session.clone()).await.unwrap_or(false) {
+                requested
+            } else {
+                return Ok(HttpResponse::Forbidden().json(ApiResponse::<()>::new(
+                    403,
+                    "Cannot list another user's private files".to_owned(),
+                    None,
+                )));
+            }
+        }
+        _ => session_user_id,
+    };
     let resp = get_file_private_list_db(&app_state.db, user_id).await?;
     let api_response = ApiResponse::new(
         200,
@@ -136,7 +151,6 @@ pub async fn download(
     app_state: web::Data<AppState>,
     parameters: web::Path<(Uuid,)>,
 ) -> actix_web::Result<impl Responder> {
-    use std::fs::File as StdFile;
     let (file_id,) = parameters.into_inner();
     Log::info(format!("Accessing download API with file ID: {}", file_id));
 
@@ -144,9 +158,7 @@ pub async fn download(
     let file_info = get_file_details_db(&app_state.db, file_id).await?;
 
     if !file_info.is_pub {
-        Log::info(String::from("This Is A Permittive File."));
-        if let Some(user_id) = session.get::<i32>("user_id").unwrap() {
-            Log::info(format!("User Id: {}", user_id));
+        if let Some(user_id) = session.get::<i32>("user_id").ok().flatten() {
             if file_info.user_id != user_id {
                 return Ok(HttpResponse::Unauthorized()
                     .json("User Not Permitted To Access This File".to_string()));
@@ -156,61 +168,33 @@ pub async fn download(
         }
     }
 
-    let file_path = file_info.path;
-
-    // Open the file.
-    let mut file = match StdFile::open(file_path.clone()) {
+    // Open asynchronously and stream in chunks: no blocking the executor and
+    // no buffering the whole file in memory.
+    let file = match tokio::fs::File::open(&file_info.path).await {
         Ok(f) => f,
         Err(e) => {
-            eprintln!("Error opening file: {:?}", e);
+            Log::error(format!("Error opening file {}: {:?}", file_info.path, e));
+            return Ok(HttpResponse::InternalServerError().finish());
+        }
+    };
+    let file_size = match file.metadata().await {
+        Ok(metadata) => metadata.len(),
+        Err(e) => {
+            Log::error(format!("Error getting file metadata: {:?}", e));
             return Ok(HttpResponse::InternalServerError().finish());
         }
     };
 
     let mut response = HttpResponse::Ok();
-
-    // Set the Content-Disposition header with encoded filename.
     let encoded_filename = encode_filename(&file_info.name);
     response.insert_header((
         "Content-Disposition",
         format!("attachment; filename*=UTF-8''{}", encoded_filename),
     ));
-
-    // Set content type and retrieve file size.
     response.content_type(file_info.content_type);
-    let file_size = match std::fs::metadata(file_path.clone()) {
-        Ok(metadata) => metadata.len(),
-        Err(e) => {
-            eprintln!("Error getting file metadata: {:?}", e);
-            return Ok(HttpResponse::InternalServerError().finish());
-        }
-    };
-    Log::info(format!("File Size: {:?}", file_size));
+    response.insert_header(("Content-Length", file_size));
 
-    //============================================================================
-    // Set up a stream to send the file content chunk by chunk to the client.
-    // let stream = unfold(file, move |mut file| async {
-    //     let mut buffer = vec![0; 4096];
-    //     let bytes_read = match file.read(&mut buffer) {
-    //         Ok(size) if size > 0 => Some((Ok(web::Bytes::copy_from_slice(&buffer[..size])), file)),
-    //         Ok(_) => None,
-    //         Err(e) => Some((Err(e), file)),
-    //     };
-    //     bytes_read
-    // });
-    //============================================================================
-    let mut file_content = Vec::new();
-    file.read_to_end(&mut file_content).map_err(|e| {
-        // Handle read errors.
-        actix_web::error::ErrorInternalServerError(e)
-    })?;
-
-    let content_length = file_content.len();
-    response.insert_header(("Content-Length", content_length));
-    //============================================================================
-    // Ok(response.streaming(stream))
-    //============================================================================
-    Ok(response.body(file_content))
+    Ok(response.streaming(tokio_util::io::ReaderStream::new(file)))
 }
 
 /// Stream a file supporting HTTP Range requests.
@@ -234,16 +218,20 @@ pub async fn stream(
     parameters: web::Path<(Uuid,)>,
     req: actix_web::HttpRequest,
 ) -> actix_web::Result<impl Responder> {
-    use std::fs::File as StdFile;
+    use tokio::io::{AsyncReadExt, AsyncSeekExt};
+
+    // Serve at most this many bytes per range request; clients follow up with
+    // further ranges. Prevents "bytes=0-" on a large video from buffering the
+    // entire file in memory.
+    const MAX_CHUNK: u64 = 4 * 1024 * 1024;
+
     let (file_id,) = parameters.into_inner();
-    Log::info(format!("Accessing download API with file ID: {}", file_id));
+    Log::info(format!("Accessing stream API with file ID: {}", file_id));
     // Query the database to retrieve file details.
     let file_info = get_file_details_db(&app_state.db, file_id).await?;
 
     if !file_info.is_pub {
-        Log::info(String::from("This Is A Permittive File."));
-        if let Some(user_id) = session.get::<i32>("user_id").unwrap() {
-            Log::info(format!("User Id: {}", user_id));
+        if let Some(user_id) = session.get::<i32>("user_id").ok().flatten() {
             if file_info.user_id != user_id {
                 return Ok(HttpResponse::Unauthorized()
                     .json("User Not Permitted To Access This File".to_string()));
@@ -253,20 +241,28 @@ pub async fn stream(
         }
     }
 
-    let file_path = file_info.path;
-    println!("File path: {}", file_path);
-
-    // Open the file.
-    let mut file = match StdFile::open(file_path.clone()) {
+    // Open the file asynchronously.
+    let mut file = match tokio::fs::File::open(&file_info.path).await {
         Ok(f) => f,
         Err(e) => {
-            eprintln!("Error opening file: {:?}", e);
+            Log::error(format!("Error opening file {}: {:?}", file_info.path, e));
+            return Ok(HttpResponse::InternalServerError().finish());
+        }
+    };
+    let file_length = match file.metadata().await {
+        Ok(m) => m.len(),
+        Err(e) => {
+            Log::error(format!("Error getting file metadata: {:?}", e));
             return Ok(HttpResponse::InternalServerError().finish());
         }
     };
 
-    // Retrieve file size metadata.
-    let file_length = file.metadata().unwrap().len();
+    if file_length == 0 {
+        // Nothing to range over; previously this underflowed on `len - 1`.
+        return Ok(HttpResponse::Ok()
+            .content_type(file_info.content_type)
+            .finish());
+    }
 
     // Parse the Range request header.
     let range = req.headers().get("Range").and_then(|header| {
@@ -274,38 +270,43 @@ pub async fn stream(
         range_str.strip_prefix("bytes=").map(|r| r.to_string())
     });
 
-    let (start, end) = if let Some(range) = range {
-        let parts: Vec<&str> = range.split('-').collect();
-        let start = parts[0].parse::<u64>().unwrap_or(0);
+    let (start, requested_end) = if let Some(range) = range {
+        let mut parts = range.splitn(2, '-');
+        let start = parts
+            .next()
+            .and_then(|s| s.parse::<u64>().ok())
+            .unwrap_or(0);
         let end = parts
-            .get(1)
-            .and_then(|&e| e.parse::<u64>().ok())
+            .next()
+            .and_then(|e| e.parse::<u64>().ok())
             .unwrap_or(file_length - 1);
         (start, end)
     } else {
         (0, file_length - 1)
     };
 
-    // Seek to the requested start position.
-    file.seek(SeekFrom::Start(start))?;
+    if start >= file_length || start > requested_end {
+        return Ok(HttpResponse::RangeNotSatisfiable()
+            .insert_header(("Content-Range", format!("bytes */{}", file_length)))
+            .finish());
+    }
+    let end = requested_end
+        .min(file_length - 1)
+        .min(start + MAX_CHUNK - 1);
 
-    // Read the range data block.
+    // Seek and read the requested window without blocking the executor.
+    file.seek(std::io::SeekFrom::Start(start)).await?;
     let length = end - start + 1;
     let mut buffer = vec![0; length as usize];
-    file.read_exact(&mut buffer)?;
+    file.read_exact(&mut buffer).await?;
 
     let mut response = HttpResponse::PartialContent();
-
-    // Insert the Content-Range response header.
     response.insert_header((
         "Content-Range",
         format!("bytes {}-{}/{}", start, end, file_length),
     ));
-
-    // Set the response Content-Type.
+    response.insert_header(("Accept-Ranges", "bytes"));
     response.content_type(file_info.content_type);
-
-    // Write the partial content to response.
     Ok(response.body(buffer))
 }
 

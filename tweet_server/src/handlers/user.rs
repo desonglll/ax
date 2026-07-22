@@ -42,15 +42,23 @@ pub async fn post_new_user(
     app_state: web::Data<AppState>,
     new_user: web::Json<CreateUser>,
 ) -> Result<HttpResponse, AxError> {
-    insert_user_db(&app_state.db, new_user.into())
-        .await
-        .map(|user| {
-            HttpResponse::Ok().json(ApiResponse::new(
-                200,
-                "Create User Success".to_string(),
-                Some(DataBuilder::new().set_data(user).build()),
-            ))
-        })
+    let mut new_user: CreateUser = new_user.into();
+    if let Err(msg) = new_user.validate() {
+        return Ok(HttpResponse::BadRequest().json(ApiResponse::<()>::new(400, msg, None)));
+    }
+    // Registration is public: privilege flags must never come from the client.
+    new_user.is_admin = Some(false);
+    // New accounts are active unless explicitly created otherwise; leaving
+    // this unset used to insert NULL and violate the NOT NULL constraint.
+    new_user.is_active = Some(true);
+    new_user.profile_picture = None;
+    insert_user_db(&app_state.db, new_user).await.map(|user| {
+        HttpResponse::Ok().json(ApiResponse::new(
+            200,
+            "Create User Success".to_string(),
+            Some(DataBuilder::new().set_data(user).build()),
+        ))
+    })
 }
 
 // Read
@@ -134,14 +142,28 @@ curl -X GET http://localhost:8000/users
 /// # Returns
 ///
 /// An HTTP response enclosing all user records on success, or an [`AxError`] on failure.
-pub async fn get_user_list(app_state: web::Data<AppState>) -> Result<HttpResponse, AxError> {
-    get_user_list_db(&app_state.db).await.map(|resp| {
-        HttpResponse::Ok().json(ApiResponse::new(
-            200,
-            "Get UserList Success".to_string(),
-            Some(DataBuilder::new().set_data(resp).build()),
-        ))
-    })
+pub async fn get_user_list(
+    app_state: web::Data<AppState>,
+    query: Option<web::Query<std::collections::HashMap<String, String>>>,
+) -> Result<HttpResponse, AxError> {
+    let query_map = query.map(|q| q.into_inner()).unwrap_or_default();
+    let limit = query_map
+        .get("limit")
+        .and_then(|s| s.parse::<i64>().ok())
+        .unwrap_or(50);
+    let offset = query_map
+        .get("offset")
+        .and_then(|s| s.parse::<i64>().ok())
+        .unwrap_or(0);
+    get_user_list_db(&app_state.db, limit, offset)
+        .await
+        .map(|resp| {
+            HttpResponse::Ok().json(ApiResponse::new(
+                200,
+                "Get UserList Success".to_string(),
+                Some(DataBuilder::new().set_data(resp).build()),
+            ))
+        })
 }
 
 // Update
@@ -174,10 +196,41 @@ pub async fn update_user_details(
     update_user: web::Json<UpdateUser>,
 ) -> Result<HttpResponse, AxError> {
     let (user_id,) = path.into_inner();
+    let mut update_user: UpdateUser = update_user.into();
+    if let Some(name) = update_user.user_name.as_mut() {
+        *name = name.trim().to_string();
+        if name.len() < 3 || name.len() > 32 {
+            return Err(AxError::InvalidInput(
+                "userName must be between 3 and 32 characters".to_string(),
+            ));
+        }
+    }
+    if let Some(email) = update_user.email.as_mut() {
+        *email = email.trim().to_lowercase();
+        if !email.contains('@') || email.len() > 254 {
+            return Err(AxError::InvalidInput("email is not valid".to_string()));
+        }
+    }
+    if let Some(password) = update_user.password.as_ref() {
+        if password.len() < 8 || password.len() > 128 {
+            return Err(AxError::InvalidInput(
+                "password must be between 8 and 128 characters".to_string(),
+            ));
+        }
+    }
+    // Only an admin session may change the is_admin flag; a user editing
+    // their own profile cannot self-escalate.
+    let is_admin = crate::extractors::session::is_admin(session.clone())
+        .await
+        .unwrap_or(false);
+    if !is_admin {
+        update_user.is_admin = None;
+        update_user.is_active = None;
+    }
     match session.get::<i32>("user_id") {
         Ok(session_user_id) => {
-            if session_user_id.unwrap_or(-1) == user_id {
-                update_user_db(&app_state.db, user_id, update_user.into())
+            if session_user_id.unwrap_or(-1) == user_id || is_admin {
+                update_user_db(&app_state.db, user_id, update_user)
                     .await
                     .map(|user| {
                         HttpResponse::Ok().json(ApiResponse::new(
@@ -239,7 +292,6 @@ mod user_dbaccess_tests {
         web::{self},
         ResponseError,
     };
-    use uuid::Uuid;
 
     use crate::state::get_demo_state;
     use crate::utils::test::get_test_session;
@@ -263,7 +315,7 @@ mod user_dbaccess_tests {
             phone: Some("12345678900".to_owned()),
             is_active: Some(true),
             is_admin: Some(true),
-            profile_picture: Some(Uuid::new_v4()),
+            profile_picture: None,
         };
         let result = insert_user_db(&app_state.db, user.clone()).await.unwrap();
         assert_eq!(&user.user_name, &result.user_name.clone());
@@ -290,12 +342,12 @@ mod user_dbaccess_tests {
         let new_user_msg = CreateUser {
             user_name: "test_insert_user".to_owned(),
             email: "test_insert_user@gmail.com".to_owned(),
-            password: "070011".to_string(),
+            password: "07001107001100".to_string(),
             full_name: Some("test_full_name".to_owned()),
             phone: Some("12345678900".to_owned()),
             is_active: Some(true),
             is_admin: Some(true),
-            profile_picture: Some(Uuid::new_v4()),
+            profile_picture: None,
         };
         let user_param = web::Json(new_user_msg.clone());
 
@@ -322,7 +374,7 @@ mod user_dbaccess_tests {
             phone: Some("12345678900".to_owned()),
             is_active: Some(true),
             is_admin: Some(true),
-            profile_picture: Some(Uuid::new_v4()),
+            profile_picture: None,
         };
         let result = insert_user_db(&app_state.db, user.clone()).await.unwrap();
         assert_eq!(&user.user_name, &result.user_name);
@@ -351,7 +403,7 @@ mod user_dbaccess_tests {
             phone: Some("12345678900".to_owned()),
             is_active: Some(true),
             is_admin: Some(true),
-            profile_picture: Some(Uuid::new_v4()),
+            profile_picture: None,
         };
         let insert_result = insert_user_db(&app_state.db, user.clone()).await.unwrap();
         assert_eq!(&user.user_name, &insert_result.user_name);
@@ -375,7 +427,7 @@ mod user_dbaccess_tests {
             phone: Some("12345678900".to_owned()),
             is_active: Some(true),
             is_admin: Some(true),
-            profile_picture: Some(Uuid::new_v4()),
+            profile_picture: None,
         };
         let insert_result = insert_user_db(&app_state.db, user.clone()).await.unwrap();
         assert_eq!(&user.user_name, &insert_result.user_name);
@@ -407,7 +459,7 @@ mod user_dbaccess_tests {
     #[actix_rt::test]
     async fn test_get_user_list() {
         let app_state = get_demo_state().await;
-        let resp = get_user_list(app_state.clone()).await.unwrap();
+        let resp = get_user_list(app_state.clone(), None).await.unwrap();
         assert_eq!(resp.status(), StatusCode::OK);
     }
 

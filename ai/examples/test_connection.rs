@@ -1,6 +1,6 @@
+use ai::models::{ChatCompletionRequest, Message};
 use ai::openai::OpenAiClient;
 use ai::AiService;
-use ai::models::{ChatCompletionRequest, Message};
 use dotenv::dotenv;
 use std::env;
 
@@ -66,7 +66,10 @@ async fn main() {
             println!("- Request ID: {}", response.id);
             println!("- Response Model: {}", response.model);
             if let Some(choice) = response.choices.first() {
-                println!("- Content Received:\n  \"{}\"", choice.message.content.trim());
+                println!(
+                    "- Content Received:\n  \"{}\"",
+                    choice.message.content.trim()
+                );
             } else {
                 println!("- Received empty choices array.");
             }
@@ -74,7 +77,9 @@ async fn main() {
         Err(err) => {
             eprintln!("\n❌ ERROR OCCURRED!");
             eprintln!("- Error Details: {}", err);
-            eprintln!("Please check your API key validity, base URL endpoint, and internet connection.");
+            eprintln!(
+                "Please check your API key validity, base URL endpoint, and internet connection."
+            );
         }
     }
     println!("====================================================");

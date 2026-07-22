@@ -4,10 +4,25 @@ use actix_session::Session;
 use actix_web::{web, HttpResponse};
 
 use crate::dbaccess::reaction::*;
-use crate::handlers::auth::login_in_unauthentic;
 use crate::extractors::api_response::ApiResponse;
 use crate::extractors::data::DataBuilder;
+use crate::handlers::auth::login_in_unauthentic;
 use crate::{errors::AxError, models::reaction::CreateReaction, state::AppState};
+
+fn parse_reaction_target(query: &HashMap<String, String>) -> Result<(uuid::Uuid, String), AxError> {
+    let to_id = query
+        .get("toId")
+        .ok_or_else(|| AxError::InvalidInput("toId is required".to_string()))?
+        .parse::<uuid::Uuid>()
+        .map_err(|_| AxError::InvalidInput("toId must be a valid UUID".to_string()))?;
+    let to_type = query.get("toType").map(String::as_str).unwrap_or("post");
+    if !matches!(to_type, "post" | "comment") {
+        return Err(AxError::InvalidInput(
+            "toType must be post or comment".to_string(),
+        ));
+    }
+    Ok((to_id, to_type.to_string()))
+}
 
 // Create
 /*
@@ -37,15 +52,13 @@ pub async fn insert_like_reaction(
         return Ok(resp);
     }
     let query_map = query.map(|q| q.into_inner()).unwrap_or_default();
-    let user_id = session.get::<i32>("user_id").unwrap().unwrap_or(0);
-    let to_id = query_map
-        .get("toId")
-        .and_then(|s| s.parse::<uuid::Uuid>().ok())
-        .unwrap_or_else(uuid::Uuid::nil);
+    let user_id = session.get::<i32>("user_id")?.unwrap_or(0);
+    let (to_id, to_type) = parse_reaction_target(&query_map)?;
 
     let new_reaction = CreateReaction {
         user_id,
         to_id,
+        to_type,
     };
     println!("{:#?}", new_reaction);
     insert_like_reaction_db(&app_state.db, new_reaction)
@@ -86,14 +99,12 @@ pub async fn insert_dislike_reaction(
         return Ok(resp);
     }
     let query_map = query.map(|q| q.into_inner()).unwrap_or_default();
-    let user_id = session.get::<i32>("user_id").unwrap().unwrap_or(0);
-    let to_id = query_map
-        .get("toId")
-        .and_then(|s| s.parse::<uuid::Uuid>().ok())
-        .unwrap_or_else(uuid::Uuid::nil);
+    let user_id = session.get::<i32>("user_id")?.unwrap_or(0);
+    let (to_id, to_type) = parse_reaction_target(&query_map)?;
     let new_reaction = CreateReaction {
         user_id,
         to_id,
+        to_type,
     };
     insert_dislike_reaction_db(&app_state.db, new_reaction)
         .await
@@ -162,8 +173,8 @@ pub async fn get_reactions_by_query(
         return Ok(resp);
     }
     let mut query_map = query.map(|q| q.into_inner()).unwrap_or_default();
-    if query_map.get("userId").is_none() {
-        let user_id = session.get::<i32>("user_id").unwrap().unwrap_or(0);
+    if !query_map.contains_key("userId") {
+        let user_id = session.get::<i32>("user_id")?.unwrap_or(0);
         query_map.insert("userId".to_string(), user_id.to_string());
     }
     let query_wrapper = web::Query(query_map);
@@ -204,25 +215,31 @@ pub async fn delete_reaction_by_id(
     let reaction_id = query_map
         .get("reactionId")
         .and_then(|s| s.parse::<i32>().ok())
-        .unwrap_or(0);
-
-    Ok(delete_reaction_by_id_db(&app_state.db, reaction_id)
+        .ok_or_else(|| AxError::InvalidInput("reactionId is required".to_string()))?;
+    let user_id = session.get::<i32>("user_id")?.unwrap_or(0);
+    let is_admin = crate::extractors::session::is_admin(session)
         .await
-        .map(|reaction| {
-            HttpResponse::Ok().json(ApiResponse::new(
-                200,
-                "Delete Reaction Successful".to_string(),
-                Some(DataBuilder::new().set_data(reaction).build()),
-            ))
-        })?)
+        .unwrap_or(false);
+
+    Ok(
+        delete_reaction_by_id_db(&app_state.db, reaction_id, user_id, is_admin)
+            .await
+            .map(|reaction| {
+                HttpResponse::Ok().json(ApiResponse::new(
+                    200,
+                    "Delete Reaction Successful".to_string(),
+                    Some(DataBuilder::new().set_data(reaction).build()),
+                ))
+            })?,
+    )
 }
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
     use actix_web::http::StatusCode;
     use actix_web::web;
     use serde_json::Value;
+    use std::collections::HashMap;
 
     use crate::{
         handlers::reaction::{
@@ -241,12 +258,12 @@ mod tests {
         query_map.insert("toId".to_string(), uuid::Uuid::new_v4().to_string());
         query_map.insert("toType".to_string(), "post".to_string());
         let query = Some(web::Query(query_map));
-        
+
         let resp = insert_like_reaction(session, app_state.clone(), query)
             .await
             .unwrap();
         assert_eq!(resp.status(), StatusCode::OK);
-        
+
         let body: Value = http_response_to_json(resp).await;
         let reaction_id = body["body"]["data"]["id"]
             .as_i64()
@@ -292,9 +309,13 @@ mod tests {
         let mut query_map = HashMap::new();
         query_map.insert("toId".to_string(), uuid::Uuid::new_v4().to_string());
         query_map.insert("toType".to_string(), "post".to_string());
-        let insert_resp = insert_like_reaction(session, app_state.clone(), Some(web::Query(query_map.clone())))
-            .await
-            .unwrap();
+        let insert_resp = insert_like_reaction(
+            session,
+            app_state.clone(),
+            Some(web::Query(query_map.clone())),
+        )
+        .await
+        .unwrap();
         assert_eq!(insert_resp.status(), StatusCode::OK);
         let insert_body: Value = http_response_to_json(insert_resp).await;
         let reaction_id = insert_body["body"]["data"]["id"]
@@ -302,9 +323,10 @@ mod tests {
             .expect("id not found") as i32;
 
         // Then get the reaction table
-        let get_resp = get_single_reaction_table_by_query(app_state.clone(), Some(web::Query(query_map)))
-            .await
-            .unwrap();
+        let get_resp =
+            get_single_reaction_table_by_query(app_state.clone(), Some(web::Query(query_map)))
+                .await
+                .unwrap();
         assert_eq!(get_resp.status(), StatusCode::OK);
         let get_body: Value = http_response_to_json(get_resp).await;
         assert_eq!(get_body["code"], 200);
@@ -325,9 +347,13 @@ mod tests {
         let mut query_map = HashMap::new();
         query_map.insert("toId".to_string(), uuid::Uuid::new_v4().to_string());
         query_map.insert("toType".to_string(), "post".to_string());
-        let insert_resp = insert_like_reaction(session.clone(), app_state.clone(), Some(web::Query(query_map)))
-            .await
-            .unwrap();
+        let insert_resp = insert_like_reaction(
+            session.clone(),
+            app_state.clone(),
+            Some(web::Query(query_map)),
+        )
+        .await
+        .unwrap();
         let insert_body: Value = http_response_to_json(insert_resp).await;
         let reaction_id = insert_body["body"]["data"]["id"]
             .as_i64()
@@ -336,9 +362,13 @@ mod tests {
         // Delete the reaction
         let mut delete_query_map = HashMap::new();
         delete_query_map.insert("reactionId".to_string(), reaction_id.to_string());
-        let delete_resp = delete_reaction_by_id(session, app_state.clone(), Some(web::Query(delete_query_map)))
-            .await
-            .unwrap();
+        let delete_resp = delete_reaction_by_id(
+            session,
+            app_state.clone(),
+            Some(web::Query(delete_query_map)),
+        )
+        .await
+        .unwrap();
         assert_eq!(delete_resp.status(), StatusCode::OK);
     }
 }

@@ -1,12 +1,15 @@
 use actix_web::web;
 
-use crate::handlers::post::{delete_post, get_post_detail, get_post_list, insert_new_post, update_post_details};
 use crate::handlers::post::get_trending_posts;
+use crate::handlers::post::{
+    delete_post, get_post_detail, get_post_list, insert_new_post, update_post_details,
+};
 
 /// Configure routes related to posts.
 pub fn post_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/posts")
+            .route("/feed", web::get().to(crate::handlers::follow::get_feed))
             .route("/trending", web::get().to(get_trending_posts))
             .route("/post", web::post().to(insert_new_post))
             .route("/get", web::get().to(get_post_list))

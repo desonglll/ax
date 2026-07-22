@@ -7,8 +7,9 @@ use crate::services::features::UserFeatures;
 
 /// Invoke the machine learning prediction model.
 ///
-/// This function transmits USER_FEATURES to the local prediction service endpoint
-/// (`http://127.0.0.1:8001/predict`) and returns a vector of recommended post IDs.
+/// This function transmits USER_FEATURES to the prediction service configured
+/// via `MODEL_SERVER_URL` (default `http://127.0.0.1:8001`) and returns a
+/// vector of recommended post IDs.
 ///
 /// # Parameters
 ///
@@ -18,9 +19,11 @@ use crate::services::features::UserFeatures;
 ///
 /// A vector of recommended post IDs on success, or an [`AxError`] on failure.
 pub async fn predict(user_features: UserFeatures) -> Result<Vec<uuid::Uuid>, AxError> {
+    let base_url =
+        std::env::var("MODEL_SERVER_URL").unwrap_or_else(|_| "http://127.0.0.1:8001".to_string());
     let client = Client::builder().no_proxy().build()?;
     let response = client
-        .post("http://127.0.0.1:8001/predict")
+        .post(format!("{}/predict", base_url.trim_end_matches('/')))
         .json(&json!({
             "liked_posts_count": user_features.liked_posts_count,
             "average_comment_count": user_features.average_comment_count,

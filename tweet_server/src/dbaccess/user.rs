@@ -52,7 +52,8 @@ pub async fn check_password_correct_db(
 ///
 /// The inserted [`User`] record on success, or an [`AxError`] on failure.
 pub async fn insert_user_db(pool: &PgPool, create_user: CreateUser) -> Result<User, AxError> {
-    let password_hash = Hash::create_password_hash(create_user.password).unwrap();
+    let password_hash = Hash::create_password_hash(create_user.password)
+        .map_err(|err| AxError::ActixError(format!("password hashing failed: {err}")))?;
     let user_row = sqlx::query_as!(
         User,
         "insert into users (user_name, email, password_hash, full_name, phone, is_active, is_admin, profile_picture) values ($1, $2, $3, $4, $5, $6, $7, $8) returning id, user_name, email, password_hash, full_name, phone, created_at, updated_at, last_login, is_active, is_admin, profile_picture",
@@ -110,10 +111,19 @@ pub async fn get_user_detail_by_name_db(pool: &PgPool, user_name: String) -> Res
 /// # Returns
 ///
 /// A vector containing all [`User`] records on success, or an [`AxError`] on database failure.
-pub async fn get_user_list_db(pool: &PgPool) -> Result<Vec<User>, AxError> {
-    let users = sqlx::query_as!(User, "select * from users")
-        .fetch_all(pool)
-        .await?;
+pub async fn get_user_list_db(
+    pool: &PgPool,
+    limit: i64,
+    offset: i64,
+) -> Result<Vec<User>, AxError> {
+    let users = sqlx::query_as!(
+        User,
+        "select * from users order by id limit $1 offset $2",
+        limit.clamp(1, 100),
+        offset.max(0)
+    )
+    .fetch_all(pool)
+    .await?;
     Ok(users)
 }
 
@@ -157,7 +167,8 @@ pub async fn update_user_db(
         current_user_row.email
     };
     let password_hash: String = if let Some(password) = update_user.password {
-        Hash::create_password_hash(password).unwrap()
+        Hash::create_password_hash(password)
+            .map_err(|err| AxError::ActixError(format!("password hashing failed: {err}")))?
     } else {
         current_user_row.password_hash
     };

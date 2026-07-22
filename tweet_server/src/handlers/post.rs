@@ -5,13 +5,32 @@ use actix_web::{web, HttpResponse};
 
 use crate::dbaccess::post::*;
 use crate::errors::AxError;
-use crate::handlers::auth::login_in_unauthentic;
 use crate::extractors::api_response::ApiResponse;
 use crate::extractors::data::{DataBuilder, PostListDataBuilder};
 use crate::extractors::session::SessionOperation;
+use crate::handlers::auth::login_in_unauthentic;
 use crate::models::post::{CreatePost, UpdatePost};
 use crate::services::recommend::recommend_posts;
 use crate::state::AppState;
+
+/// Join posts with their attachments using a single batched query instead of
+/// one attachment lookup per post.
+pub(crate) async fn attach_files_to_posts(
+    pool: &sqlx::PgPool,
+    posts: Vec<crate::models::post::Post>,
+) -> Vec<crate::models::post::PostDetail> {
+    let ids: Vec<uuid::Uuid> = posts.iter().map(|p| p.id).collect();
+    let mut files_by_post = crate::dbaccess::file::get_file_attachments_by_posts_db(pool, &ids)
+        .await
+        .unwrap_or_default();
+    posts
+        .into_iter()
+        .map(|post| {
+            let attachments = files_by_post.remove(&post.id).unwrap_or_default();
+            crate::models::post::PostDetail { post, attachments }
+        })
+        .collect()
+}
 
 // Create
 /*
@@ -53,30 +72,27 @@ pub async fn insert_new_post(
     let user_id = session.get::<i32>("user_id").unwrap().unwrap_or(0);
     new_post.set_user_id(user_id);
 
-    let attachments = new_post.attachments.clone();
-    let is_title_empty = new_post.title.as_ref().map(|t| t.trim().is_empty()).unwrap_or(true);
+    let attachments = new_post.attachments.clone().unwrap_or_default();
+    let is_title_empty = new_post
+        .title
+        .as_ref()
+        .map(|t| t.trim().is_empty())
+        .unwrap_or(true);
 
-    let post = insert_post_db(&app_state.db, new_post).await?;
-
-    if let Some(attachments_list) = attachments {
-        for file_id in attachments_list {
-            let _ = sqlx::query!(
-                "UPDATE files SET post_id = $1 WHERE id = $2 AND user_id = $3",
-                post.id,
-                file_id,
-                user_id
-            )
-            .execute(&app_state.db)
-            .await;
-        }
-    }
+    // Post insert and attachment linking commit or roll back together.
+    let post = insert_post_with_attachments_db(&app_state.db, new_post, &attachments).await?;
 
     if is_title_empty {
         let _ = app_state.queue_sender.send(post.id);
     }
 
-    let files = crate::dbaccess::file::get_file_attachments_by_post_db(&app_state.db, post.id).await.unwrap_or_default();
-    let post_detail = crate::models::post::PostDetail { post, attachments: files };
+    let files = crate::dbaccess::file::get_file_attachments_by_post_db(&app_state.db, post.id)
+        .await
+        .unwrap_or_default();
+    let post_detail = crate::models::post::PostDetail {
+        post,
+        attachments: files,
+    };
 
     let api_response = ApiResponse::new(
         200,
@@ -109,8 +125,13 @@ pub async fn get_post_detail(
     app_state.add_request_count();
     let (post_id,) = path.into_inner();
     let post = get_post_detail_db(&app_state.db, post_id).await?;
-    let files = crate::dbaccess::file::get_file_attachments_by_post_db(&app_state.db, post.id).await.unwrap_or_default();
-    let post_detail = crate::models::post::PostDetail { post, attachments: files };
+    let files = crate::dbaccess::file::get_file_attachments_by_post_db(&app_state.db, post.id)
+        .await
+        .unwrap_or_default();
+    let post_detail = crate::models::post::PostDetail {
+        post,
+        attachments: files,
+    };
     let api_response = ApiResponse::new(
         200,
         "Get Post Successful".to_string(),
@@ -140,11 +161,7 @@ pub async fn get_post_list(
     app_state.add_request_count();
 
     let (posts, pagination) = get_post_list_db(&app_state.db, query).await?;
-    let mut posts_with_files = Vec::new();
-    for post in posts {
-        let files = crate::dbaccess::file::get_file_attachments_by_post_db(&app_state.db, post.id).await.unwrap_or_default();
-        posts_with_files.push(crate::models::post::PostDetail { post, attachments: files });
-    }
+    let posts_with_files = attach_files_to_posts(&app_state.db, posts).await;
 
     let api_response = ApiResponse::new(
         200,
@@ -192,11 +209,7 @@ pub async fn get_trending_posts(
 
     // Fetch post records for the recommended identifiers.
     let posts = get_posts_by_ids(&app_state.db, recommended_post_ids).await?;
-    let mut posts_with_files = Vec::new();
-    for post in posts {
-        let files = crate::dbaccess::file::get_file_attachments_by_post_db(&app_state.db, post.id).await.unwrap_or_default();
-        posts_with_files.push(crate::models::post::PostDetail { post, attachments: files });
-    }
+    let posts_with_files = attach_files_to_posts(&app_state.db, posts).await;
 
     let api_response = ApiResponse::new(
         200,
@@ -245,7 +258,9 @@ pub async fn update_post_details(
 
     // Perform post ownership check.
     let post = get_post_detail_db(&app_state.db, post_id).await?;
-    let is_admin_user = crate::extractors::session::is_admin(session.clone()).await.unwrap_or(false);
+    let is_admin_user = crate::extractors::session::is_admin(session.clone())
+        .await
+        .unwrap_or(false);
     if post.user_id != user_id && !is_admin_user {
         return Ok(HttpResponse::Unauthorized().json(ApiResponse::<()>::new(
             401,
@@ -258,29 +273,18 @@ pub async fn update_post_details(
     let post = update_post_db(&app_state.db, post_id, update_post.into()).await?;
 
     if let Some(attachments_list) = attachments {
-        // Unlink all current files associated with this post
-        let _ = sqlx::query!(
-            "UPDATE files SET post_id = NULL WHERE post_id = $1",
-            post.id
-        )
-        .execute(&app_state.db)
-        .await;
-
-        // Link the files in the new list
-        for file_id in attachments_list {
-            let _ = sqlx::query!(
-                "UPDATE files SET post_id = $1 WHERE id = $2 AND user_id = $3",
-                post.id,
-                file_id,
-                user_id
-            )
-            .execute(&app_state.db)
-            .await;
-        }
+        // Unlink-all + relink runs in one transaction so a failure cannot
+        // leave the post with a partial attachment set.
+        relink_post_attachments_db(&app_state.db, post.id, &attachments_list, user_id).await?;
     }
 
-    let files = crate::dbaccess::file::get_file_attachments_by_post_db(&app_state.db, post.id).await.unwrap_or_default();
-    let post_detail = crate::models::post::PostDetail { post, attachments: files };
+    let files = crate::dbaccess::file::get_file_attachments_by_post_db(&app_state.db, post.id)
+        .await
+        .unwrap_or_default();
+    let post_detail = crate::models::post::PostDetail {
+        post,
+        attachments: files,
+    };
 
     let api_response = ApiResponse::new(
         200,
@@ -322,7 +326,9 @@ pub async fn delete_post(
 
     // Perform post ownership check.
     let post = get_post_detail_db(&app_state.db, post_id).await?;
-    let is_admin_user = crate::extractors::session::is_admin(session.clone()).await.unwrap_or(false);
+    let is_admin_user = crate::extractors::session::is_admin(session.clone())
+        .await
+        .unwrap_or(false);
     if post.user_id != user_id && !is_admin_user {
         return Ok(HttpResponse::Unauthorized().json(ApiResponse::<()>::new(
             401,
@@ -348,8 +354,8 @@ mod tests {
 
     use crate::{
         handlers::post::{
-            delete_post, get_post_detail, get_post_list, insert_new_post, insert_post_db, update_post_details,
-            get_trending_posts,
+            delete_post, get_post_detail, get_post_list, get_trending_posts, insert_new_post,
+            insert_post_db, update_post_details,
         },
         models::post::{CreatePost, UpdatePost},
         state::{get_demo_state, AppState},
@@ -492,7 +498,9 @@ mod tests {
         let new_post_msg = CreatePost::demo();
         let post_param = web::Json(new_post_msg);
         let session = test::TestRequest::post().to_http_request().get_session();
-        let resp = insert_new_post(session, app_state, post_param).await.unwrap();
+        let resp = insert_new_post(session, app_state, post_param)
+            .await
+            .unwrap();
         assert_eq!(resp.status(), StatusCode::OK);
         let body: Value = crate::utils::test::http_response_to_json(resp).await;
         assert_eq!(body["code"], 401);

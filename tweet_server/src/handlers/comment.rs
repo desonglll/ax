@@ -3,12 +3,10 @@ use std::collections::HashMap;
 use actix_session::Session;
 use actix_web::{web, HttpResponse};
 
-use crate::dbaccess::comment::{
-    delete_comment_by_id_db, get_comment_by_query_db, insert_comment_db,
-};
-use crate::handlers::auth::login_in_unauthentic;
+use crate::dbaccess::comment::{delete_comment_by_id_db, get_comment_by_query_db};
 use crate::extractors::api_response::ApiResponse;
 use crate::extractors::data::DataBuilder;
+use crate::handlers::auth::login_in_unauthentic;
 use crate::{errors::AxError, models::comment::CreateComment, state::AppState};
 
 /*
@@ -47,25 +45,25 @@ pub async fn insert_comment(
     let mut create_comment = create_comment.into_inner();
     create_comment.set_user_id(Some(user_id));
 
-    let attachments = create_comment.attachments.clone();
+    let attachments = create_comment.attachments.clone().unwrap_or_default();
 
-    let comment = insert_comment_db(&app_state.db, create_comment).await?;
+    // Comment insert and attachment linking commit or roll back together.
+    let comment = crate::dbaccess::comment::insert_comment_with_attachments_db(
+        &app_state.db,
+        create_comment,
+        &attachments,
+        user_id,
+    )
+    .await?;
 
-    if let Some(attachments_list) = attachments {
-        for file_id in attachments_list {
-            let _ = sqlx::query!(
-                "UPDATE files SET comment_id = $1 WHERE id = $2 AND user_id = $3",
-                comment.id,
-                file_id,
-                user_id
-            )
-            .execute(&app_state.db)
-            .await;
-        }
-    }
-
-    let files = crate::dbaccess::file::get_file_attachments_by_comment_db(&app_state.db, comment.id).await.unwrap_or_default();
-    let comment_detail = crate::models::comment::CommentDetail { comment, attachments: files };
+    let files =
+        crate::dbaccess::file::get_file_attachments_by_comment_db(&app_state.db, comment.id)
+            .await
+            .unwrap_or_default();
+    let comment_detail = crate::models::comment::CommentDetail {
+        comment,
+        attachments: files,
+    };
 
     let api_response = ApiResponse::new(
         200,
@@ -106,7 +104,9 @@ pub async fn delete_comment(
         .await
         .map_err(|_| AxError::NotFound("Comment not found".to_string()))?;
     let user_id = session.get::<i32>("user_id").unwrap().unwrap_or(0);
-    let is_admin_user = crate::extractors::session::is_admin(session.clone()).await.unwrap_or(false);
+    let is_admin_user = crate::extractors::session::is_admin(session.clone())
+        .await
+        .unwrap_or(false);
     if comment.user_id != user_id && !is_admin_user {
         return Ok(HttpResponse::Unauthorized().json(ApiResponse::<()>::new(
             401,
@@ -144,11 +144,23 @@ pub async fn get_comment_by_query(
     query: web::Query<HashMap<String, String>>,
 ) -> Result<HttpResponse, AxError> {
     let (comments, pagination) = get_comment_by_query_db(&app_state.db, query).await?;
-    let mut comments_with_files = Vec::new();
-    for comment in comments {
-        let files = crate::dbaccess::file::get_file_attachments_by_comment_db(&app_state.db, comment.id).await.unwrap_or_default();
-        comments_with_files.push(crate::models::comment::CommentDetail { comment, attachments: files });
-    }
+    // Batch the attachment lookup: one query for the whole page instead of
+    // one query per comment.
+    let ids: Vec<uuid::Uuid> = comments.iter().map(|c| c.id).collect();
+    let mut files_by_comment =
+        crate::dbaccess::file::get_file_attachments_by_comments_db(&app_state.db, &ids)
+            .await
+            .unwrap_or_default();
+    let comments_with_files: Vec<crate::models::comment::CommentDetail> = comments
+        .into_iter()
+        .map(|comment| {
+            let attachments = files_by_comment.remove(&comment.id).unwrap_or_default();
+            crate::models::comment::CommentDetail {
+                comment,
+                attachments,
+            }
+        })
+        .collect();
 
     let api_response = ApiResponse::new(
         200,

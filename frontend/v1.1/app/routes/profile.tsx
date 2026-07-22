@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router";
-import { userApi, postApi, type User, type Post } from "../utils/api";
+import { userApi, postApi, followApi, type User, type Post, type FollowStats } from "../utils/api";
 import { useScrollPreservation } from "../utils/scroll";
 import { useAuth } from "../contexts/AuthContext";
 import { PostItem } from "../components/PostItem";
@@ -23,6 +23,10 @@ export default function Profile() {
   const [updating, setUpdating] = useState(false);
   const [updateSuccess, setUpdateSuccess] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
+
+  // Follow relationship state
+  const [followStats, setFollowStats] = useState<FollowStats | null>(null);
+  const [followBusy, setFollowBusy] = useState(false);
 
   // Stats computed locally
   const [userPosts, setUserPosts] = useState<Post[]>([]);
@@ -63,11 +67,18 @@ export default function Profile() {
         setEditEmail(userObj.email);
       }
 
-      // 2. Fetch all posts to compute local user stats & list user posts
-      const postsRes = await postApi.list({ limit: 1000 });
+      // Follower/following counts (and whether we follow this profile)
+      try {
+        const fs = await followApi.stats(userObj.id);
+        if (fs.code === 200 && fs.body?.data) setFollowStats(fs.body.data);
+      } catch {
+        setFollowStats(null);
+      }
+
+      // 2. Fetch this user's posts (filtered server-side) to compute stats
+      const postsRes = await postApi.list({ user_id: userObj.id, limit: 100 });
       if (postsRes.code === 200 && postsRes.body.data) {
-        const allPosts = postsRes.body.data;
-        const filtered = allPosts.filter((p) => p.userId === userObj.id);
+        const filtered = postsRes.body.data;
         setUserPosts(filtered);
 
         const postCount = filtered.length;
@@ -218,9 +229,37 @@ export default function Profile() {
     <div className="flex flex-col gap-8 font-mono">
       {/* Profile Overview Card */}
       <div className="card card-border bg-base-100 p-6">
-        <h2 className="text-xl font-bold border-b border-base-300 pb-2 mb-4 uppercase tracking-wide">
-          User Profile
-        </h2>
+        <div className="flex items-center justify-between border-b border-base-300 pb-2 mb-4">
+          <h2 className="text-xl font-bold uppercase tracking-wide">User Profile</h2>
+          <div className="flex items-center gap-3">
+            {followStats && (
+              <span className="text-xs text-gray-500">
+                {followStats.followersCount} followers · {followStats.followingCount} following
+              </span>
+            )}
+            {currentUser && profileUser.id !== currentUser.id && followStats && (
+              <button
+                className={`btn btn-xs ${followStats.isFollowing ? "btn-outline" : "btn-primary"}`}
+                disabled={followBusy}
+                onClick={async () => {
+                  setFollowBusy(true);
+                  try {
+                    const res = followStats.isFollowing
+                      ? await followApi.unfollow(profileUser.id)
+                      : await followApi.follow(profileUser.id);
+                    if (res.code === 200 && res.body?.data) setFollowStats(res.body.data);
+                  } catch (e) {
+                    console.error("Failed to toggle follow", e);
+                  } finally {
+                    setFollowBusy(false);
+                  }
+                }}
+              >
+                {followStats.isFollowing ? "Unfollow" : "Follow"}
+              </button>
+            )}
+          </div>
+        </div>
 
         <div className="overflow-x-auto mb-6">
           <table className="table table-zebra table-sm w-full">

@@ -50,7 +50,7 @@ impl CreatePost {
             title: Some(String::from("Demo Title")),
             content: String::from(""),
             user_id: Some(1),
-            reply_to: Some(uuid::Uuid::nil()),
+            reply_to: None,
             user_name: Some(String::from("")),
             attachments: None,
         }

@@ -5,8 +5,8 @@ use sqlx::PgPool;
 
 use crate::{
     errors::AxError,
-    models::comment::{Comment, CreateComment},
     extractors::response_pagination::{Pagination, PaginationBuilder},
+    models::comment::{Comment, CreateComment},
 };
 
 /// Insert a new comment into the database.
@@ -33,6 +33,37 @@ pub async fn insert_comment_db(
     create_comment.reply_to(),
     create_comment.user_id(),
     ).fetch_one(pool).await?;
+    Ok(row)
+}
+
+/// Insert a comment and link its attachments in one transaction.
+pub async fn insert_comment_with_attachments_db(
+    pool: &PgPool,
+    create_comment: CreateComment,
+    attachments: &[uuid::Uuid],
+    user_id: i32,
+) -> Result<Comment, AxError> {
+    let mut tx = pool.begin().await?;
+    let row = sqlx::query_as!(
+        Comment,
+        "insert into comments (content, reply_to, user_id) values ($1, $2, $3) returning id, content, reply_to, user_id, user_name, created_at, updated_at",
+        create_comment.content(),
+        create_comment.reply_to(),
+        create_comment.user_id(),
+    )
+    .fetch_one(&mut *tx)
+    .await?;
+    if !attachments.is_empty() {
+        sqlx::query!(
+            "UPDATE files SET comment_id = $1 WHERE id = ANY($2) AND user_id = $3",
+            row.id,
+            attachments,
+            user_id
+        )
+        .execute(&mut *tx)
+        .await?;
+    }
+    tx.commit().await?;
     Ok(row)
 }
 
@@ -77,14 +108,27 @@ pub async fn get_comment_by_query_db(
     pool: &PgPool,
     query: web::Query<HashMap<String, String>>,
 ) -> Result<(Vec<Comment>, Pagination), AxError> {
-    let id = query.get("commentId").and_then(|s| s.parse::<uuid::Uuid>().ok());
-    let reply_to = query.get("replyTo").and_then(|s| s.parse::<uuid::Uuid>().ok());
-    let limit = query.get("limit").and_then(|s| s.parse::<i64>().ok()).unwrap_or(10);
-    let offset = query.get("offset").and_then(|s| s.parse::<i64>().ok()).unwrap_or(0);
+    let id = query
+        .get("commentId")
+        .and_then(|s| s.parse::<uuid::Uuid>().ok());
+    let reply_to = query
+        .get("replyTo")
+        .and_then(|s| s.parse::<uuid::Uuid>().ok());
+    let limit = query
+        .get("limit")
+        .and_then(|s| s.parse::<i64>().ok())
+        .unwrap_or(10)
+        .clamp(1, 100);
+    let offset = query
+        .get("offset")
+        .and_then(|s| s.parse::<i64>().ok())
+        .unwrap_or(0)
+        .max(0);
 
+    // Explicit ordering keeps pagination stable across pages.
     let rows = sqlx::query_as!(
         Comment,
-        "select id, content, reply_to, user_id, user_name, created_at, updated_at from comments where ($1::uuid is null or reply_to = $1) and ($2::uuid is null or id = $2) limit $3 offset $4",
+        "select id, content, reply_to, user_id, user_name, created_at, updated_at from comments where ($1::uuid is null or reply_to = $1) and ($2::uuid is null or id = $2) order by created_at asc, id asc limit $3 offset $4",
         reply_to,
         id,
         limit,

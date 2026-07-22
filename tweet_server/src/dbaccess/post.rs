@@ -41,6 +41,74 @@ pub async fn insert_post_db(pool: &PgPool, create_post: CreatePost) -> Result<Po
     Ok(post_row)
 }
 
+/// Insert a post and link its attachments in a single transaction.
+///
+/// Either the post and all its attachment links are committed together, or
+/// nothing is — a mid-way failure no longer leaves a post with half of its
+/// files linked.
+pub async fn insert_post_with_attachments_db(
+    pool: &PgPool,
+    create_post: CreatePost,
+    attachments: &[uuid::Uuid],
+) -> Result<Post, AxError> {
+    let title = create_post.title.unwrap_or_default();
+    let mut tx = pool.begin().await?;
+    let post_row = sqlx::query_as!(
+        Post,
+        "insert into posts (title, content, user_id, reply_to, user_name)
+         values ($1, $2, $3, $4, $5)
+         returning id, title, content, created_at, updated_at, user_id, reply_to, user_name, like_count, dislike_count, engagement_rate",
+        title,
+        create_post.content,
+        create_post.user_id,
+        create_post.reply_to,
+        create_post.user_name
+    )
+    .fetch_one(&mut *tx)
+    .await?;
+    if !attachments.is_empty() {
+        sqlx::query!(
+            "UPDATE files SET post_id = $1 WHERE id = ANY($2) AND user_id = $3",
+            post_row.id,
+            attachments,
+            post_row.user_id
+        )
+        .execute(&mut *tx)
+        .await?;
+    }
+    tx.commit().await?;
+    Ok(post_row)
+}
+
+/// Replace a post's attachment set atomically: unlink everything, then link
+/// the new list, in one transaction.
+pub async fn relink_post_attachments_db(
+    pool: &PgPool,
+    post_id: uuid::Uuid,
+    attachments: &[uuid::Uuid],
+    user_id: i32,
+) -> Result<(), AxError> {
+    let mut tx = pool.begin().await?;
+    sqlx::query!(
+        "UPDATE files SET post_id = NULL WHERE post_id = $1",
+        post_id
+    )
+    .execute(&mut *tx)
+    .await?;
+    if !attachments.is_empty() {
+        sqlx::query!(
+            "UPDATE files SET post_id = $1 WHERE id = ANY($2) AND user_id = $3",
+            post_id,
+            attachments,
+            user_id
+        )
+        .execute(&mut *tx)
+        .await?;
+    }
+    tx.commit().await?;
+    Ok(())
+}
+
 /// Retrieve post details by its identifier.
 ///
 /// This function queries the `posts` table for a record matching the POST_ID parameter.
@@ -79,67 +147,84 @@ pub async fn get_post_list_db(
     query: Option<web::Query<HashMap<String, String>>>,
 ) -> Result<(Vec<Post>, Pagination), AxError> {
     let query_map = query.map(|q| q.into_inner()).unwrap_or_default();
-    let order_by = query_map.get("order_by").map(|s| s.as_str()).unwrap_or("created_at");
-    let valid_order_by = ["id", "created_at", "updated_at", "like_count", "dislike_count", "engagement_rate"];
+    let order_by = query_map
+        .get("order_by")
+        .map(|s| s.as_str())
+        .unwrap_or("created_at");
+    let valid_order_by = [
+        "id",
+        "created_at",
+        "updated_at",
+        "like_count",
+        "dislike_count",
+        "engagement_rate",
+    ];
     if !valid_order_by.contains(&order_by) {
-        return Err(AxError::InvalidInput(format!("Invalid order_by field: {}", order_by)));
+        return Err(AxError::InvalidInput(format!(
+            "Invalid order_by field: {}",
+            order_by
+        )));
     }
 
-    let sort = query_map.get("sort").map(|s| s.to_lowercase()).unwrap_or_else(|| "desc".to_string());
+    let sort = query_map
+        .get("sort")
+        .map(|s| s.to_lowercase())
+        .unwrap_or_else(|| "desc".to_string());
     if sort != "asc" && sort != "desc" {
-        return Err(AxError::InvalidInput(format!("Invalid sort direction: {}", sort)));
+        return Err(AxError::InvalidInput(format!(
+            "Invalid sort direction: {}",
+            sort
+        )));
     }
 
+    // Clamp to a sane page size so a client cannot request the whole table.
     let limit = query_map
         .get("limit")
         .and_then(|s| s.parse::<i64>().ok())
-        .unwrap_or(10);
+        .unwrap_or(10)
+        .clamp(1, 100);
     let offset = query_map
         .get("offset")
         .and_then(|s| s.parse::<i64>().ok())
-        .unwrap_or(0);
-    println!("order_by: {:#?} sort: {:#?}", order_by, sort);
+        .unwrap_or(0)
+        .max(0);
 
-    let search = query_map.get("search").map(|s| s.trim()).filter(|s| !s.is_empty());
+    let search = query_map
+        .get("search")
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty());
+    let like_pattern = search.map(|keyword| format!("%{}%", keyword));
+    // Optional author filter so callers (e.g. a profile page) can page through
+    // one user's posts server-side instead of downloading the whole table.
+    let author_id = query_map
+        .get("user_id")
+        .or_else(|| query_map.get("userId"))
+        .and_then(|s| s.parse::<i32>().ok());
 
-    let (posts, count) = if let Some(keyword) = search {
-        let like_pattern = format!("%{}%", keyword);
-        let sql = format!(
-            "SELECT * FROM posts WHERE content ILIKE $1 ORDER BY {} {} LIMIT $2 OFFSET $3",
-            order_by,
-            sort
-        );
-        let posts = sqlx::query_as::<_, Post>(&sql)
-            .bind(&like_pattern)
-            .bind(limit)
-            .bind(offset)
-            .fetch_all(pool)
-            .await?;
+    let sql = format!(
+        "SELECT * FROM posts
+         WHERE ($1::text IS NULL OR content ILIKE $1)
+           AND ($2::int4 IS NULL OR user_id = $2)
+         ORDER BY {} {} LIMIT $3 OFFSET $4",
+        order_by, sort
+    );
+    let posts = sqlx::query_as::<_, Post>(&sql)
+        .bind(&like_pattern)
+        .bind(author_id)
+        .bind(limit)
+        .bind(offset)
+        .fetch_all(pool)
+        .await?;
 
-        let count = sqlx::query_scalar::<_, i64>("SELECT count(*) FROM posts WHERE content ILIKE $1")
-            .bind(&like_pattern)
-            .fetch_one(pool)
-            .await?;
-
-        (posts, count)
-    } else {
-        let sql = format!(
-            "SELECT * FROM posts ORDER BY {} {} LIMIT $1 OFFSET $2",
-            order_by,
-            sort
-        );
-        let posts = sqlx::query_as::<_, Post>(&sql)
-            .bind(limit)
-            .bind(offset)
-            .fetch_all(pool)
-            .await?;
-
-        let count = sqlx::query_scalar::<_, i64>("SELECT count(*) FROM posts")
-            .fetch_one(pool)
-            .await?;
-
-        (posts, count)
-    };
+    let count = sqlx::query_scalar::<_, i64>(
+        "SELECT count(*) FROM posts
+         WHERE ($1::text IS NULL OR content ILIKE $1)
+           AND ($2::int4 IS NULL OR user_id = $2)",
+    )
+    .bind(&like_pattern)
+    .bind(author_id)
+    .fetch_one(pool)
+    .await?;
 
     let pagination = PaginationBuilder::new(limit, offset)
         .set_count(count)
@@ -163,7 +248,9 @@ pub async fn get_post_list_db(
 /// A vector of matching [`Post`] records aligned to the order of IDS on success,
 /// or an [`AxError`] on failure.
 pub async fn get_posts_by_ids(pool: &PgPool, ids: Vec<uuid::Uuid>) -> Result<Vec<Post>, AxError> {
-    println!("ids: {:?}", ids);
+    if ids.is_empty() {
+        return Ok(Vec::new());
+    }
 
     // Generate parameter placeholders, for example $1, $2, $3...
     let placeholders = ids
@@ -183,7 +270,6 @@ pub async fn get_posts_by_ids(pool: &PgPool, ids: Vec<uuid::Uuid>) -> Result<Vec
             .collect::<Vec<_>>()
             .join(" ")
     );
-    println!("SQL Query: {}", sql);
 
     // Construct the query and bind each identifier.
     let mut query = sqlx::query_as::<_, Post>(&sql);

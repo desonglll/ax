@@ -1,11 +1,11 @@
+use crate::infra::log::Log;
+use ai::models::{ChatCompletionRequest, Message};
+use ai::openai::OpenAiClient;
+use ai::AiService;
+use sqlx::PgPool;
 use std::env;
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
-use sqlx::PgPool;
-use ai::openai::OpenAiClient;
-use ai::models::{ChatCompletionRequest, Message};
-use ai::AiService;
 use uuid::Uuid;
-use crate::infra::log::Log;
 
 pub struct QueueWorker {
     db: PgPool,
@@ -22,7 +22,10 @@ impl QueueWorker {
         while let Some(post_id) = self.receiver.recv().await {
             Log::info(format!("Queue Worker: Processing post_id={}", post_id));
             if let Err(e) = self.process_post(post_id).await {
-                Log::error(format!("Queue Worker: Error processing post_id={}: {}", post_id, e));
+                Log::error(format!(
+                    "Queue Worker: Error processing post_id={}: {}",
+                    post_id, e
+                ));
             }
         }
         Log::info("AI Title Completion Queue Worker stopped.".to_string());
@@ -41,14 +44,20 @@ impl QueueWorker {
         let post = match post {
             Some(p) => p,
             None => {
-                Log::info(format!("Queue Worker: Post not found, skipping. id={}", post_id));
+                Log::info(format!(
+                    "Queue Worker: Post not found, skipping. id={}",
+                    post_id
+                ));
                 return Ok(());
             }
         };
 
         // 2. Check if title is empty/whitespace
         if !post.title.trim().is_empty() {
-            Log::info(format!("Queue Worker: Post id={} already has a title, skipping.", post_id));
+            Log::info(format!(
+                "Queue Worker: Post id={} already has a title, skipping.",
+                post_id
+            ));
             return Ok(());
         }
 
@@ -60,7 +69,9 @@ impl QueueWorker {
             }
         };
 
-        let base_url = env::var("OPENAI_API_BASE").ok().filter(|s| !s.trim().is_empty());
+        let base_url = env::var("OPENAI_API_BASE")
+            .ok()
+            .filter(|s| !s.trim().is_empty());
         let client = match base_url {
             Some(url) => OpenAiClient::new_with_base_url(api_key, url),
             None => OpenAiClient::new(api_key),
@@ -88,18 +99,26 @@ impl QueueWorker {
             max_tokens: Some(50),
         };
 
-        Log::info(format!("Queue Worker: Calling AI API to generate title for post_id={}...", post_id));
+        Log::info(format!(
+            "Queue Worker: Calling AI API to generate title for post_id={}...",
+            post_id
+        ));
         let response = client.chat_completion(req).await?;
 
-        let generated_title = response.choices.first()
-            .and_then(|choice| Some(choice.message.content.trim().to_string()))
+        let generated_title = response
+            .choices
+            .first()
+            .map(|choice| choice.message.content.trim().to_string())
             .unwrap_or_default();
 
         if generated_title.is_empty() {
             return Err("AI returned an empty title".to_string());
         }
 
-        Log::info(format!("Queue Worker: Generated title for post_id={}: \"{}\"", post_id, generated_title));
+        Log::info(format!(
+            "Queue Worker: Generated title for post_id={}: \"{}\"",
+            post_id, generated_title
+        ));
 
         // 4. Update the post title in database
         sqlx::query!(
@@ -111,18 +130,19 @@ impl QueueWorker {
         .await
         .map_err(|e| format!("Failed to update post title: {}", e))?;
 
-        Log::info(format!("Queue Worker: Successfully updated title for post_id={}", post_id));
+        Log::info(format!(
+            "Queue Worker: Successfully updated title for post_id={}",
+            post_id
+        ));
         Ok(())
     }
 }
 
 pub async fn scan_and_enqueue_empty_titles(db: &PgPool, sender: &UnboundedSender<Uuid>) {
     Log::info("Scanning database for posts with empty titles...".to_string());
-    let posts = sqlx::query!(
-        "SELECT id FROM posts WHERE title = '' OR title IS NULL"
-    )
-    .fetch_all(db)
-    .await;
+    let posts = sqlx::query!("SELECT id FROM posts WHERE title = '' OR title IS NULL")
+        .fetch_all(db)
+        .await;
 
     match posts {
         Ok(rows) => {
@@ -130,10 +150,16 @@ pub async fn scan_and_enqueue_empty_titles(db: &PgPool, sender: &UnboundedSender
             for row in rows {
                 let _ = sender.send(row.id);
             }
-            Log::info(format!("Scan completed. Enqueued {} posts for title completion.", count));
+            Log::info(format!(
+                "Scan completed. Enqueued {} posts for title completion.",
+                count
+            ));
         }
         Err(e) => {
-            Log::error(format!("Failed to scan existing posts for empty titles: {}", e));
+            Log::error(format!(
+                "Failed to scan existing posts for empty titles: {}",
+                e
+            ));
         }
     }
 }
@@ -142,8 +168,8 @@ pub async fn scan_and_enqueue_empty_titles(db: &PgPool, sender: &UnboundedSender
 mod tests {
     use super::*;
     use crate::infra::db::get_db_pool;
-    use std::net::TcpListener;
     use std::io::{Read, Write};
+    use std::net::TcpListener;
     use std::thread;
 
     #[actix_rt::test]
@@ -223,16 +249,17 @@ mod tests {
         }
 
         // Assert process succeeded
-        assert!(res.is_ok(), "Expected process_post to succeed, got: {:?}", res);
+        assert!(
+            res.is_ok(),
+            "Expected process_post to succeed, got: {:?}",
+            res
+        );
 
         // Fetch updated post and assert title is completed
-        let updated_post = sqlx::query!(
-            "SELECT title FROM posts WHERE id = $1",
-            post_row.id
-        )
-        .fetch_one(&db)
-        .await
-        .unwrap();
+        let updated_post = sqlx::query!("SELECT title FROM posts WHERE id = $1", post_row.id)
+            .fetch_one(&db)
+            .await
+            .unwrap();
 
         assert_eq!(updated_post.title, "AI Generated Catchy Title");
 

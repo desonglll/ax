@@ -1,7 +1,7 @@
+use crate::models::{ChatCompletionRequest, ChatCompletionResponse};
+use crate::AiService;
 use async_trait::async_trait;
 use reqwest::Client;
-use crate::AiService;
-use crate::models::{ChatCompletionRequest, ChatCompletionResponse};
 
 pub struct OpenAiClient {
     client: Client,
@@ -50,8 +50,7 @@ impl AiService for OpenAiClient {
             let error_text = response.text().await.unwrap_or_default();
             return Err(format!(
                 "API returned error status {}: {}",
-                status,
-                error_text
+                status, error_text
             ));
         }
 
@@ -67,9 +66,9 @@ impl AiService for OpenAiClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{Message, ChatCompletionRequest};
-    use std::net::TcpListener;
+    use crate::models::{ChatCompletionRequest, Message};
     use std::io::{Read, Write};
+    use std::net::TcpListener;
     use std::thread;
 
     #[tokio::test]
@@ -110,7 +109,7 @@ mod tests {
         // Instantiate OpenAiClient targeting the mock server
         let client = OpenAiClient::new_with_base_url(
             "mock-api-key".to_string(),
-            format!("http://127.0.0.1:{}", port)
+            format!("http://127.0.0.1:{}", port),
         );
 
         let request = ChatCompletionRequest {
@@ -126,7 +125,10 @@ mod tests {
         let result = client.chat_completion(request).await.unwrap();
 
         assert_eq!(result.id, "chatcmpl-123");
-        assert_eq!(result.choices[0].message.content, "Hello! How can I help you today?");
+        assert_eq!(
+            result.choices[0].message.content,
+            "Hello! How can I help you today?"
+        );
         assert_eq!(result.choices[0].message.role, "assistant");
     }
 }

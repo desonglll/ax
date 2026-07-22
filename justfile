@@ -61,11 +61,13 @@ test-ai:
 
 # Start all services (backend, frontend, recommendation) concurrently
 start:
-	@echo "Starting all services (backend, frontend, recommendation)..."
-	@trap 'kill 0' INT TERM EXIT; \
-	just run & \
+	@echo "Starting all services with a random backend port..."
+	@rm -f .server-port; \
+	trap 'kill 0' INT TERM EXIT; \
+	PORT=0 PORT_FILE=.server-port just run & \
+	for attempt in $(seq 1 100); do test -s .server-port && break; sleep 0.1; done; \
+	test -s .server-port || { echo "Backend did not publish its port" >&2; exit 1; }; \
+	echo "Backend port: $(cat .server-port)"; \
 	just fe-dev & \
 	just rec-run & \
 	wait
-
-
