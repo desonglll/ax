@@ -5,6 +5,7 @@ import { useI18n } from "vue-i18n";
 import { fileApi } from "../api";
 import { getApiError } from "../api/client";
 import { formatSize } from "../lib/format";
+import { useDialogStore } from "../stores/dialog";
 import { useToastStore } from "../stores/toast";
 import type { FileRecord } from "../types";
 import MarkdownBody from "./MarkdownBody.vue";
@@ -27,6 +28,7 @@ const emit = defineEmits<{ submit: [] }>();
 
 const { t } = useI18n();
 const toast = useToastStore();
+const dialog = useDialogStore();
 const textarea = ref<HTMLTextAreaElement>();
 const fileInput = ref<HTMLInputElement>();
 const preview = ref(false);
@@ -73,8 +75,12 @@ const insertAtCursor = async (text: string) => {
 };
 
 const link = async () => {
-  const url = prompt(t("editor.linkPrompt"), "https://");
-  if (!url) return;
+  const el = textarea.value;
+  const selection = el ? { start: el.selectionStart, end: el.selectionEnd } : null;
+  const url = await dialog.prompt({ title: t("editor.insertLink"), confirmLabel: t("editor.insertLink"), input: { placeholder: "https://", initial: "https://" } });
+  if (!url || url === "https://") return;
+  // The dialog steals focus; put the caret back where it was before wrapping.
+  if (el && selection) el.setSelectionRange(selection.start, selection.end);
   await wrap("[", `](${url})`, t("editor.linkText"));
 };
 
@@ -142,7 +148,7 @@ const tools = computed(() => [
 </script>
 
 <template>
-  <div class="rounded-box border border-base-300 bg-base-100 transition-shadow" :class="{ 'ring-2 ring-primary': dragging }" @dragover.prevent="dragging = true" @dragleave="dragging = false" @drop.prevent="onDrop">
+  <div class="min-w-0 rounded-box border border-base-300 bg-base-100 transition-shadow" :class="{ 'ring-2 ring-primary': dragging }" @dragover.prevent="dragging = true" @dragleave="dragging = false" @drop.prevent="onDrop">
     <div class="flex flex-wrap items-center gap-0.5 border-b border-base-300 px-2 py-1">
       <button v-for="tool in tools" :key="tool.label" type="button" class="btn btn-ghost btn-square btn-xs" :title="tool.label" :aria-label="tool.label" @click="tool.run()">
         <component :is="tool.icon" :size="15" />
@@ -156,11 +162,11 @@ const tools = computed(() => [
       </button>
     </div>
 
-    <div class="grid" :class="{ 'md:grid-cols-2 md:divide-x md:divide-base-300': preview }">
+    <div class="grid min-w-0 grid-cols-1" :class="{ 'md:grid-cols-2 md:divide-x md:divide-base-300': preview }">
       <textarea
         ref="textarea"
         v-model="content"
-        class="textarea w-full resize-y rounded-none border-0 bg-transparent px-4 py-3 font-mono text-[0.95rem] leading-relaxed focus:outline-none"
+        class="textarea field-sizing-fixed min-w-0 w-full resize-y rounded-none border-0 bg-transparent px-4 py-3 font-mono text-[0.95rem] leading-relaxed focus:outline-none"
         :class="[compact ? 'min-h-20' : 'min-h-40', { 'hidden md:block': preview }]"
         :placeholder="placeholder ?? t('editor.placeholder')"
         :maxlength="maxLength"
@@ -168,7 +174,7 @@ const tools = computed(() => [
         @keydown="onKeydown"
         @paste="onPaste"
       ></textarea>
-      <MarkdownBody v-if="preview" :source="content || `*${t('editor.nothingToPreview')}*`" class="overflow-y-auto px-4 py-3" :class="compact ? 'min-h-20 max-h-80' : 'min-h-40 max-h-[32rem]'" />
+      <MarkdownBody v-if="preview" :source="content || `*${t('editor.nothingToPreview')}*`" class="min-w-0 overflow-y-auto px-4 py-3" :class="compact ? 'min-h-20 max-h-80' : 'min-h-40 max-h-[32rem]'" />
     </div>
 
     <TransitionGroup v-if="attachments.length" name="list" tag="div" class="flex flex-wrap gap-2 border-t border-base-300 px-3 py-2">
@@ -181,9 +187,9 @@ const tools = computed(() => [
       </span>
     </TransitionGroup>
 
-    <div class="flex items-center justify-between px-3 py-1 text-xs text-base-content/45">
-      <span class="truncate">{{ t("editor.hint") }}</span>
-      <span :class="{ 'text-warning': remaining < 500 }">{{ remaining }}</span>
+    <div class="flex items-center justify-between gap-3 px-3 py-1 text-xs text-base-content/45">
+      <span class="min-w-0 truncate">{{ t("editor.hint") }}</span>
+      <span class="shrink-0 tabular-nums" :class="{ 'text-warning': remaining < 500 }">{{ remaining }}</span>
     </div>
     <input ref="fileInput" type="file" multiple class="hidden" :accept="pickImagesOnly ? 'image/*' : undefined" @change="onPick" />
   </div>

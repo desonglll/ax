@@ -8,12 +8,14 @@ import EmptyState from "../components/EmptyState.vue";
 import LoadMore from "../components/LoadMore.vue";
 import { useInfiniteList } from "../composables/useInfiniteList";
 import { timeAgo } from "../lib/format";
+import { useNotificationStore } from "../stores/notifications";
 import type { Notification } from "../types";
 
 defineOptions({ name: "NotificationsView" });
 
 const { t } = useI18n();
 const router = useRouter();
+const store = useNotificationStore();
 const icons = { follow: UserPlus, comment: MessageCircle, reaction: Heart };
 
 const list = useInfiniteList<Notification>(async (offset, limit) => {
@@ -24,20 +26,23 @@ const unread = computed(() => list.items.value.filter(item => !item.isRead).leng
 
 const open = async (item: Notification) => {
   if (!item.isRead) {
-    await notificationApi.read(item.id).catch(() => undefined);
     list.replace({ ...item, isRead: true });
+    await store.markRead(item.id);
   }
   router.push(item.postId ? `/posts/${item.postId}` : `/profile/${item.actorId}`);
 };
 
 const readAll = async () => {
-  await notificationApi.readAll();
+  await store.markAllRead();
   list.items.value = list.items.value.map(item => ({ ...item, isRead: true }));
 };
 
 onMounted(() => list.reset());
 // Coming back from a post: pick up anything new since we left.
-onActivated(() => { if (list.items.value.length) list.reset(); });
+onActivated(() => {
+  if (list.items.value.length) list.reset();
+  store.refresh();
+});
 </script>
 
 <template>

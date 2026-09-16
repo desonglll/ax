@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import AppShell from "./components/AppShell.vue";
+import ConfirmDialog from "./components/ConfirmDialog.vue";
+import Lightbox from "./components/Lightbox.vue";
 import ToastHost from "./components/ToastHost.vue";
 
 /** List pages stay mounted so going back restores their content and scroll position. */
@@ -17,4 +19,6 @@ const keepAlive = ["HomeView", "TrendingView", "PeopleView", "ProfileView", "Not
     </RouterView>
   </AppShell>
   <ToastHost />
+  <Lightbox />
+  <ConfirmDialog />
 </template>

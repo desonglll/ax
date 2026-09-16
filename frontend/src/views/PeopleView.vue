@@ -7,6 +7,7 @@ import { getApiError } from "../api/client";
 import Avatar from "../components/Avatar.vue";
 import EmptyState from "../components/EmptyState.vue";
 import { useAuthStore } from "../stores/auth";
+import { useDialogStore } from "../stores/dialog";
 import { useToastStore } from "../stores/toast";
 import type { User } from "../types";
 
@@ -15,6 +16,7 @@ defineOptions({ name: "PeopleView" });
 const { t } = useI18n();
 const auth = useAuthStore();
 const toast = useToastStore();
+const dialog = useDialogStore();
 const users = ref<User[]>([]);
 const query = ref("");
 const loading = ref(true);
@@ -45,7 +47,7 @@ const toggle = async (user: User, field: "isAdmin" | "isActive") => {
 };
 
 const remove = async (user: User) => {
-  if (!confirm(t("people.confirmDelete", { name: user.userName }))) return;
+  if (!(await dialog.confirm({ title: t("people.confirmDelete", { name: user.userName }), message: t("common.irreversible"), confirmLabel: t("common.delete"), danger: true }))) return;
   try {
     await userApi.delete(user.id);
     users.value = users.value.filter(item => item.id !== user.id);

@@ -7,6 +7,7 @@ import { getApiError } from "../api/client";
 import { fullDate, timeAgo } from "../lib/format";
 import { embedsImage } from "../lib/markdown";
 import { useAuthStore } from "../stores/auth";
+import { useDialogStore } from "../stores/dialog";
 import { useToastStore } from "../stores/toast";
 import type { Comment } from "../types";
 import Avatar from "./Avatar.vue";
@@ -19,6 +20,7 @@ const emit = defineEmits<{ deleted: [id: string] }>();
 const { t } = useI18n();
 const auth = useAuthStore();
 const toast = useToastStore();
+const dialog = useDialogStore();
 
 const likes = ref(props.comment.likeCount);
 const dislikes = ref(props.comment.dislikeCount);
@@ -27,7 +29,7 @@ watch(() => props.comment, c => { likes.value = c.likeCount; dislikes.value = c.
 const extraAttachments = computed(() => (props.comment.attachments || []).filter(file => !embedsImage(props.comment.content, file.id)));
 
 const remove = async () => {
-  if (!confirm(t("comments.confirmDelete"))) return;
+  if (!(await dialog.confirm({ title: t("comments.confirmDelete"), confirmLabel: t("common.delete"), danger: true }))) return;
   try {
     await commentApi.delete(props.comment.id);
     emit("deleted", props.comment.id);

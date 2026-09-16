@@ -12,6 +12,7 @@ export const zhCN: Messages = {
     signOut: "退出登录",
     register: "注册",
     search: "搜索帖子",
+    openSearch: "搜索",
     searchButton: "搜索",
     openMenu: "打开菜单",
     closeMenu: "关闭菜单",
@@ -44,6 +45,9 @@ export const zhCN: Messages = {
     justNow: "刚刚",
     clear: "清除",
     confirmDelete: "确定删除？此操作不可撤销。",
+    confirm: "确定",
+    backToTop: "回到顶部",
+    irreversible: "此操作不可撤销。",
   },
   errors: {
     request: "请求失败",
@@ -88,6 +92,7 @@ export const zhCN: Messages = {
     placeholder: "想说点什么？支持 Markdown。",
     post: "发布",
     posted: "已发布",
+    discard: "丢弃草稿",
   },
   editor: {
     bold: "加粗 (⌘B)",
@@ -107,6 +112,7 @@ export const zhCN: Messages = {
     nothingToPreview: "暂无内容",
     hint: "Markdown · 粘贴或拖入文件即可上传 · ⌘↵ 提交",
     removeAttachment: "移除附件",
+    insertLink: "插入链接",
     placeholder: "用 Markdown 书写…",
   },
   post: {

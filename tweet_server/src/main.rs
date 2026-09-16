@@ -3,7 +3,7 @@ use std::time::Duration;
 use actix_cors::Cors;
 use actix_governor::{Governor, GovernorConfigBuilder};
 use actix_session::{storage::CookieSessionStore, SessionMiddleware};
-use actix_web::{middleware::Logger, web, App, HttpServer};
+use actix_web::{http::Method, middleware::Logger, web, App, HttpServer};
 use tracing_subscriber::EnvFilter;
 
 use tweet_server::{
@@ -36,10 +36,17 @@ async fn main() -> std::io::Result<()> {
         upload_dir: config.upload_dir.clone(),
     });
 
-    // Per-IP token bucket; excess requests get HTTP 429.
+    // Per-IP token bucket on writes only; a feed full of images must never
+    // trip it. Excess requests get HTTP 429.
     let governor = GovernorConfigBuilder::default()
         .requests_per_second(config.rate_per_second)
         .burst_size(config.rate_burst)
+        .methods(vec![
+            Method::POST,
+            Method::PUT,
+            Method::PATCH,
+            Method::DELETE,
+        ])
         .finish()
         .expect("invalid rate limit configuration");
     let session_key = config.session_key();

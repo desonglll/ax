@@ -10,6 +10,7 @@ export const en = {
     signOut: "Sign out",
     register: "Register",
     search: "Search posts",
+    openSearch: "Search",
     searchButton: "Search",
     openMenu: "Open menu",
     closeMenu: "Close menu",
@@ -42,6 +43,9 @@ export const en = {
     justNow: "just now",
     clear: "Clear",
     confirmDelete: "Delete this? This cannot be undone.",
+    confirm: "OK",
+    backToTop: "Back to top",
+    irreversible: "This cannot be undone.",
   },
   errors: {
     request: "Request failed",
@@ -86,6 +90,7 @@ export const en = {
     placeholder: "What's on your mind? Markdown supported.",
     post: "Post",
     posted: "Posted",
+    discard: "Discard draft",
   },
   editor: {
     bold: "Bold (⌘B)",
@@ -105,6 +110,7 @@ export const en = {
     nothingToPreview: "Nothing to preview",
     hint: "Markdown · paste or drop files to upload · ⌘↵ to submit",
     removeAttachment: "Remove attachment",
+    insertLink: "Insert link",
     placeholder: "Write in Markdown…",
   },
   post: {

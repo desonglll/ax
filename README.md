@@ -73,7 +73,7 @@ All settings are environment variables (see `.env.example`).
 | `PORT_FILE`                               | `.server-port`     | The bound port is written here for the frontend dev proxy      |
 | `UPLOAD_DIR`                              | `uploads`          | Where uploaded files are stored                                |
 | `SESSION_SECRET_KEY`                      | random             | Cookie signing key (32+ chars). Unset = sessions reset on restart |
-| `RATE_LIMIT_PER_SECOND` / `RATE_LIMIT_BURST` | `20` / `50`     | Per-IP rate limit; excess requests get HTTP 429                |
+| `RATE_LIMIT_PER_SECOND` / `RATE_LIMIT_BURST` | `20` / `50`     | Per-IP rate limit on write requests (POST/PUT/DELETE); excess gets HTTP 429 |
 | `OPENAI_API_KEY` / `OPENAI_API_BASE` / `OPENAI_MODEL` | unset  | Enable AI titles for posts published without one               |
 | `RUST_LOG`                                | `info,sqlx=warn`   | Log filter                                                     |
 

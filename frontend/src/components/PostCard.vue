@@ -7,6 +7,7 @@ import { getApiError } from "../api/client";
 import { fullDate, timeAgo } from "../lib/format";
 import { embedsImage } from "../lib/markdown";
 import { useAuthStore } from "../stores/auth";
+import { useDialogStore } from "../stores/dialog";
 import { useToastStore } from "../stores/toast";
 import type { FileRecord, Post } from "../types";
 import Avatar from "./Avatar.vue";
@@ -20,6 +21,7 @@ const emit = defineEmits<{ deleted: [id: string]; updated: [post: Post] }>();
 const { t } = useI18n();
 const auth = useAuthStore();
 const toast = useToastStore();
+const dialog = useDialogStore();
 
 const likes = ref(props.post.likeCount);
 const dislikes = ref(props.post.dislikeCount);
@@ -65,7 +67,7 @@ const save = async () => {
 };
 
 const remove = async () => {
-  if (!confirm(t("post.confirmDelete"))) return;
+  if (!(await dialog.confirm({ title: t("post.confirmDelete"), message: t("common.irreversible"), confirmLabel: t("common.delete"), danger: true }))) return;
   try {
     await postApi.delete(props.post.id);
     emit("deleted", props.post.id);
@@ -104,7 +106,8 @@ const remove = async () => {
       </form>
 
       <template v-else>
-        <RouterLink v-if="post.title" :to="`/posts/${post.id}`" class="text-xl font-bold tracking-tight hover:text-primary">{{ post.title }}</RouterLink>
+        <h2 v-if="post.title && detailed" class="text-2xl font-bold tracking-tight">{{ post.title }}</h2>
+        <RouterLink v-else-if="post.title" :to="`/posts/${post.id}`" class="text-xl font-bold tracking-tight hover:text-primary">{{ post.title }}</RouterLink>
         <div class="relative transition-[max-height] duration-300" :class="{ 'max-h-[26rem] overflow-hidden': long && !expanded }">
           <MarkdownBody :source="post.content" />
           <div v-if="long && !expanded" class="absolute inset-x-0 bottom-0 flex h-24 items-end justify-center bg-gradient-to-t from-base-100 via-base-100/80 to-transparent">

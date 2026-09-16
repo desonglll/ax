@@ -45,6 +45,11 @@ fast tests that need no infrastructure.
   uploads inserted at the cursor) for posts and comments, sanitized Markdown
   rendering; the standalone Files page is gone — files exist as attachments.
   Plainer copy throughout.
+- Frontend: collapsed one-line composer with draft autosave, themed
+  confirm/prompt dialogs (no native `confirm()`), image lightbox, colour-coded
+  avatars, shared unread badge (navbar, bottom nav, notifications page),
+  back-to-top button, phone search bar, `/` to focus search, page titles,
+  favicon.
 - Frontend: English / Simplified Chinese UI (vue-i18n, auto-detected,
   switchable); infinite scrolling for feeds, profile posts, notifications and
   comments; kept-alive list pages so Back restores scroll position; page and
@@ -58,6 +63,14 @@ fast tests that need no infrastructure.
   drawer, structured error toasts.
 
 ### Fixed
+- Horizontal overflow on phones (the feed column and editor could exceed the
+  viewport); verified at 390px on every page.
+- Image-heavy feeds tripped the rate limiter (HTTP 429 on images); the limit
+  now applies to write requests only.
+- File downloads send `Cache-Control` and an `ETag` (304 on revalidation).
+- Theme no longer flashes light before dark on load.
+- The Vite dev proxy follows the backend to a new port without a restart.
+- Markdown paragraphs no longer render doubled blank lines.
 - Admins can delete users and other users' comments from the UI (the API
   previously only allowed self-deletion).
 - Deactivated accounts can no longer sign in; `last_login` is now recorded.

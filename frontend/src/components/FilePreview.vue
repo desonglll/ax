@@ -2,14 +2,16 @@
 import { Download, FileText } from "lucide-vue-next";
 import { fileApi } from "../api";
 import { formatSize } from "../lib/format";
+import { useLightboxStore } from "../stores/lightbox";
 import type { FileRecord } from "../types";
 
 defineProps<{ file: FileRecord }>();
+const lightbox = useLightboxStore();
 </script>
 
 <template>
   <figure v-if="file.contentType.startsWith('image/')" class="overflow-hidden rounded-box border border-base-300 bg-base-200">
-    <img :src="fileApi.downloadUrl(file.id)" :alt="file.name" class="max-h-[34rem] w-full object-contain" loading="lazy" />
+    <img :src="fileApi.downloadUrl(file.id)" :alt="file.name" class="max-h-[34rem] w-full cursor-zoom-in object-contain" loading="lazy" @click="lightbox.open(fileApi.downloadUrl(file.id), file.name)" />
   </figure>
   <video v-else-if="file.contentType.startsWith('video/')" :src="fileApi.streamUrl(file.id)" controls preload="metadata" class="max-h-[34rem] w-full rounded-box bg-neutral"></video>
   <audio v-else-if="file.contentType.startsWith('audio/')" :src="fileApi.streamUrl(file.id)" controls preload="metadata" class="w-full"></audio>

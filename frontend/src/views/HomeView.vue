@@ -29,7 +29,7 @@ const search = ref(String(route.query.search || ""));
 const tab = ref<Tab>(route.query.tab === "following" && auth.user ? "following" : "all");
 const people = ref<User[]>([]);
 const trending = ref<Post[]>([]);
-const composer = ref<HTMLElement>();
+const composer = ref<InstanceType<typeof ComposerCard>>();
 
 const feed = useInfiniteList<Post>(async (offset, limit) => {
   const response = tab.value === "following"
@@ -62,23 +62,19 @@ const loadSidebar = async () => {
 
 const focusComposer = () => {
   window.scrollTo({ top: 0, behavior: "smooth" });
-  window.setTimeout(() => composer.value?.querySelector("textarea")?.focus(), 350);
+  window.setTimeout(() => composer.value?.expand(), 300);
 };
 
 onMounted(() => { feed.reset(); loadSidebar(); });
 </script>
 
 <template>
-  <div class="ax-container grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
-    <div class="space-y-4">
-      <div ref="composer">
-        <SectionCard v-if="auth.user" :title="t('composer.title')" :icon="PenLine">
-          <ComposerCard @created="post => feed.prepend(post)" />
-        </SectionCard>
-        <div v-else class="alert"><span>{{ t("home.signInPrompt") }}</span><RouterLink to="/login" class="btn btn-sm">{{ t("nav.signIn") }}</RouterLink></div>
-      </div>
+  <div class="ax-container grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
+    <div class="min-w-0 space-y-4">
+      <ComposerCard v-if="auth.user" ref="composer" @created="post => feed.prepend(post)" />
+      <div v-else class="alert"><span>{{ t("home.signInPrompt") }}</span><RouterLink to="/login" class="btn btn-sm">{{ t("nav.signIn") }}</RouterLink></div>
 
-      <div class="sticky top-16 z-30 -mx-1 flex flex-wrap items-center justify-between gap-2 rounded-box border border-base-300 bg-base-100/95 px-3 py-2 backdrop-blur md:top-[4.25rem]">
+      <div class="sticky top-16 z-30 flex flex-wrap items-center justify-between gap-2 rounded-box border border-base-300 bg-base-100/95 px-3 py-2 backdrop-blur md:top-[4.25rem]">
         <h1 class="text-base font-bold">{{ title }}</h1>
         <div class="flex items-center gap-1">
           <RouterLink v-if="search" to="/" class="btn btn-ghost btn-xs">{{ t("common.clear") }}</RouterLink>
@@ -100,7 +96,7 @@ onMounted(() => { feed.reset(); loadSidebar(); });
       <LoadMore v-if="!feed.loading.value" :loading="feed.loadingMore.value" :done="feed.done.value" :count="feed.items.value.length" :error="feed.error.value" @more="feed.loadMore()" />
     </div>
 
-    <aside class="space-y-4">
+    <aside class="min-w-0 space-y-4">
       <SectionCard v-if="trending.length" :title="t('home.trending')" :icon="Flame" to="/trending" :action="t('home.seeAll')">
         <RouterLink v-for="(post, index) in trending" :key="post.id" :to="`/posts/${post.id}`" class="flex gap-3 rounded-box p-2 transition hover:bg-base-200">
           <span class="w-4 shrink-0 pt-0.5 text-sm font-bold text-base-content/40">{{ index + 1 }}</span>
