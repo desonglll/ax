@@ -45,7 +45,6 @@ const open = async (item: Notification) => {
 const readAll = async () => {
   await notificationApi.readAll();
   items.value = items.value.map(item => ({ ...item, isRead: true }));
-  toast.show("All notifications marked read", "success");
 };
 
 onMounted(load);
@@ -54,12 +53,12 @@ onMounted(load);
 <template>
   <div class="ax-container max-w-4xl space-y-6">
     <header class="flex flex-wrap items-end justify-between gap-3">
-      <div><p class="ax-section-title">Activity center</p><h1 class="ax-page-title">Notifications</h1></div>
+      <h1 class="ax-page-title">Notifications</h1>
       <button class="btn btn-outline btn-sm" :disabled="!unread" @click="readAll"><CheckCheck :size="16" /> Mark all read</button>
     </header>
 
     <div v-if="loading" class="grid place-items-center py-24"><LoaderCircle class="animate-spin" /></div>
-    <EmptyState v-else-if="!items.length" :icon="Bell" title="No notifications yet" description="Follows, comments and reactions on your posts will appear here." />
+    <EmptyState v-else-if="!items.length" :icon="Bell" title="No notifications" />
     <section v-else class="ax-panel">
       <div class="divide-y divide-base-300">
         <button v-for="item in items" :key="item.id" class="flex w-full items-start gap-4 p-4 text-left transition hover:bg-base-200 md:p-5" :class="{ 'bg-primary/8': !item.isRead }" @click="open(item)">

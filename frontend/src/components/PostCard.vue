@@ -4,11 +4,14 @@ import { MessageCircle, MoreHorizontal, Pencil, Trash2 } from "lucide-vue-next";
 import { postApi } from "../api";
 import { getApiError } from "../api/client";
 import { fullDate, timeAgo } from "../lib/format";
+import { embedsImage } from "../lib/markdown";
 import { useAuthStore } from "../stores/auth";
 import { useToastStore } from "../stores/toast";
-import type { Post } from "../types";
+import type { FileRecord, Post } from "../types";
 import Avatar from "./Avatar.vue";
 import FilePreview from "./FilePreview.vue";
+import MarkdownBody from "./MarkdownBody.vue";
+import MarkdownEditor from "./MarkdownEditor.vue";
 import ReactionBar from "./ReactionBar.vue";
 
 const props = defineProps<{ post: Post; detailed?: boolean }>();
@@ -23,36 +26,51 @@ watch(() => props.post, p => { likes.value = p.likeCount; dislikes.value = p.dis
 
 const editing = ref(false);
 const busy = ref(false);
-const editTitle = ref(props.post.title);
-const editContent = ref(props.post.content);
+const editTitle = ref("");
+const editContent = ref("");
+const editAttachments = ref<FileRecord[]>([]);
+const expanded = ref(false);
+
 const canManage = computed(() => auth.user?.id === props.post.userId || auth.user?.isAdmin);
 const edited = computed(() => props.post.updatedAt !== props.post.createdAt);
+const long = computed(() => !props.detailed && (props.post.content.length > 700 || props.post.content.split("\n").length > 14));
+/** Attachments not already shown inline as images. */
+const extraAttachments = computed(() => (props.post.attachments || []).filter(file => !embedsImage(props.post.content, file.id)));
 
-const startEdit = () => { editTitle.value = props.post.title; editContent.value = props.post.content; editing.value = true; };
+const startEdit = () => {
+  editTitle.value = props.post.title;
+  editContent.value = props.post.content;
+  editAttachments.value = [...(props.post.attachments || [])];
+  editing.value = true;
+};
 
 const save = async () => {
-  if (!editContent.value.trim()) return;
+  if (!editContent.value.trim() || busy.value) return;
   busy.value = true;
   try {
-    const response = await postApi.update(props.post.id, { title: editTitle.value.trim(), content: editContent.value.trim() });
+    const response = await postApi.update(props.post.id, {
+      title: editTitle.value.trim(),
+      content: editContent.value.trim(),
+      attachments: editAttachments.value.map(file => file.id),
+    });
     if (response.body?.data) emit("updated", response.body.data);
     editing.value = false;
-    toast.show("Post updated", "success");
+    toast.show("Saved", "success");
   } catch (error) {
-    toast.show(getApiError(error, "Could not update post"), "error");
+    toast.show(getApiError(error, "Could not save"), "error");
   } finally {
     busy.value = false;
   }
 };
 
 const remove = async () => {
-  if (!confirm("Delete this post? This cannot be undone.")) return;
+  if (!confirm("Delete this post?")) return;
   try {
     await postApi.delete(props.post.id);
     emit("deleted", props.post.id);
-    toast.show("Post deleted", "success");
+    toast.show("Deleted", "success");
   } catch (error) {
-    toast.show(getApiError(error, "Could not delete post"), "error");
+    toast.show(getApiError(error, "Could not delete"), "error");
   }
 };
 </script>
@@ -77,7 +95,7 @@ const remove = async () => {
 
       <form v-if="editing" class="space-y-3" @submit.prevent="save">
         <input v-model="editTitle" class="input w-full" maxlength="120" placeholder="Title (optional)" />
-        <textarea v-model="editContent" class="textarea min-h-36 w-full" maxlength="10000" required></textarea>
+        <MarkdownEditor v-model="editContent" v-model:attachments="editAttachments" autofocus @submit="save" />
         <div class="flex justify-end gap-2">
           <button type="button" class="btn btn-ghost btn-sm" @click="editing = false">Cancel</button>
           <button type="submit" class="btn btn-primary btn-sm" :disabled="busy || !editContent.trim()">Save</button>
@@ -85,17 +103,19 @@ const remove = async () => {
       </form>
 
       <template v-else>
-        <component :is="detailed ? 'div' : 'RouterLink'" :to="detailed ? undefined : `/posts/${post.id}`" class="group block">
-          <h2 v-if="post.title" class="mb-2 text-xl font-black tracking-tight" :class="{ 'group-hover:text-primary': !detailed }">{{ post.title }}</h2>
-          <p class="ax-prose text-[0.98rem]" :class="{ 'line-clamp-[12]': !detailed }">{{ post.content }}</p>
-        </component>
-        <div v-if="post.attachments?.length" class="grid gap-3"><FilePreview v-for="file in post.attachments" :key="file.id" :file="file" /></div>
+        <RouterLink v-if="post.title" :to="`/posts/${post.id}`" class="text-xl font-bold tracking-tight hover:text-primary">{{ post.title }}</RouterLink>
+        <div class="relative" :class="{ 'max-h-[26rem] overflow-hidden': long && !expanded }">
+          <MarkdownBody :source="post.content" />
+          <div v-if="long && !expanded" class="absolute inset-x-0 bottom-0 flex h-20 items-end justify-center bg-gradient-to-t from-base-100 to-transparent">
+            <RouterLink :to="`/posts/${post.id}`" class="btn btn-ghost btn-sm">Read more</RouterLink>
+          </div>
+        </div>
+        <div v-if="extraAttachments.length" class="grid gap-3"><FilePreview v-for="file in extraAttachments" :key="file.id" :file="file" /></div>
       </template>
 
       <footer class="flex flex-wrap items-center gap-1 border-t border-base-300 pt-3">
         <ReactionBar v-model:likes="likes" v-model:dislikes="dislikes" v-model:mine="mine" :target-id="post.id" target-type="post" />
         <RouterLink :to="`/posts/${post.id}`" class="btn btn-ghost btn-sm"><MessageCircle :size="17" /> {{ post.commentCount }}</RouterLink>
-        <span v-if="likes + dislikes > 0" class="ml-auto badge badge-ghost">{{ Math.round((likes / (likes + dislikes)) * 100) }}% positive</span>
       </footer>
     </div>
   </article>

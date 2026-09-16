@@ -64,7 +64,7 @@ look like an address. `passwordHash` is never returned.
 | PUT    | `/posts/{id}`      | owner/admin | `{ content?, title?, attachments? }` (attachments replaces the whole set)    | `Post` |
 | DELETE | `/posts/{id}`      | owner/admin |                                                                              | `Post` |
 
-`search` matches title and content (case-insensitive). A post created
+`content` is Markdown. `search` matches title and content (case-insensitive). A post created
 without a title gets an AI-generated one later when `OPENAI_API_KEY` is set.
 
 `Post` fields: `id, title, content, createdAt, updatedAt, userId, userName,

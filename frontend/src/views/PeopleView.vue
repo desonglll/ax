@@ -57,11 +57,11 @@ onMounted(load);
 <template>
   <div class="ax-container space-y-6">
     <header class="flex flex-wrap items-end justify-between gap-4">
-      <div><p class="ax-section-title">Community directory</p><h1 class="ax-page-title">People on Ax</h1></div>
+      <h1 class="ax-page-title">People</h1>
       <label class="input flex items-center gap-2"><Search :size="16" /><input v-model="query" type="search" placeholder="Find people" /></label>
     </header>
 
-    <EmptyState v-if="!loading && !filtered.length" :icon="UsersRound" title="No one matches" description="Try a different name or email." />
+    <EmptyState v-if="!loading && !filtered.length" :icon="UsersRound" title="No matches" />
     <div v-else class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       <article v-for="person in filtered" :key="person.id" class="ax-panel" :class="{ 'opacity-60': !person.isActive }">
         <div class="card-body gap-3">
@@ -76,7 +76,7 @@ onMounted(load);
           </div>
           <p v-if="auth.user?.isAdmin" class="ax-muted truncate text-sm">{{ person.email }}</p>
           <div class="card-actions mt-1">
-            <RouterLink :to="`/profile/${person.id}`" class="btn btn-outline btn-sm flex-1"><UserRound :size="15" /> View profile</RouterLink>
+            <RouterLink :to="`/profile/${person.id}`" class="btn btn-outline btn-sm flex-1"><UserRound :size="15" /> Profile</RouterLink>
             <div v-if="auth.user?.isAdmin && auth.user.id !== person.id" class="dropdown dropdown-end">
               <button tabindex="0" class="btn btn-ghost btn-sm">Manage</button>
               <ul tabindex="0" class="dropdown-content menu z-20 w-48 rounded-box border border-base-300 bg-base-100 p-2 shadow-xl">

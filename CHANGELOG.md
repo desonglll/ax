@@ -41,6 +41,10 @@ fast tests that need no infrastructure.
   no service containers; the image workflow builds two images.
 - `compose.yml` runs PostgreSQL only; `compose.prod.yml` runs the published
   images.
+- Frontend: Markdown editor (toolbar, shortcuts, preview, paste/drop/pick
+  uploads inserted at the cursor) for posts and comments, sanitized Markdown
+  rendering; the standalone Files page is gone — files exist as attachments.
+  Plainer copy throughout.
 - Frontend: relative timestamps, optimistic reactions with rollback, shared
   `Avatar` / `EmptyState` / `UserRow` / `ReactionBar` components, a trending
   widget on the home page, paginated profile posts and comments, feed tab and

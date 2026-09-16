@@ -100,17 +100,16 @@ watch(() => route.params.id, load);
 <template>
   <div class="ax-container max-w-5xl space-y-6">
     <div v-if="loading" class="grid place-items-center py-24"><LoaderCircle class="animate-spin" /></div>
-    <EmptyState v-else-if="!profile" :icon="UserRound" title="User not found" description="This profile does not exist or was removed.">
+    <EmptyState v-else-if="!profile" :icon="UserRound" title="User not found">
       <RouterLink to="/people" class="btn btn-primary btn-sm mt-2">Browse people</RouterLink>
     </EmptyState>
     <template v-else>
-      <section class="overflow-hidden rounded-box border border-base-300 bg-base-100 shadow-sm">
-        <div class="h-28 bg-gradient-to-br from-primary via-secondary to-accent md:h-40"></div>
-        <div class="px-5 pb-5 md:px-8">
-          <div class="-mt-12 flex flex-wrap items-end justify-between gap-4">
-            <div class="rounded-full border-4 border-base-100"><Avatar :name="profile.userName" size="xl" /></div>
+      <section class="ax-panel">
+        <div class="card-body p-5 md:p-6">
+          <div class="flex flex-wrap items-start justify-between gap-4">
+            <Avatar :name="profile.userName" size="xl" />
             <div class="flex gap-2">
-              <button v-if="own" class="btn btn-outline btn-sm" @click="editing = !editing"><Pencil :size="16" /> {{ editing ? "Close editor" : "Edit profile" }}</button>
+              <button v-if="own" class="btn btn-outline btn-sm" @click="editing = !editing"><Pencil :size="16" /> {{ editing ? "Close" : "Edit profile" }}</button>
               <button v-else class="btn btn-sm" :class="follows?.isFollowing ? 'btn-outline' : 'btn-primary'" :disabled="busy" @click="toggleFollow">
                 <UserMinus v-if="follows?.isFollowing" :size="16" /><UserPlus v-else :size="16" />{{ follows?.isFollowing ? "Unfollow" : "Follow" }}
               </button>
@@ -118,13 +117,13 @@ watch(() => route.params.id, load);
           </div>
           <div class="mt-4">
             <div class="flex flex-wrap items-center gap-2">
-              <h1 class="text-3xl font-black">{{ profile.fullName || profile.userName }}</h1>
+              <h1 class="text-2xl font-bold">{{ profile.fullName || profile.userName }}</h1>
               <span v-if="profile.isAdmin" class="badge badge-primary">Admin</span>
               <span v-if="!profile.isActive" class="badge badge-warning">Deactivated</span>
             </div>
             <p class="text-base-content/55">@{{ profile.userName }}</p>
             <p v-if="own" class="mt-2 text-sm ax-muted">{{ profile.email }}<template v-if="profile.phone"> · {{ profile.phone }}</template></p>
-            <p class="ax-muted mt-3 flex items-center gap-2 text-sm"><CalendarDays :size="15" /> Joined {{ profile.createdAt ? new Date(profile.createdAt).toLocaleDateString() : "recently" }}</p>
+            <p class="ax-muted mt-2 flex items-center gap-2 text-sm"><CalendarDays :size="15" /> Joined {{ profile.createdAt ? new Date(profile.createdAt).toLocaleDateString() : "" }}</p>
           </div>
           <div class="mt-5 flex gap-5 text-sm">
             <button class="hover:text-primary" @click="showRelationships('followers')"><strong>{{ follows?.followersCount || 0 }}</strong> <span class="ax-muted">followers</span></button>
@@ -149,11 +148,11 @@ watch(() => route.params.id, load);
       </section>
 
       <div>
-        <h2 class="mb-4 text-xl font-black">Posts</h2>
+        <h2 class="mb-3 text-lg font-bold">Posts</h2>
         <div class="space-y-4">
           <PostCard v-for="post in posts" :key="post.id" :post="post" @deleted="id => { posts = posts.filter(item => item.id !== id); if (postCount) postCount -= 1; }" @updated="value => posts = posts.map(item => item.id === value.id ? value : item)" />
         </div>
-        <p v-if="!posts.length" class="ax-muted py-16 text-center">{{ own ? "You haven't posted yet." : "No posts yet." }}</p>
+        <p v-if="!posts.length" class="ax-muted py-12 text-center">No posts yet.</p>
         <div class="mt-4"><PaginationBar :offset="offset" :limit="LIMIT" :count="postCount" @change="value => { offset = value; loadPosts(); }" /></div>
       </div>
     </template>
@@ -163,7 +162,7 @@ watch(() => route.params.id, load);
         <h3 class="text-lg font-bold">{{ relationship.title }}</h3>
         <div class="mt-4 space-y-1">
           <UserRow v-for="person in relationship.users" :key="person.id" :user="person" onclick="this.closest('dialog').close()" />
-          <p v-if="!relationship.users.length" class="ax-muted py-10 text-center">No one here yet.</p>
+          <p v-if="!relationship.users.length" class="ax-muted py-10 text-center">Nobody yet.</p>
         </div>
         <div class="modal-action"><form method="dialog"><button class="btn">Close</button></form></div>
       </div>

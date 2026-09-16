@@ -68,7 +68,7 @@ onBeforeUnmount(() => window.clearInterval(timer));
             <span class="text-sm"><strong>{{ item.actorName || `User ${item.actorId}` }}</strong> {{ describe(item) }}</span>
             <small class="mt-1 block text-base-content/50">{{ timeAgo(item.createdAt) }}</small>
           </button>
-          <p v-if="!items.length" class="py-8 text-center text-sm text-base-content/55">You're all caught up.</p>
+          <p v-if="!items.length" class="py-8 text-center text-sm text-base-content/55">No notifications.</p>
         </template>
         <RouterLink to="/notifications" class="btn btn-ghost btn-sm" @click="close">View all</RouterLink>
       </div>
