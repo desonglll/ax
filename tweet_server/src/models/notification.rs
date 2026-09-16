@@ -1,16 +1,15 @@
 use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use uuid::Uuid;
 
-/// A single in-app notification (row in `notifications`).
-#[derive(Debug, Serialize, Deserialize, Clone)]
+/// Row of `notifications`, joined with the actor's current user name.
+#[derive(Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Notification {
     pub id: i64,
-    /// Recipient user id.
+    /// Recipient.
     pub user_id: i32,
     pub actor_id: i32,
-    /// Denormalized for display; not stored.
     pub actor_name: Option<String>,
     /// One of `follow`, `comment`, `reaction`.
     pub kind: String,

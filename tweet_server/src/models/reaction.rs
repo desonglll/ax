@@ -1,53 +1,96 @@
-use actix_web::web;
-use chrono::DateTime;
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
-/// Enumeration representing reaction categories.
-///
-/// This lists the active interactive responses associated with target IDs.
-#[derive(Serialize, Deserialize, Debug)]
-pub enum ReactionName {
-    Like(uuid::Uuid),
-    Dislike(uuid::Uuid),
-}
+use crate::errors::AxError;
 
-/// Reaction data model.
-///
-/// This struct corresponds to records in the `reactions` database table, representing
-/// a user interaction (such as Like or Dislike) with a target.
-#[derive(Serialize, Deserialize, Debug, Default, Clone)]
+/// Row of `reactions`.
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Reaction {
     pub id: i32,
     pub user_id: i32,
-    pub to_id: uuid::Uuid,
-    pub created_at: DateTime<chrono::Utc>,
+    pub to_id: Uuid,
+    pub created_at: DateTime<Utc>,
     pub reaction_name: String,
     pub to_type: String,
 }
 
-/// Request payload structure for creating a reaction.
-///
-/// This structure encapsulates parameters required to register a new user reaction.
-#[derive(Debug, Serialize, Deserialize, Clone)]
+/// What a reaction points at: a post or a comment.
+#[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct CreateReaction {
-    pub user_id: i32,
-    pub to_id: uuid::Uuid,
+pub struct ReactionTarget {
+    pub to_id: Uuid,
+    #[serde(default = "default_target_type")]
     pub to_type: String,
 }
 
-impl From<web::Json<CreateReaction>> for CreateReaction {
-    fn from(value: web::Json<CreateReaction>) -> Self {
-        CreateReaction { ..value.clone() }
+fn default_target_type() -> String {
+    "post".to_string()
+}
+
+impl ReactionTarget {
+    pub fn validate(&self) -> Result<(), AxError> {
+        if matches!(self.to_type.as_str(), "post" | "comment") {
+            Ok(())
+        } else {
+            Err(AxError::invalid("toType must be post or comment"))
+        }
     }
 }
 
-/// Response structure containing aggregated reaction statistics.
-///
-/// This table aggregates counts for Like and Dislike reactions associated with a target.
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
-pub struct ReactionResponseTable {
-    pub like: i64,
-    pub dislike: i64,
+/// Body of `PUT /api/reactions`.
+#[derive(Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct SetReaction {
+    #[serde(flatten)]
+    pub target: ReactionTarget,
+    /// `"Like"` or `"Dislike"`.
+    pub reaction: String,
+}
+
+impl SetReaction {
+    pub fn validate(&self) -> Result<(), AxError> {
+        self.target.validate()?;
+        if matches!(self.reaction.as_str(), "Like" | "Dislike") {
+            Ok(())
+        } else {
+            Err(AxError::invalid("reaction must be Like or Dislike"))
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn reaction_payload_is_validated() {
+        let ok = SetReaction {
+            target: ReactionTarget {
+                to_id: Uuid::nil(),
+                to_type: "comment".into(),
+            },
+            reaction: "Like".into(),
+        };
+        assert!(ok.validate().is_ok());
+
+        let bad_type = SetReaction {
+            target: ReactionTarget {
+                to_id: Uuid::nil(),
+                to_type: "user".into(),
+            },
+            reaction: "Like".into(),
+        };
+        assert!(bad_type.validate().is_err());
+
+        let bad_reaction = SetReaction {
+            target: ReactionTarget {
+                to_id: Uuid::nil(),
+                to_type: "post".into(),
+            },
+            reaction: "Love".into(),
+        };
+        assert!(bad_reaction.validate().is_err());
+    }
 }

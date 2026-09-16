@@ -1,97 +1,72 @@
-use chrono::DateTime;
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use sqlx::types::chrono;
+use uuid::Uuid;
 
-/// Comment data model.
-///
-/// This struct corresponds to records in the `comments` database table.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+use crate::{errors::AxError, models::file::File, response::PageQuery};
+
+/// Row of `comments` (the `reply_to_type` column is derived by a trigger and
+/// not exposed).
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Comment {
-    pub id: uuid::Uuid,
+    pub id: Uuid,
     pub content: String,
-    pub reply_to: uuid::Uuid,
+    pub reply_to: Uuid,
     pub user_id: i32,
     pub user_name: String,
-    pub created_at: DateTime<chrono::Utc>,
-    pub updated_at: DateTime<chrono::Utc>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
-/// Request payload structure for creating a comment.
-///
-/// This structure encapsulates request parameters to submit a comment. The `user_id`
-/// attribute is populated by the server from session context.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CreateComment {
-    content: String,
-    reply_to: uuid::Uuid,
-    user_id: Option<i32>,
-    pub attachments: Option<Vec<uuid::Uuid>>,
-}
-
-impl CreateComment {
-    /// Create a new CreateComment request payload.
-    pub fn new(
-        content: String,
-        reply_to: uuid::Uuid,
-        user_id: Option<i32>,
-        attachments: Option<Vec<uuid::Uuid>>,
-    ) -> Self {
-        Self {
-            content,
-            reply_to,
-            user_id,
-            attachments,
-        }
-    }
-
-    /// Set the comment content field.
-    pub fn set_content(&mut self, content: String) {
-        self.content = content;
-    }
-
-    /// Set the identifier of the target item being replied to.
-    pub fn set_reply_to(&mut self, reply_to: uuid::Uuid) {
-        self.reply_to = reply_to;
-    }
-
-    /// Set the user identifier of the commenter.
-    pub fn set_user_id(&mut self, user_id: Option<i32>) {
-        self.user_id = user_id;
-    }
-
-    /// Retrieve a reference to the comment content.
-    pub fn content(&self) -> &str {
-        &self.content
-    }
-
-    /// Retrieve the identifier of the target item.
-    pub fn reply_to(&self) -> uuid::Uuid {
-        self.reply_to
-    }
-
-    /// Retrieve the optional user identifier.
-    pub fn user_id(&self) -> Option<i32> {
-        self.user_id
-    }
-
-    /// Generate a demonstration CreateComment request payload.
-    pub fn demo() -> Self {
-        CreateComment {
-            content: "demo".to_string(),
-            reply_to: uuid::Uuid::nil(),
-            user_id: None,
-            attachments: None,
-        }
-    }
-}
-
-/// Detailed comment view with flattened comment fields and attached file records.
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+/// A comment plus the reaction state a card needs to render.
+#[derive(Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct CommentDetail {
     #[serde(flatten)]
     pub comment: Comment,
-    pub attachments: Vec<crate::models::file::File>,
+    pub attachments: Vec<File>,
+    pub like_count: i64,
+    pub dislike_count: i64,
+    pub viewer_reaction: Option<String>,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateComment {
+    pub content: String,
+    /// Post (or comment) being replied to.
+    pub reply_to: Uuid,
+    #[serde(default)]
+    pub attachments: Vec<Uuid>,
+}
+
+impl CreateComment {
+    pub fn normalize(&mut self) -> Result<(), AxError> {
+        self.content = self.content.trim().to_string();
+        if self.content.is_empty() {
+            return Err(AxError::invalid("content cannot be empty"));
+        }
+        if self.content.chars().count() > 5_000 {
+            return Err(AxError::invalid("content must be at most 5000 characters"));
+        }
+        Ok(())
+    }
+}
+
+/// Query parameters for `GET /api/comments`.
+#[derive(Deserialize, Debug, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct CommentQuery {
+    pub limit: Option<i64>,
+    pub offset: Option<i64>,
+    pub reply_to: Option<Uuid>,
+}
+
+impl CommentQuery {
+    pub fn page(&self) -> PageQuery {
+        PageQuery {
+            limit: self.limit,
+            offset: self.offset,
+        }
+    }
 }

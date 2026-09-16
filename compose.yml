@@ -1,38 +1,24 @@
+# Local development: PostgreSQL is the only external service.
+# The backend applies migrations itself on startup.
+# Host port 55432 (not 5432) so it does not collide with other local Postgres instances.
 services:
   postgres:
     image: postgres:16-alpine
-    restart: always
-    # set shared memory limit when using docker compose
+    restart: unless-stopped
     shm_size: 128mb
-    # or set shared memory limit when deploy via swarm stack
-    #volumes:
-    #  - type: tmpfs
-    #    target: /dev/shm
-    #    tmpfs:
-    #      size: 134217728 # 128*2^20 bytes = 128Mb
     ports:
-      - 5432:5432
+      - "${AX_PG_PORT:-55432}:5432"
     environment:
-      POSTGRES_PASSWORD: password
       POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
       POSTGRES_DB: ax
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ax"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
-  redis:
-    image: redis:7-alpine
-    ports:
-      - '6379:6379'
-
-  adminer:
-    image: adminer
-    restart: always
-    ports:
-      - 5433:8080
-
-  # model-server:
-  #   build: ./model_server
-  #   ports:
-  #     - '8001:8001'
-  #   environment:
-  #     - DATABASE_URL=postgres://postgres:password@postgres:5432/ax
-  #   depends_on:
-  #     - postgres
+volumes:
+  pgdata:

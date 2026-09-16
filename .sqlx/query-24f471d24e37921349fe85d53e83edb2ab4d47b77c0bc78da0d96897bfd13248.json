@@ -1,0 +1,82 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "delete from posts where id = $1 returning *",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "content",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 2,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 3,
+        "name": "user_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "user_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "like_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "dislike_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 7,
+        "name": "engagement_rate",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 8,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 9,
+        "name": "reply_to",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 10,
+        "name": "title",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "24f471d24e37921349fe85d53e83edb2ab4d47b77c0bc78da0d96897bfd13248"
+}

@@ -1,12 +1,12 @@
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
-/// Aggregate follow information for a user profile.
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+/// Follow counts for a profile, plus whether the viewer follows it.
+#[derive(Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct FollowStats {
     pub user_id: i32,
     pub followers_count: i64,
     pub following_count: i64,
-    /// Whether the requesting user follows this profile (false for anonymous).
+    /// `false` for anonymous viewers.
     pub is_following: bool,
 }

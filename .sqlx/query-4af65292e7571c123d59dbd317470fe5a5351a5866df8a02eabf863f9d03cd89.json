@@ -1,0 +1,95 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update users set\n            user_name = coalesce($2, user_name),\n            email = coalesce($3, email),\n            password_hash = coalesce($4, password_hash),\n            full_name = coalesce($5, full_name),\n            phone = coalesce($6, phone),\n            is_active = coalesce($7, is_active),\n            is_admin = coalesce($8, is_admin),\n            updated_at = now()\n         where id = $1\n         returning *",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "user_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "email",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "password_hash",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "full_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "phone",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "last_login",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "is_active",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 10,
+        "name": "is_admin",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 11,
+        "name": "profile_picture",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Bool",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "4af65292e7571c123d59dbd317470fe5a5351a5866df8a02eabf863f9d03cd89"
+}

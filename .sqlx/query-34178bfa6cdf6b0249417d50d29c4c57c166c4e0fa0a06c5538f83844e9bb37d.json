@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update users set last_login = now() where id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "34178bfa6cdf6b0249417d50d29c4c57c166c4e0fa0a06c5538f83844e9bb37d"
+}

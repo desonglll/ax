@@ -1,0 +1,30 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select to_id, reaction_name from reactions\n         where user_id = $1 and to_type = $2 and to_id = any($3)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "to_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "reaction_name",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Text",
+        "UuidArray"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "9fdba005f205a903249799f105c1b9623b8f59257a3225d48ed8aa3948c45ab6"
+}

@@ -1,0 +1,111 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "insert into files (id, name, path, size, content_type, created_at, updated_at,\n                            user_id, description, checksum, is_deleted, is_pub)\n         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)\n         returning *",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "path",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "size",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 4,
+        "name": "content_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "user_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 8,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "checksum",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 10,
+        "name": "is_deleted",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 11,
+        "name": "is_pub",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 12,
+        "name": "post_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 13,
+        "name": "comment_id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Varchar",
+        "Varchar",
+        "Int8",
+        "Varchar",
+        "Timestamptz",
+        "Timestamptz",
+        "Int4",
+        "Text",
+        "Varchar",
+        "Bool",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "e136acf5ffdf1bc37a4946e675c126e63b1b339a89a57177f510d92c66dee326"
+}

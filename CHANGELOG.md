@@ -2,6 +2,61 @@
 
 This document logs the development history and version alterations of Project Ax.
 
+## [0.5.0] - 2026-09-16
+
+A simplification release: one database, one backend crate, one frontend, and
+fast tests that need no infrastructure.
+
+### Removed
+- **Redis.** Sessions now live in an encrypted cookie (`actix-session`
+  `CookieSessionStore`) holding only the user id, name and admin flag.
+- **The Python recommendation service** (`model_server/`). Trending is a single
+  SQL query with a Hacker-News style score (`db::post::trending`).
+- **The `ai` crate.** The OpenAI-compatible client is now
+  `tweet_server/src/services/ai.rs`; the title worker starts only when
+  `OPENAI_API_KEY` is set.
+- **Frontends v1.0 and v1.1.** The Vue app moved from `frontend/v1.2/` to
+  `frontend/`.
+- **The `/stats` endpoint and System page**, which reported request counts that
+  were never fully collected.
+- **49 database-backed handler tests**, the custom colored `Log` facade,
+  `juniper`, `clap`, `actix-redis`, `colored`, `env_logger` and other unused
+  dependencies. `adminer` left `compose.yml`.
+
+### Changed
+- **REST-style routes**: `POST /api/posts`, `GET /api/posts/{id}`,
+  `PUT /api/reactions`, `POST /api/files?public=…`, `GET /api/auth/me`, etc.
+  (see `docs/src/api.md`). Errors return real HTTP statuses (400/401/403/404)
+  with a `{code, message}` body instead of `200` with an embedded code.
+- **Hydrated lists**: posts include `attachments`, `commentCount` and
+  `viewerReaction`; comments include reaction counts and `viewerReaction`. The
+  frontend no longer issues one to two requests per card.
+- **Migrations run on startup** (`sqlx::migrate!`), so a new database needs
+  no `sqlx-cli`. SQL is checked against the committed `.sqlx/` cache, so
+  `cargo check`, tests, CI and Docker builds work without a database.
+- **Backend layout**: `routes.rs` → `handlers/` → `db/` (renamed from
+  `dbaccess/`), `models/` with `normalize()`/`validate()`, `auth.rs`,
+  `response.rs`, `config.rs`. Logging is `tracing` only.
+- **CI** is two jobs (backend fmt/clippy/test, frontend typecheck/build) with
+  no service containers; the image workflow builds two images.
+- `compose.yml` runs PostgreSQL only; `compose.prod.yml` runs the published
+  images.
+- Frontend: relative timestamps, optimistic reactions with rollback, shared
+  `Avatar` / `EmptyState` / `UserRow` / `ReactionBar` components, a trending
+  widget on the home page, paginated profile posts and comments, feed tab and
+  page kept in the URL, auto sign-in after registration, mobile search in the
+  drawer, structured error toasts.
+
+### Fixed
+- Admins can delete users and other users' comments from the UI (the API
+  previously only allowed self-deletion).
+- Deactivated accounts can no longer sign in; `last_login` is now recorded.
+- A missing post/user/comment returns 404 instead of a 500 "Database error";
+  duplicate user names/emails return 400.
+- Post search also matches the title.
+- Uploading with no file part returns 400 instead of an empty success.
+- Trending no longer requires sign-in.
+
 ## [0.4.0] - 2026-06-18
 
 ### Added

@@ -1,12 +1,11 @@
-use actix_session::Session;
-use chrono::{DateTime, Local};
+use std::path::Path;
+
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-/// File metadata data model.
-///
-/// This struct corresponds to records in the `files` database table.
-#[derive(Serialize, Deserialize, Debug, Default, Clone)]
+/// Row of `files`. `path` is the absolute on-disk location.
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct File {
     pub id: Uuid,
@@ -14,8 +13,8 @@ pub struct File {
     pub path: String,
     pub size: i64,
     pub content_type: String,
-    pub created_at: Option<DateTime<chrono::Utc>>,
-    pub updated_at: Option<DateTime<chrono::Utc>>,
+    pub created_at: Option<DateTime<Utc>>,
+    pub updated_at: Option<DateTime<Utc>>,
     pub user_id: i32,
     pub description: Option<String>,
     pub checksum: String,
@@ -26,22 +25,11 @@ pub struct File {
 }
 
 impl File {
-    /// Create a new File metadata model instance.
-    ///
-    /// This method initializes a `File` struct. It extracts the user ID from SESSION,
-    /// constructs the filesystem path based on NAME, and generates a new UUID and timestamp.
-    ///
-    /// # Parameters
-    ///
-    /// - `session`: Reference to the request session to read user credentials.
-    /// - `name`: The filename string.
-    /// - `size`: The size of the file in bytes.
-    /// - `content_type`: The MIME content type string.
-    /// - `description`: The optional text description of the file.
-    /// - `checksum`: The SHA-256 hash checksum of the file.
-    /// - `is_pub`: Boolean indicating if the file is publicly readable.
+    /// Metadata for a freshly uploaded file stored under `upload_dir/<uuid>`.
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
-        session: &Session,
+        upload_dir: &Path,
+        user_id: i32,
         name: String,
         size: i64,
         content_type: String,
@@ -49,22 +37,19 @@ impl File {
         checksum: String,
         is_pub: bool,
     ) -> Self {
-        let user_id = session.get::<i32>("user_id").unwrap().unwrap_or(-1);
-        let base_url: String = std::env::current_dir()
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .to_string();
         let id = Uuid::new_v4();
-        let path = format!("{}/uploads/{}", base_url, id);
+        let now = Utc::now();
         Self {
             id,
             name,
-            path,
+            path: upload_dir
+                .join(id.to_string())
+                .to_string_lossy()
+                .into_owned(),
             size,
             content_type,
-            created_at: Some(Local::now().to_utc()),
-            updated_at: Some(Local::now().to_utc()),
+            created_at: Some(now),
+            updated_at: Some(now),
             user_id,
             description,
             checksum,
@@ -76,14 +61,27 @@ impl File {
     }
 }
 
-/// Query filters for file records.
-///
-/// This structure represents filter parameters when querying lists of file metadata.
-#[derive(Deserialize)]
-pub struct FileFilter {
-    pub name: Option<String>,
-    pub path: Option<String>,
-    pub user_id: Option<i32>,
-    pub is_deleted: Option<bool>,
-    pub is_pub: Option<bool>,
+/// Which files `GET /api/files` returns.
+#[derive(Deserialize, Debug, Default, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum FileScope {
+    /// Public files (default; no sign-in needed).
+    #[default]
+    Public,
+    /// The caller's own files (public and private).
+    Mine,
+    /// Every file (admins only).
+    All,
+}
+
+#[derive(Deserialize, Debug, Default)]
+pub struct FileListQuery {
+    #[serde(default)]
+    pub scope: FileScope,
+}
+
+#[derive(Deserialize, Debug, Default)]
+pub struct UploadQuery {
+    /// Whether uploaded files are publicly readable. Defaults to `true`.
+    pub public: Option<bool>,
 }

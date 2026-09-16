@@ -1,305 +1,58 @@
-use std::collections::HashMap;
-
 use actix_session::Session;
 use actix_web::{web, HttpResponse};
+use uuid::Uuid;
 
-use crate::dbaccess::comment::{delete_comment_by_id_db, get_comment_by_query_db};
-use crate::extractors::api_response::ApiResponse;
-use crate::extractors::data::DataBuilder;
-use crate::handlers::auth::login_in_unauthentic;
-use crate::{errors::AxError, models::comment::CreateComment, state::AppState};
+use crate::{
+    auth::{current_user, require_user},
+    db,
+    errors::AxError,
+    models::comment::{CommentQuery, CreateComment},
+    response::{ok, ok_paged},
+    state::AppState,
+};
 
-/*
-{
-    "content": "Test content",
-    "reply_to": 1,
-    "reactions": "Like",
-    "reply_type": "post"
-}
- */
-/// Insert a new comment record.
-///
-/// This handler processes request payloads to insert a new comment. It retrieves
-/// the active user's identifier from the SESSION and delegates the database insert
-/// to the persistence layer.
-///
-/// # Parameters
-///
-/// - `session`: The session object of the incoming request.
-/// - `app_state`: Reference to the shared state of the application.
-/// - `create_comment`: JSON payload representing the comment details.
-///
-/// # Returns
-///
-/// An HTTP response enclosing the created comment on success, or an [`AxError`] on failure.
-pub async fn insert_comment(
+/// `POST /api/comments`
+pub async fn create(
     session: Session,
-    app_state: web::Data<AppState>,
-    create_comment: web::Json<CreateComment>,
+    state: web::Data<AppState>,
+    body: web::Json<CreateComment>,
 ) -> Result<HttpResponse, AxError> {
-    // Perform authentication check.
-    if let Ok(resp) = login_in_unauthentic(&session).await {
-        return Ok(resp);
-    }
-    let user_id: i32 = session.get::<i32>("user_id").unwrap().unwrap_or(0);
-    let mut create_comment = create_comment.into_inner();
-    create_comment.set_user_id(Some(user_id));
-
-    let attachments = create_comment.attachments.clone().unwrap_or_default();
-
-    // Comment insert and attachment linking commit or roll back together.
-    let comment = crate::dbaccess::comment::insert_comment_with_attachments_db(
-        &app_state.db,
-        create_comment,
-        &attachments,
-        user_id,
-    )
-    .await?;
-
-    let files =
-        crate::dbaccess::file::get_file_attachments_by_comment_db(&app_state.db, comment.id)
-            .await
-            .unwrap_or_default();
-    let comment_detail = crate::models::comment::CommentDetail {
-        comment,
-        attachments: files,
-    };
-
-    let api_response = ApiResponse::new(
-        200,
-        "Create Comment Successful".to_string(),
-        Some(DataBuilder::new().set_data(comment_detail).build()),
-    );
-    Ok(HttpResponse::Ok().json(api_response))
+    let user = require_user(&session)?;
+    let mut payload = body.into_inner();
+    payload.normalize()?;
+    let comment = db::comment::insert(&state.db, user.id, payload).await?;
+    let detail = db::comment::hydrate_one(&state.db, comment, Some(user.id)).await?;
+    Ok(ok("Comment added", detail))
 }
 
-/// Delete a comment record by its identifier.
-///
-/// This handler processes request payloads to delete a comment. It verifies the login
-/// status, checks ownership or administrator privileges, and performs the deletion.
-///
-/// # Parameters
-///
-/// - `session`: The session object of the incoming request.
-/// - `app_state`: Reference to the shared state of the application.
-/// - `params`: Path parameters containing the comment identifier.
-///
-/// # Returns
-///
-/// An HTTP response enclosing the deleted comment on success, or an [`AxError`] on failure.
-pub async fn delete_comment(
+/// `GET /api/comments?replyTo=<id>` — oldest first.
+pub async fn list(
     session: Session,
-    app_state: web::Data<AppState>,
-    params: web::Path<(uuid::Uuid,)>,
+    state: web::Data<AppState>,
+    query: web::Query<CommentQuery>,
 ) -> Result<HttpResponse, AxError> {
-    // Perform authentication check.
-    if let Ok(resp) = login_in_unauthentic(&session).await {
-        return Ok(resp);
-    }
-    let (id,) = params.into_inner();
-
-    // Verify commenter ownership.
-    let comment = sqlx::query!("select user_id from comments where id = $1", id)
-        .fetch_one(&app_state.db)
-        .await
-        .map_err(|_| AxError::NotFound("Comment not found".to_string()))?;
-    let user_id = session.get::<i32>("user_id").unwrap().unwrap_or(0);
-    let is_admin_user = crate::extractors::session::is_admin(session.clone())
-        .await
-        .unwrap_or(false);
-    if comment.user_id != user_id && !is_admin_user {
-        return Ok(HttpResponse::Unauthorized().json(ApiResponse::<()>::new(
-            401,
-            "Not authorized to delete this comment".to_string(),
-            None,
-        )));
-    }
-
-    delete_comment_by_id_db(&app_state.db, id)
-        .await
-        .map(|comment| {
-            let api_response = ApiResponse::new(
-                200,
-                "Delete Comment Successful".to_string(),
-                Some(DataBuilder::new().set_data(comment).build()),
-            );
-            HttpResponse::Ok().json(api_response)
-        })
+    let reply_to = query
+        .reply_to
+        .ok_or_else(|| AxError::invalid("replyTo is required"))?;
+    let viewer = current_user(&session).map(|u| u.id);
+    let (limit, offset) = query.page().bounds(50);
+    let (comments, pagination) = db::comment::list_for(&state.db, reply_to, limit, offset).await?;
+    let comments = db::comment::hydrate(&state.db, comments, viewer).await?;
+    Ok(ok_paged("OK", comments, pagination))
 }
 
-/// Retrieve a list of comments matching the query.
-///
-/// This handler returns a list of comment records filtered by query parameters.
-///
-/// # Parameters
-///
-/// - `app_state`: Reference to the shared state of the application.
-/// - `query`: URL query mapping representing comment filters.
-///
-/// # Returns
-///
-/// An HTTP response enclosing matching comment records on success, or an [`AxError`] on failure.
-pub async fn get_comment_by_query(
-    app_state: web::Data<AppState>,
-    query: web::Query<HashMap<String, String>>,
+/// `DELETE /api/comments/{id}` — owner or admin.
+pub async fn remove(
+    session: Session,
+    state: web::Data<AppState>,
+    path: web::Path<Uuid>,
 ) -> Result<HttpResponse, AxError> {
-    let (comments, pagination) = get_comment_by_query_db(&app_state.db, query).await?;
-    // Batch the attachment lookup: one query for the whole page instead of
-    // one query per comment.
-    let ids: Vec<uuid::Uuid> = comments.iter().map(|c| c.id).collect();
-    let mut files_by_comment =
-        crate::dbaccess::file::get_file_attachments_by_comments_db(&app_state.db, &ids)
-            .await
-            .unwrap_or_default();
-    let comments_with_files: Vec<crate::models::comment::CommentDetail> = comments
-        .into_iter()
-        .map(|comment| {
-            let attachments = files_by_comment.remove(&comment.id).unwrap_or_default();
-            crate::models::comment::CommentDetail {
-                comment,
-                attachments,
-            }
-        })
-        .collect();
-
-    let api_response = ApiResponse::new(
-        200,
-        "Get Comment Successful".to_string(),
-        Some(
-            DataBuilder::new()
-                .set_data(comments_with_files)
-                .set_pagination(pagination)
-                .build(),
-        ),
-    );
-    Ok(HttpResponse::Ok().json(api_response))
-}
-
-#[cfg(test)]
-mod tests {
-    use std::collections::HashMap;
-
-    use actix_web::http::StatusCode;
-    use actix_web::web::{Json, Query};
-    use serde_json::Value;
-
-    use crate::handlers::comment::{delete_comment, get_comment_by_query, insert_comment};
-    use crate::models::comment::CreateComment;
-    use crate::state::get_demo_state;
-    use crate::utils::test::{get_demo_session, http_response_to_json};
-
-    #[actix_rt::test]
-    async fn test_insert_comment() {
-        let new_comment = CreateComment::demo();
-        let session = get_demo_session().await;
-        let app_state = get_demo_state().await;
-        let resp = insert_comment(session, app_state.clone(), Json(new_comment))
-            .await
-            .unwrap();
-        assert_eq!(resp.status(), StatusCode::OK);
-        let body_json: Value = http_response_to_json(resp).await;
-        let comment_id_str = body_json["body"]["data"]["id"]
-            .as_str()
-            .expect("id not found or not a string");
-        let comment_id = uuid::Uuid::parse_str(comment_id_str).expect("not a valid UUID");
-        // Clean up the comment inserted for testing.
-        sqlx::query!("DELETE FROM comments WHERE id = $1", comment_id)
-            .execute(&app_state.db)
-            .await
-            .unwrap();
-    }
-
-    #[actix_rt::test]
-    async fn test_delete_comment() {
-        let new_comment = CreateComment::demo();
-        let session = get_demo_session().await;
-        let app_state = get_demo_state().await;
-        let resp = insert_comment(session.clone(), app_state.clone(), Json(new_comment))
-            .await
-            .unwrap();
-        assert_eq!(resp.status(), StatusCode::OK);
-        let body_json: Value = http_response_to_json(resp).await;
-        let comment_id_str = body_json["body"]["data"]["id"]
-            .as_str()
-            .expect("id not found or not a string");
-        let comment_id = uuid::Uuid::parse_str(comment_id_str).expect("not a valid UUID");
-        let params = actix_web::web::Path::<(uuid::Uuid,)>::from((comment_id,));
-        let del_resp = delete_comment(session.clone(), app_state.clone(), params)
-            .await
-            .unwrap();
-        assert_eq!(del_resp.status(), StatusCode::OK);
-    }
-
-    #[actix_rt::test]
-    async fn test_get_comment() {
-        let new_comment = CreateComment::demo();
-        let session = get_demo_session().await;
-        let app_state = get_demo_state().await;
-        let resp = insert_comment(session.clone(), app_state.clone(), Json(new_comment))
-            .await
-            .unwrap();
-        assert_eq!(resp.status(), StatusCode::OK);
-        let body_json: Value = http_response_to_json(resp).await;
-        let comment_id_str = body_json["body"]["data"]["id"]
-            .as_str()
-            .expect("id not found or not a string");
-        let comment_id = uuid::Uuid::parse_str(comment_id_str).expect("not a valid UUID");
-        let mut query = HashMap::<String, String>::new();
-        query.insert("commentId".to_string(), comment_id.to_string());
-
-        // Test get comment by id.
-        let get_resp = get_comment_by_query(app_state.clone(), Query(query))
-            .await
-            .unwrap();
-        let get_body_json: Value = http_response_to_json(get_resp).await;
-        println!("{:?}", get_body_json);
-        let get_comment_id_str = get_body_json["body"]["data"][0]["id"]
-            .as_str()
-            .expect("id not found or not a string");
-        let get_comment_id = uuid::Uuid::parse_str(get_comment_id_str).expect("not a valid UUID");
-        assert_eq!(comment_id, get_comment_id);
-
-        // Clean up the comment inserted for testing.
-        sqlx::query!("DELETE FROM comments WHERE id = $1", comment_id)
-            .execute(&app_state.db)
-            .await
-            .unwrap();
-    }
-
-    #[actix_rt::test]
-    async fn test_get_comment_pagination() {
-        let new_comment = CreateComment::demo();
-        let session = get_demo_session().await;
-        let app_state = get_demo_state().await;
-        let resp = insert_comment(session.clone(), app_state.clone(), Json(new_comment))
-            .await
-            .unwrap();
-        assert_eq!(resp.status(), StatusCode::OK);
-        let body_json: Value = http_response_to_json(resp).await;
-        let comment_id_str = body_json["body"]["data"]["id"]
-            .as_str()
-            .expect("id not found or not a string");
-        let comment_id = uuid::Uuid::parse_str(comment_id_str).expect("not a valid UUID");
-
-        // Query with pagination limit=1
-        let mut query = HashMap::<String, String>::new();
-        query.insert("commentId".to_string(), comment_id.to_string());
-        query.insert("limit".to_string(), "1".to_string());
-        query.insert("offset".to_string(), "0".to_string());
-
-        let get_resp = get_comment_by_query(app_state.clone(), Query(query))
-            .await
-            .unwrap();
-        let get_body_json: Value = http_response_to_json(get_resp).await;
-        let comments = get_body_json["body"]["data"].as_array().unwrap();
-        assert_eq!(comments.len(), 1);
-        assert_eq!(get_body_json["body"]["pagination"]["limit"], 1);
-        assert_eq!(get_body_json["body"]["pagination"]["offset"], 0);
-
-        // Cleanup
-        sqlx::query!("DELETE FROM comments WHERE id = $1", comment_id)
-            .execute(&app_state.db)
-            .await
-            .unwrap();
-    }
+    let user = require_user(&session)?;
+    let id = path.into_inner();
+    let owner = db::comment::owner(&state.db, id)
+        .await?
+        .ok_or_else(|| AxError::not_found("Comment not found"))?;
+    user.authorize_owner(owner)?;
+    let comment = db::comment::delete(&state.db, id).await?;
+    Ok(ok("Comment deleted", comment))
 }
