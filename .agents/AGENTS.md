@@ -38,7 +38,13 @@ obvious from the code.
    backend serializes with `rename_all = "camelCase"`). Lists come
    pre-hydrated (`viewerReaction`, `commentCount`, attachments); do not add
    per-card requests.
-8. **Tests**: unit tests only, colocated (`#[cfg(test)]`), no database or
+8. **i18n**: no user-visible literal strings in components — add a key to
+   `frontend/src/i18n/en.ts` *and* `zh-CN.ts` (the `Messages` type keeps them
+   in sync) and use `t("...")`.
+9. **Lists**: paginated data goes through `useInfiniteList` + `LoadMore`;
+   list pages are kept alive, so re-sync with the route in
+   `onBeforeRouteUpdate` / `onActivated` rather than watching `route`.
+10. **Tests**: unit tests only, colocated (`#[cfg(test)]`), no database or
    network. Put logic worth testing in pure functions (validation, parsing,
    query building) and test those.
 

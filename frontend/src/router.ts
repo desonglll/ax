@@ -1,6 +1,9 @@
 import { createRouter, createWebHistory } from "vue-router";
 import HomeView from "./views/HomeView.vue";
 
+/** Matches the `.page-*` transition in style.css. */
+const PAGE_TRANSITION_MS = 160;
+
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
@@ -14,5 +17,8 @@ export const router = createRouter({
     { path: "/register", name: "register", component: () => import("./views/RegisterView.vue"), meta: { guest: true } },
     { path: "/:pathMatch(.*)*", redirect: "/" },
   ],
-  scrollBehavior: (_to, _from, saved) => saved || { top: 0 },
+  // Wait for the outgoing page to fade before restoring the saved position;
+  // kept-alive list pages are already rendered at full height by then.
+  scrollBehavior: (_to, _from, saved) =>
+    new Promise(resolve => setTimeout(() => resolve(saved || { top: 0 }), PAGE_TRANSITION_MS)),
 });

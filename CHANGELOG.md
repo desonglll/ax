@@ -45,6 +45,12 @@ fast tests that need no infrastructure.
   uploads inserted at the cursor) for posts and comments, sanitized Markdown
   rendering; the standalone Files page is gone — files exist as attachments.
   Plainer copy throughout.
+- Frontend: English / Simplified Chinese UI (vue-i18n, auto-detected,
+  switchable); infinite scrolling for feeds, profile posts, notifications and
+  comments; kept-alive list pages so Back restores scroll position; page and
+  list transitions, like animation, skeleton loaders; phone bottom navigation
+  and compose button; side-by-side Markdown preview with image thumbnails;
+  "Show more" expands posts in place; clearer section headers on the home page.
 - Frontend: relative timestamps, optimistic reactions with rollback, shared
   `Avatar` / `EmptyState` / `UserRow` / `ReactionBar` components, a trending
   widget on the home page, paginated profile posts and comments, feed tab and

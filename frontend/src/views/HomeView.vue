@@ -1,57 +1,58 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import { Flame, LoaderCircle, RefreshCw, Rss, UsersRound } from "lucide-vue-next";
+import { computed, onActivated, onMounted, ref } from "vue";
+import { useI18n } from "vue-i18n";
+import { onBeforeRouteUpdate, useRoute, useRouter, type RouteLocationNormalized } from "vue-router";
+import { Flame, PenLine, RefreshCw, Rss, UsersRound } from "lucide-vue-next";
 import { postApi, userApi } from "../api";
-import { getApiError } from "../api/client";
 import ComposerCard from "../components/ComposerCard.vue";
 import EmptyState from "../components/EmptyState.vue";
-import PaginationBar from "../components/PaginationBar.vue";
+import LoadMore from "../components/LoadMore.vue";
 import PostCard from "../components/PostCard.vue";
+import PostSkeleton from "../components/PostSkeleton.vue";
+import SectionCard from "../components/SectionCard.vue";
 import UserRow from "../components/UserRow.vue";
+import { useInfiniteList } from "../composables/useInfiniteList";
 import { excerpt } from "../lib/markdown";
 import { useAuthStore } from "../stores/auth";
-import { useToastStore } from "../stores/toast";
 import type { Post, User } from "../types";
 
-type Tab = "all" | "following";
-const LIMIT = 12;
+defineOptions({ name: "HomeView" });
 
+type Tab = "all" | "following";
+const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
-const toast = useToastStore();
 
-const posts = ref<Post[]>([]);
+// Read from the route so the tab and search survive reloads and back/forward.
+const search = ref(String(route.query.search || ""));
+const tab = ref<Tab>(route.query.tab === "following" && auth.user ? "following" : "all");
 const people = ref<User[]>([]);
 const trending = ref<Post[]>([]);
-const loading = ref(true);
-const count = ref<number>();
+const composer = ref<HTMLElement>();
 
-const search = computed(() => String(route.query.search || ""));
-const tab = computed<Tab>(() => (route.query.tab === "following" && auth.user ? "following" : "all"));
-const offset = computed(() => Math.max(0, Number(route.query.offset) || 0));
+const feed = useInfiniteList<Post>(async (offset, limit) => {
+  const response = tab.value === "following"
+    ? await postApi.feed({ limit, offset })
+    : await postApi.list({ limit, offset, search: search.value || undefined });
+  return { items: response.body?.data || [], count: response.body?.pagination?.count };
+}, 12);
 
-const load = async () => {
-  loading.value = true;
-  try {
-    const response = tab.value === "following"
-      ? await postApi.feed({ limit: LIMIT, offset: offset.value })
-      : await postApi.list({ limit: LIMIT, offset: offset.value, search: search.value || undefined });
-    posts.value = response.body?.data || [];
-    count.value = response.body?.pagination?.count;
-  } catch (error) {
-    toast.show(getApiError(error, "Could not load posts"), "error");
-  } finally {
-    loading.value = false;
-  }
+const title = computed(() => (search.value ? t("home.searchTitle", { query: search.value }) : tab.value === "following" ? t("home.following") : t("home.latest")));
+
+const setTab = (value: Tab) => router.push({ query: { ...route.query, tab: value === "all" ? undefined : value } });
+
+const applyRoute = (to: RouteLocationNormalized) => {
+  search.value = String(to.query.search || "");
+  tab.value = to.query.tab === "following" && auth.user ? "following" : "all";
+  feed.reset();
 };
-
-const navigate = (patch: Record<string, string | number | undefined>) =>
-  router.push({ query: { ...route.query, ...Object.fromEntries(Object.entries(patch).map(([k, v]) => [k, v || undefined])) } });
-
-const setTab = (value: Tab) => navigate({ tab: value === "all" ? undefined : value, offset: undefined });
-const setOffset = (value: number) => navigate({ offset: value || undefined });
+onBeforeRouteUpdate(to => { applyRoute(to); });
+// Kept alive: coming back via the nav (fresh query) must re-sync; via Back (same query) keeps position.
+onActivated(() => {
+  const wantTab: Tab = route.query.tab === "following" && auth.user ? "following" : "all";
+  if (String(route.query.search || "") !== search.value || wantTab !== tab.value) applyRoute(route);
+});
 
 const loadSidebar = async () => {
   const [users, hot] = await Promise.allSettled([userApi.list({ limit: 6 }), postApi.trending({ limit: 5 })]);
@@ -59,53 +60,61 @@ const loadSidebar = async () => {
   if (hot.status === "fulfilled") trending.value = hot.value.body?.data || [];
 };
 
-onMounted(() => { load(); loadSidebar(); });
-watch(() => [route.query.search, route.query.tab, route.query.offset], load);
+const focusComposer = () => {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  window.setTimeout(() => composer.value?.querySelector("textarea")?.focus(), 350);
+};
+
+onMounted(() => { feed.reset(); loadSidebar(); });
 </script>
 
 <template>
   <div class="ax-container grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
     <div class="space-y-4">
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <h1 class="ax-page-title">{{ search ? `Search: “${search}”` : tab === "following" ? "Following" : "Latest" }}</h1>
-        <div class="flex items-center gap-2">
-          <RouterLink v-if="search" to="/" class="btn btn-ghost btn-sm">Clear</RouterLink>
-          <button class="btn btn-ghost btn-sm" :disabled="loading" aria-label="Refresh" @click="load"><RefreshCw :size="16" :class="{ 'animate-spin': loading }" /></button>
+      <div ref="composer">
+        <SectionCard v-if="auth.user" :title="t('composer.title')" :icon="PenLine">
+          <ComposerCard @created="post => feed.prepend(post)" />
+        </SectionCard>
+        <div v-else class="alert"><span>{{ t("home.signInPrompt") }}</span><RouterLink to="/login" class="btn btn-sm">{{ t("nav.signIn") }}</RouterLink></div>
+      </div>
+
+      <div class="sticky top-16 z-30 -mx-1 flex flex-wrap items-center justify-between gap-2 rounded-box border border-base-300 bg-base-100/95 px-3 py-2 backdrop-blur md:top-[4.25rem]">
+        <h1 class="text-base font-bold">{{ title }}</h1>
+        <div class="flex items-center gap-1">
+          <RouterLink v-if="search" to="/" class="btn btn-ghost btn-xs">{{ t("common.clear") }}</RouterLink>
+          <div role="tablist" class="tabs tabs-box tabs-sm">
+            <button role="tab" class="tab gap-1" :class="{ 'tab-active': tab === 'all' }" @click="setTab('all')"><Rss :size="14" /> {{ t("home.all") }}</button>
+            <button role="tab" class="tab gap-1" :class="{ 'tab-active': tab === 'following' }" :disabled="!auth.user" :title="auth.user ? '' : t('home.followingHint')" @click="setTab('following')"><UsersRound :size="14" /> {{ t("home.following") }}</button>
+          </div>
+          <button class="btn btn-ghost btn-xs btn-square" :disabled="feed.loading.value" :aria-label="t('common.refresh')" @click="feed.reset()"><RefreshCw :size="14" :class="{ 'animate-spin': feed.loading.value }" /></button>
         </div>
       </div>
 
-      <ComposerCard v-if="auth.user" @created="post => posts.unshift(post)" />
-      <div v-else class="alert"><span>Sign in to post and comment.</span><RouterLink to="/login" class="btn btn-sm">Sign in</RouterLink></div>
-
-      <div role="tablist" class="tabs tabs-box w-fit">
-        <button role="tab" class="tab gap-2" :class="{ 'tab-active': tab === 'all' }" @click="setTab('all')"><Rss :size="15" /> All</button>
-        <button role="tab" class="tab gap-2" :class="{ 'tab-active': tab === 'following' }" :disabled="!auth.user" :title="auth.user ? '' : 'Sign in to see posts from people you follow'" @click="setTab('following')"><UsersRound :size="15" /> Following</button>
-      </div>
-
-      <div v-if="loading" class="grid place-items-center py-24"><LoaderCircle class="animate-spin text-primary" :size="32" /></div>
-      <EmptyState v-else-if="!posts.length" :icon="tab === 'following' ? UsersRound : Rss" :title="tab === 'following' ? 'Nothing from people you follow yet' : search ? 'No results' : 'No posts yet'">
-        <RouterLink v-if="tab === 'following'" to="/people" class="btn btn-primary btn-sm mt-2">Find people</RouterLink>
+      <div v-if="feed.loading.value" class="space-y-4"><PostSkeleton v-for="n in 3" :key="n" /></div>
+      <EmptyState v-else-if="!feed.items.value.length" :icon="tab === 'following' ? UsersRound : Rss" :title="tab === 'following' ? t('home.noFollowing') : search ? t('home.noResults') : t('home.noPosts')">
+        <RouterLink v-if="tab === 'following'" to="/people" class="btn btn-primary btn-sm mt-2">{{ t("home.findPeople") }}</RouterLink>
       </EmptyState>
-      <div v-else class="space-y-4">
-        <PostCard v-for="post in posts" :key="post.id" :post="post" @deleted="id => posts = posts.filter(item => item.id !== id)" @updated="value => posts = posts.map(item => item.id === value.id ? value : item)" />
-      </div>
-      <PaginationBar :offset="offset" :limit="LIMIT" :count="count" :loading="loading" @change="setOffset" />
+      <TransitionGroup v-else name="list" tag="div" class="relative space-y-4">
+        <PostCard v-for="post in feed.items.value" :key="post.id" :post="post" @deleted="feed.remove" @updated="feed.replace" />
+      </TransitionGroup>
+      <LoadMore v-if="!feed.loading.value" :loading="feed.loadingMore.value" :done="feed.done.value" :count="feed.items.value.length" :error="feed.error.value" @more="feed.loadMore()" />
     </div>
 
     <aside class="space-y-4">
-      <section v-if="trending.length" class="ax-panel"><div class="card-body gap-1 p-4">
-        <h2 class="mb-1 flex items-center gap-1 text-sm font-bold"><Flame :size="14" /> Trending</h2>
-        <RouterLink v-for="post in trending" :key="post.id" :to="`/posts/${post.id}`" class="rounded-box p-2 hover:bg-base-200">
-          <span class="line-clamp-2 text-sm">{{ post.title || excerpt(post.content, 80) }}</span>
-          <small class="ax-muted">{{ post.userName }} · {{ post.likeCount }} likes · {{ post.commentCount }} comments</small>
+      <SectionCard v-if="trending.length" :title="t('home.trending')" :icon="Flame" to="/trending" :action="t('home.seeAll')">
+        <RouterLink v-for="(post, index) in trending" :key="post.id" :to="`/posts/${post.id}`" class="flex gap-3 rounded-box p-2 transition hover:bg-base-200">
+          <span class="w-4 shrink-0 pt-0.5 text-sm font-bold text-base-content/40">{{ index + 1 }}</span>
+          <span class="min-w-0">
+            <span class="line-clamp-2 text-sm">{{ post.title || excerpt(post.content, 80) }}</span>
+            <small class="ax-muted block truncate">{{ post.userName }} · {{ t("home.likesComments", { likes: post.likeCount, comments: post.commentCount }) }}</small>
+          </span>
         </RouterLink>
-        <RouterLink to="/trending" class="btn btn-ghost btn-sm mt-1">More</RouterLink>
-      </div></section>
-      <section v-if="people.length" class="ax-panel"><div class="card-body gap-1 p-4">
-        <h2 class="mb-1 text-sm font-bold">People</h2>
+      </SectionCard>
+      <SectionCard v-if="people.length" :title="t('home.whoToFollow')" :icon="UsersRound" to="/people" :action="t('home.seeAll')">
         <UserRow v-for="person in people" :key="person.id" :user="person" />
-        <RouterLink to="/people" class="btn btn-ghost btn-sm mt-1">All people</RouterLink>
-      </div></section>
+      </SectionCard>
     </aside>
+
+    <button v-if="auth.user" class="btn btn-primary btn-circle btn-lg fixed bottom-20 right-4 z-30 shadow-lg md:hidden" :aria-label="t('nav.newPost')" @click="focusComposer"><PenLine :size="22" /></button>
   </div>
 </template>

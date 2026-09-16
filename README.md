@@ -12,7 +12,7 @@ the front. One database, no other services.
 |-----------|-----------------------------------------------------------------------------|
 | Backend   | Rust, [Actix-web](https://actix.rs), [SQLx](https://github.com/launchbadge/sqlx) (compile-time checked SQL), cookie sessions |
 | Database  | PostgreSQL 16 — triggers keep counters and notifications consistent        |
-| Frontend  | Vue 3, TypeScript, Vite, Tailwind CSS 4, daisyUI 5, Pinia                   |
+| Frontend  | Vue 3, TypeScript, Vite, Tailwind CSS 4, daisyUI 5, Pinia, vue-i18n (English / 简体中文) |
 | Optional  | Any OpenAI-compatible API for auto-titling posts                           |
 
 ## Quick start
@@ -93,6 +93,9 @@ All settings are environment variables (see `.env.example`).
 - **Files** live only as attachments: public by default, streamed with HTTP
   Range support for media; duplicate uploads (same SHA-256) replace the older copy.
 - **Admin**: promote/deactivate/delete users, moderate any post or comment.
+- **UI**: English and Simplified Chinese (auto-detected, switchable), light/dark
+  theme, infinite scrolling feeds, phone bottom navigation, kept-alive list
+  pages so Back returns to where you were.
 - **AI titles** (optional): posts without a title get one from an
   OpenAI-compatible model in the background.
 
@@ -119,6 +122,8 @@ tweet_server/          Rust backend (one crate)
 frontend/              Vue 3 app (Vite + Bun)
   src/views/           one component per page
   src/components/      cards, shell, Markdown editor/renderer, …
+  src/i18n/            UI strings (en, zh-CN)
+  src/composables/     useInfiniteList
   src/api/             typed API client
 migrations/            SQLx migrations, applied on startup
 .sqlx/                 offline query cache (commit after `just sqlx-prepare`)

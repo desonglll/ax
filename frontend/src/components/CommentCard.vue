@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
 import { Trash2 } from "lucide-vue-next";
 import { commentApi } from "../api";
 import { getApiError } from "../api/client";
@@ -15,6 +16,7 @@ import ReactionBar from "./ReactionBar.vue";
 
 const props = defineProps<{ comment: Comment }>();
 const emit = defineEmits<{ deleted: [id: string] }>();
+const { t } = useI18n();
 const auth = useAuthStore();
 const toast = useToastStore();
 
@@ -25,12 +27,12 @@ watch(() => props.comment, c => { likes.value = c.likeCount; dislikes.value = c.
 const extraAttachments = computed(() => (props.comment.attachments || []).filter(file => !embedsImage(props.comment.content, file.id)));
 
 const remove = async () => {
-  if (!confirm("Delete this comment?")) return;
+  if (!confirm(t("comments.confirmDelete"))) return;
   try {
     await commentApi.delete(props.comment.id);
     emit("deleted", props.comment.id);
   } catch (error) {
-    toast.show(getApiError(error, "Could not delete"), "error");
+    toast.show(getApiError(error, t("errors.delete")), "error");
   }
 };
 </script>
@@ -43,7 +45,7 @@ const remove = async () => {
         <RouterLink :to="`/profile/${comment.userId}`" class="text-sm font-bold hover:text-primary">{{ comment.userName }}</RouterLink>
         <small class="block text-base-content/45" :title="fullDate(comment.createdAt)">{{ timeAgo(comment.createdAt) }}</small>
       </div>
-      <button v-if="auth.user?.id === comment.userId || auth.user?.isAdmin" class="btn btn-ghost btn-circle btn-xs text-error" aria-label="Delete comment" @click="remove"><Trash2 :size="14" /></button>
+      <button v-if="auth.user?.id === comment.userId || auth.user?.isAdmin" class="btn btn-ghost btn-circle btn-xs text-error" :aria-label="t('comments.delete')" @click="remove"><Trash2 :size="14" /></button>
     </header>
     <MarkdownBody :source="comment.content" compact />
     <div v-if="extraAttachments.length" class="mt-3 grid gap-2"><FilePreview v-for="file in extraAttachments" :key="file.id" :file="file" /></div>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Heart, ThumbsDown } from "lucide-vue-next";
 import { ref } from "vue";
+import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { reactionApi } from "../api";
 import { getApiError } from "../api/client";
@@ -9,15 +10,15 @@ import { useToastStore } from "../stores/toast";
 import type { ReactionKind, ReactionTargetType } from "../types";
 
 /**
- * Like / Dislike buttons with optimistic updates. The parent owns the
- * counts and the viewer's current reaction; this component mutates them via
- * v-model and rolls back if the request fails.
+ * Like / Dislike buttons with optimistic updates. The parent owns the counts
+ * and the viewer's reaction via v-model; a failed request rolls them back.
  */
 const props = withDefaults(defineProps<{ targetId: string; targetType: ReactionTargetType; compact?: boolean }>(), { compact: false });
 const likes = defineModel<number>("likes", { required: true });
 const dislikes = defineModel<number>("dislikes", { required: true });
 const mine = defineModel<ReactionKind | null>("mine", { required: true });
 
+const { t } = useI18n();
 const auth = useAuthStore();
 const toast = useToastStore();
 const router = useRouter();
@@ -48,7 +49,7 @@ const react = async (kind: ReactionKind) => {
     likes.value = snapshot.likes;
     dislikes.value = snapshot.dislikes;
     mine.value = snapshot.mine;
-    toast.show(getApiError(error, "Reaction failed"), "error");
+    toast.show(getApiError(error, t("errors.reaction")), "error");
   } finally {
     busy.value = false;
   }
@@ -57,11 +58,11 @@ const react = async (kind: ReactionKind) => {
 
 <template>
   <div class="flex items-center gap-1">
-    <button class="btn btn-ghost" :class="[compact ? 'btn-xs' : 'btn-sm', { 'text-error': mine === 'Like' }]" :disabled="busy" aria-label="Like" @click="react('Like')">
-      <Heart :size="compact ? 14 : 17" :fill="mine === 'Like' ? 'currentColor' : 'none'" /> {{ likes }}
+    <button class="btn btn-ghost" :class="[compact ? 'btn-xs' : 'btn-sm', { 'text-error': mine === 'Like' }]" :disabled="busy" :aria-label="t('post.like')" :aria-pressed="mine === 'Like'" @click="react('Like')">
+      <Heart :key="`like-${mine === 'Like'}`" :size="compact ? 14 : 17" :fill="mine === 'Like' ? 'currentColor' : 'none'" class="pop" /> {{ likes }}
     </button>
-    <button class="btn btn-ghost" :class="[compact ? 'btn-xs' : 'btn-sm', { 'text-warning': mine === 'Dislike' }]" :disabled="busy" aria-label="Dislike" @click="react('Dislike')">
-      <ThumbsDown :size="compact ? 14 : 17" :fill="mine === 'Dislike' ? 'currentColor' : 'none'" /> {{ dislikes }}
+    <button class="btn btn-ghost" :class="[compact ? 'btn-xs' : 'btn-sm', { 'text-warning': mine === 'Dislike' }]" :disabled="busy" :aria-label="t('post.dislike')" :aria-pressed="mine === 'Dislike'" @click="react('Dislike')">
+      <ThumbsDown :key="`dislike-${mine === 'Dislike'}`" :size="compact ? 14 : 17" :fill="mine === 'Dislike' ? 'currentColor' : 'none'" class="pop" /> {{ dislikes }}
     </button>
   </div>
 </template>
