@@ -3,18 +3,7 @@
 .server-port
 .idea
 .vscode
-target
-uploads
-upload
-ssh
-
-# python ignores
-__pycache__/
-*.pyc
-.venv/
-.uv/
-
-# node ignores
+target/
+uploads/
 node_modules/
-build/
-.react-router/
+dist/

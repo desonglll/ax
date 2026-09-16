@@ -1,0 +1,34 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select to_id,\n                  count(*) filter (where reaction_name = 'Like') as \"likes!\",\n                  count(*) filter (where reaction_name = 'Dislike') as \"dislikes!\"\n           from reactions\n           where to_type = 'comment' and to_id = any($1)\n           group by to_id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "to_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "likes!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "dislikes!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "UuidArray"
+      ]
+    },
+    "nullable": [
+      false,
+      null,
+      null
+    ]
+  },
+  "hash": "587902a9591f745e57eda41273037236558bd2d89a5c2156185f33d832ea6a66"
+}

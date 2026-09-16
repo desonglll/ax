@@ -1,78 +1,83 @@
-# Project Ax Automation Recipes
+# Project Ax — task runner. Run `just` to list recipes.
 
-export PATH := env_var("PATH")
+set dotenv-load
 
-# Default recipe: list available recipes
 default:
-	@just --list
+    @just --list
 
-# Initialize the PostgreSQL database and run migrations
-init-db:
-	sqlx database create
-	sqlx migrate run
+# Start PostgreSQL (the only external service)
+db:
+    docker compose up -d
 
-# Compile check the backend server
-check:
-	cargo check --manifest-path tweet_server/Cargo.toml
+# Stop PostgreSQL
+db-down:
+    docker compose down
 
-# Run the unit and integration tests using cargo-nextest
-test:
-	cargo nextest run --workspace
-
-# Run the backend server locally
+# Run the backend (migrations are applied automatically on startup)
 run:
-	cargo run --manifest-path tweet_server/Cargo.toml
+    cargo run --manifest-path tweet_server/Cargo.toml
 
-# Build the mdBook documentation
-doc-build:
-	mdbook build docs
+# Type-check the backend without a database
+check:
+    SQLX_OFFLINE=true cargo check --manifest-path tweet_server/Cargo.toml --all-targets
 
-# Serve the mdBook documentation locally
-doc-serve:
-	mdbook serve docs
+# Lint the backend
+clippy:
+    SQLX_OFFLINE=true cargo clippy --manifest-path tweet_server/Cargo.toml --all-targets -- -D warnings
 
-# Install frontend dependencies (v1.2)
+# Run backend unit tests (no database needed)
+test:
+    SQLX_OFFLINE=true cargo test --manifest-path tweet_server/Cargo.toml
+
+# Regenerate the SQLx offline query cache after changing SQL (needs DATABASE_URL)
+sqlx-prepare:
+    cargo sqlx prepare --workspace -- --all-targets
+
+# Create a new migration file
+migrate-add name:
+    sqlx migrate add {{name}}
+
+# Install frontend dependencies
 fe-install:
-	cd frontend/v1.2 && bun install
+    cd frontend && bun install
 
-# Start frontend development server (v1.2)
+# Frontend dev server (proxies /api to the backend port in .server-port)
 fe-dev:
-	cd frontend/v1.2 && bun run dev
+    cd frontend && bun run dev
 
-# Run frontend typescript typecheck (v1.2)
+# Frontend type-check
 fe-check:
-	cd frontend/v1.2 && bun run typecheck
+    cd frontend && bun run typecheck
 
-# Build frontend production bundle (v1.2)
+# Frontend production build
 fe-build:
-	cd frontend/v1.2 && bun run build
+    cd frontend && bun run build
 
-# Install model server python dependencies using uv
-rec-install:
-	cd model_server && uv sync
+# Everything CI runs: backend check + clippy + tests, frontend typecheck + build
+ci: check clippy test fe-check fe-build
 
-# Run the model server locally using uv
-rec-run:
-	cd model_server && uv run uvicorn main:app --host 127.0.0.1 --port 8001 --reload
-
-# Test the AI API connection using standard environment variables
-test-ai:
-	cargo run --package ai --example test_connection
-
-# Start all services (backend, frontend, recommendation) concurrently
+# Start backend (random port) and frontend dev server together
 start:
-	@echo "Starting all services with a random backend port..."
-	@rm -f .server-port; \
-	trap 'kill 0' INT TERM EXIT; \
-	PORT=0 PORT_FILE=.server-port just run & \
-	backend_pid=$!; \
-	for attempt in $(seq 1 600); do \
-		test -s .server-port && break; \
-		kill -0 $backend_pid 2>/dev/null || { echo "Backend exited before publishing its port" >&2; exit 1; }; \
-		sleep 0.1; \
-	done; \
-	test -s .server-port || { echo "Backend did not publish its port" >&2; exit 1; }; \
-	echo "Backend port: $(cat .server-port)"; \
-	just fe-dev & \
-	just rec-run & \
-	wait
+    #!/usr/bin/env bash
+    set -euo pipefail
+    rm -f .server-port
+    trap 'kill 0' INT TERM EXIT
+    PORT=0 PORT_FILE=.server-port cargo run --manifest-path tweet_server/Cargo.toml &
+    backend=$!
+    for _ in $(seq 1 600); do
+        test -s .server-port && break
+        kill -0 "$backend" 2>/dev/null || { echo "backend exited before publishing its port" >&2; exit 1; }
+        sleep 0.1
+    done
+    test -s .server-port || { echo "backend did not publish its port" >&2; exit 1; }
+    echo "backend: http://127.0.0.1:$(cat .server-port)"
+    (cd frontend && bun run dev) &
+    wait
+
+# Build the documentation book
+doc-build:
+    mdbook build docs
+
+# Serve the documentation book locally
+doc-serve:
+    mdbook serve docs

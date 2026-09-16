@@ -1,6 +1,3 @@
 [workspace]
-members = [
-    "tweet_server",
-    "ai",
-]
+members = ["tweet_server"]
 resolver = "2"

@@ -1,135 +1,123 @@
 use std::fmt;
 
-use actix_session::SessionGetError;
-use actix_web::{error, http::StatusCode, HttpResponse, Result};
-use serde::Serialize;
-use sqlx::error::Error as SQLxError;
+use actix_web::{http::StatusCode, HttpResponse, ResponseError};
 
-/// Global application error enumeration.
-///
-/// This lists all error categories that can occur within the application flow,
-/// with each variant carrying a detailed error description string.
-///
-/// # Variants
-///
-/// - `DBError`: Database execution failures.
-/// - `ActixError`: Actix-web framework failures.
-/// - `NotFound`: Target resource was not found.
-/// - `InvalidInput`: Malformed or invalid query parameters.
-/// - `AuthenticationError`: User authentication or session permission failure.
-/// - `SessionGetError`: Failure when reading from the session store.
-/// - `ModelPredictError`: Failure in the machine learning prediction client.
-#[derive(Debug, Serialize)]
+use crate::response::ApiResponse;
+
+/// Application error. Every variant maps to one HTTP status and is rendered as
+/// `{"code": <status>, "message": "..."}` so clients see a single error shape.
+#[derive(Debug)]
 pub enum AxError {
-    DBError(String),
-    ActixError(String),
-    NotFound(String),
     InvalidInput(String),
-    AuthenticationError(String),
-    SessionGetError(String),
-    ModelPredictError(String),
+    Unauthorized(String),
+    Forbidden(String),
+    NotFound(String),
+    Database(sqlx::Error),
+    Internal(String),
 }
-
-/// Standardized JSON response payload structure for errors.
-#[derive(Debug, Serialize)]
-pub struct MyErrorResponse {
-    error_message: String,
-}
-
-impl std::error::Error for AxError {}
 
 impl AxError {
-    /// Return the error message corresponding to the error variant.
-    ///
-    /// Database and Actix server error descriptions are sanitized to prevent leak of
-    /// sensitive server metrics, while other variants return the raw message.
-    fn error_response(&self) -> String {
-        match self {
-            AxError::DBError(msg) => {
-                println!("Database error occurred: {:?}", msg);
-                "Database error".into()
-            }
-            AxError::ActixError(msg) => {
-                println!("Server error occurred: {:?}", msg);
-                "Internal server error".into()
-            }
-            AxError::InvalidInput(msg) => {
-                println!("Invalid parameters received: {:?}", msg);
-                msg.into()
-            }
-            AxError::NotFound(msg) => {
-                println!("Not found error occurred: {:?}", msg);
-                msg.into()
-            }
-            AxError::AuthenticationError(msg) => {
-                println!("Authentication error occurred: {:?}", msg);
-                msg.into()
-            }
-            AxError::SessionGetError(msg) => {
-                println!("Session get error occurred: {:?}", msg);
-                msg.into()
-            }
-            AxError::ModelPredictError(msg) => {
-                println!("Model predict error occurred: {:?}", msg);
-                msg.into()
-            }
-        }
+    pub fn invalid(msg: impl Into<String>) -> Self {
+        AxError::InvalidInput(msg.into())
     }
-}
+    pub fn not_found(msg: impl Into<String>) -> Self {
+        AxError::NotFound(msg.into())
+    }
+    pub fn forbidden(msg: impl Into<String>) -> Self {
+        AxError::Forbidden(msg.into())
+    }
+    pub fn unauthorized(msg: impl Into<String>) -> Self {
+        AxError::Unauthorized(msg.into())
+    }
 
-impl error::ResponseError for AxError {
-    /// Map the error variant to the corresponding HTTP status code.
-    fn status_code(&self) -> StatusCode {
+    /// Message safe to show to clients. Internal details are logged, not leaked.
+    fn public_message(&self) -> String {
         match self {
-            AxError::DBError(_msg) | AxError::ActixError(_msg) => StatusCode::INTERNAL_SERVER_ERROR,
-            AxError::InvalidInput(_msg) => StatusCode::BAD_REQUEST,
-            AxError::NotFound(_msg) => StatusCode::NOT_FOUND,
-            AxError::AuthenticationError(_msg) => StatusCode::BAD_REQUEST,
-            AxError::SessionGetError(_msg) => StatusCode::BAD_REQUEST,
-            AxError::ModelPredictError(_msg) => StatusCode::INTERNAL_SERVER_ERROR,
+            AxError::InvalidInput(m)
+            | AxError::Unauthorized(m)
+            | AxError::Forbidden(m)
+            | AxError::NotFound(m) => m.clone(),
+            AxError::Database(e) => {
+                tracing::error!("database error: {e}");
+                "Database error".to_string()
+            }
+            AxError::Internal(m) => {
+                tracing::error!("internal error: {m}");
+                "Internal server error".to_string()
+            }
         }
-    }
-    fn error_response(&self) -> HttpResponse {
-        HttpResponse::build(self.status_code()).json(MyErrorResponse {
-            error_message: self.error_response(),
-        })
     }
 }
 
 impl fmt::Display for AxError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            AxError::DBError(msg) => write!(f, "Database error: {}", msg),
-            AxError::ActixError(msg) => write!(f, "Actix error: {}", msg),
-            AxError::NotFound(msg) => write!(f, "Not found: {}", msg),
-            AxError::InvalidInput(msg) => write!(f, "Invalid input: {}", msg),
-            AxError::AuthenticationError(msg) => write!(f, "Authentication error: {}", msg),
-            AxError::SessionGetError(msg) => write!(f, "Session get error: {}", msg),
-            AxError::ModelPredictError(msg) => write!(f, "Model load error: {}", msg),
+            AxError::InvalidInput(m) => write!(f, "invalid input: {m}"),
+            AxError::Unauthorized(m) => write!(f, "unauthorized: {m}"),
+            AxError::Forbidden(m) => write!(f, "forbidden: {m}"),
+            AxError::NotFound(m) => write!(f, "not found: {m}"),
+            AxError::Database(e) => write!(f, "database: {e}"),
+            AxError::Internal(m) => write!(f, "internal: {m}"),
         }
     }
 }
 
-impl From<actix_web::error::Error> for AxError {
-    fn from(err: actix_web::error::Error) -> Self {
-        AxError::ActixError(err.to_string())
+impl std::error::Error for AxError {}
+
+impl ResponseError for AxError {
+    fn status_code(&self) -> StatusCode {
+        match self {
+            AxError::InvalidInput(_) => StatusCode::BAD_REQUEST,
+            AxError::Unauthorized(_) => StatusCode::UNAUTHORIZED,
+            AxError::Forbidden(_) => StatusCode::FORBIDDEN,
+            AxError::NotFound(_) => StatusCode::NOT_FOUND,
+            AxError::Database(_) | AxError::Internal(_) => StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    }
+
+    fn error_response(&self) -> HttpResponse {
+        let status = self.status_code();
+        HttpResponse::build(status).json(ApiResponse::<()> {
+            code: status.as_u16(),
+            message: self.public_message(),
+            body: None,
+        })
     }
 }
 
-impl From<SQLxError> for AxError {
-    fn from(err: SQLxError) -> Self {
-        AxError::DBError(err.to_string())
+impl From<sqlx::Error> for AxError {
+    fn from(err: sqlx::Error) -> Self {
+        match &err {
+            sqlx::Error::RowNotFound => AxError::NotFound("Resource not found".into()),
+            // 23505 = unique_violation: surface as a client error instead of a 500.
+            sqlx::Error::Database(db) if db.code().as_deref() == Some("23505") => {
+                AxError::InvalidInput("A record with the same unique value already exists".into())
+            }
+            _ => AxError::Database(err),
+        }
     }
 }
 
-impl From<SessionGetError> for AxError {
-    fn from(value: SessionGetError) -> Self {
-        AxError::SessionGetError(value.to_string())
+impl From<actix_web::Error> for AxError {
+    fn from(err: actix_web::Error) -> Self {
+        AxError::Internal(err.to_string())
     }
 }
 
-impl From<reqwest::Error> for AxError {
-    fn from(value: reqwest::Error) -> Self {
-        AxError::ModelPredictError(value.to_string())
+impl From<std::io::Error> for AxError {
+    fn from(err: std::io::Error) -> Self {
+        AxError::Internal(err.to_string())
+    }
+}
+
+impl From<actix_multipart::MultipartError> for AxError {
+    fn from(err: actix_multipart::MultipartError) -> Self {
+        AxError::InvalidInput(format!("Malformed upload: {err}"))
+    }
+}
+
+impl From<actix_session::SessionInsertError> for AxError {
+    fn from(err: actix_session::SessionInsertError) -> Self {
+        AxError::Internal(err.to_string())
     }
 }

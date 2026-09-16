@@ -1,11 +1,18 @@
-# Project Ax Documentation
+# Ax Documentation
 
-This manual documents the design, architecture, API specifications, and operational instructions of Project Ax.
+Ax is a small micro-blogging application: posts with attachments, comments,
+Like/Dislike reactions, follows, a personalized feed, trending ranking and
+in-app notifications.
 
-Project Ax is a secure web application designed to support micro-blogging and media uploads. It consists of:
-1. A backend server written in the Rust programming language, utilizing the Actix-web framework.
-2. A relational database managed by PostgreSQL and accessed via SQLx.
-3. A session caching store using Redis.
-4. A frontend client written in TypeScript using Vite.
+It consists of exactly two deployable pieces plus a database:
 
-This documentation is written in accordance with the GNU documentation guidelines, providing a plain, clean, and comprehensive reference for developers and system administrators.
+1. **Backend** — a Rust HTTP API built on Actix-web and SQLx (`tweet_server/`).
+2. **Frontend** — a Vue 3 single-page application served by nginx (`frontend/`).
+3. **PostgreSQL** — the only external service. Sessions live in signed
+   cookies, so there is no Redis; trending is a SQL query, so there is no
+   separate recommendation service.
+
+Setup, commands and configuration are covered in the repository
+[README](https://github.com/desonglll/ax#readme). This book covers the parts
+you need when changing the code: the request flow, the HTTP API and the
+database schema with its triggers.

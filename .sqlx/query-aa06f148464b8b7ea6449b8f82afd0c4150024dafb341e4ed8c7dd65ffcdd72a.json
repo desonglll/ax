@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update files set post_id = null where post_id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "aa06f148464b8b7ea6449b8f82afd0c4150024dafb341e4ed8c7dd65ffcdd72a"
+}

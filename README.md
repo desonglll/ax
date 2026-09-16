@@ -1,126 +1,144 @@
-# The Ax Project
+# Ax
 
-This is the official distribution of the Ax Project, a secure micro-blogging and media web application server.
+A small, self-contained micro-blogging app: posts, comments, likes, follows,
+notifications and file attachments. Rust + PostgreSQL on the back, Vue 3 on
+the front. One database, no other services.
 
-## Overview
+<img width="1536" height="896" alt="Ax home page" src="https://github.com/user-attachments/assets/f1a60ad0-6097-446e-9ee6-b13c45ccf4e8" />
 
-The Ax Project provides a secure web server written in the Rust programming language utilizing the Actix-web framework. Data is persisted in a PostgreSQL database and session states are cached via Redis. Project documentation is managed through mdBook.
+## Stack
 
-## Screenshots
+| Part      | Technology                                                                 |
+|-----------|-----------------------------------------------------------------------------|
+| Backend   | Rust, [Actix-web](https://actix.rs), [SQLx](https://github.com/launchbadge/sqlx) (compile-time checked SQL), cookie sessions |
+| Database  | PostgreSQL 16 — triggers keep counters and notifications consistent        |
+| Frontend  | Vue 3, TypeScript, Vite, Tailwind CSS 4, daisyUI 5, Pinia                   |
+| Optional  | Any OpenAI-compatible API for auto-titling posts                           |
 
-<img width="1536" height="896" alt="image" src="https://github.com/user-attachments/assets/f1a60ad0-6097-446e-9ee6-b13c45ccf4e8" />
+## Quick start
 
-## Prerequisites
+Prerequisites: Rust (stable), [Bun](https://bun.sh), Docker, and
+[`just`](https://github.com/casey/just) (`cargo install just`).
 
-To compile, build, and test this software, the following tools must be installed:
-- Cargo and the Rust compiler toolchain (edition 2021).
-- The `just` command runner.
-- The `sqlx-cli` tool (compiled with Postgres support).
-- The `cargo-nextest` test runner.
-- The `mdbook` compiler (for documentation generation).
-- Bun 1.3 or newer for the Vue frontend.
-
-You may install the development tools with:
 ```bash
-cargo install just
-cargo install sqlx-cli --no-default-features --features native-tls,postgres
-cargo install --locked cargo-nextest
-cargo install mdbook
+cp .env.example .env          # DATABASE_URL points at the compose database
+just db                       # start PostgreSQL on host port 55432 (docker compose up -d)
+just fe-install               # bun install
+just start                    # backend + Vite dev server
 ```
 
----
+Open the URL Vite prints (usually http://localhost:5173). The backend applies
+database migrations on startup, picks a free port, and writes it to
+`.server-port`; the Vite proxy reads that file, so nothing needs configuring.
 
-## Installation & Setup
+Demo accounts (password `070011`): `root` and `mike` are admins, `joe` and
+`otis` are members.
 
-1. **Start the Infrastructure Containers**:
-   Deploy PostgreSQL and Redis instances using Docker Compose:
-   ```bash
-   docker compose -f compose.yml up -d
-   ```
+## Everyday commands
 
-2. **Configure the Environment**:
-   Copy the example environment configuration:
-   ```bash
-   cp .env.example .env
-   ```
+```bash
+just run          # backend only, on PORT (default 8000)
+just fe-dev       # frontend only
+just check        # cargo check, no database required
+just clippy       # lints, warnings are errors
+just test         # backend unit tests, no database required
+just fe-check     # vue-tsc
+just fe-build     # production bundle -> frontend/dist
+just ci           # everything CI runs
+```
 
-3. **Initialize the Database**:
-   Create the database schema and execute trigger migrations:
-   ```bash
-   just init-db
-   ```
+### Changing SQL
 
-4. **Launch the Server**:
-   Start the backend application:
-   ```bash
-   just run
-   ```
+Queries are checked at compile time against `.sqlx/`, a committed cache, so
+`cargo check`, tests and Docker builds all work offline. After editing any
+`sqlx::query!` call, regenerate the cache with the database running:
 
-5. **Launch the Complete Development Stack**:
-   ```bash
-   just start
-   ```
-   The command starts the Vue v1.2 frontend, backend, and recommendation
-   service. The backend binds to a random available port and publishes it to
-   `.server-port`; Vite reads that file and configures its API proxy.
+```bash
+cargo install sqlx-cli --no-default-features --features native-tls,postgres
+just sqlx-prepare
+```
 
----
+New schema changes go in a new file under `migrations/` (`just migrate-add
+<name>`); they run automatically the next time the backend starts.
 
-## Server Configuration
+## Configuration
 
-The backend reads its configuration from environment variables (see `.env.example`):
+All settings are environment variables (see `.env.example`).
 
-| Variable | Default | Purpose |
-|---|---|---|
-| `HOST` | `0.0.0.0` | Interface the HTTP server binds to. |
-| `PORT` | `8000` | Listen port. **`PORT=0` binds a random free port** — useful for tests and running several debug instances side by side. |
-| `PORT_FILE` | `.server-port` | The actually bound port is written here on startup; the frontend dev server reads it automatically, so a random backend port needs no manual sync. |
-| `SESSION_SECRET_KEY` | (random) | Session signing key (≥ 32 chars). Without it, all sessions reset on every restart. |
-| `DATABASE_URL` | — | PostgreSQL connection string (required). |
-| `REDIS_URL` | `redis://127.0.0.1:6379` | Redis for session storage. |
-| `MODEL_SERVER_URL` | `http://127.0.0.1:8001` | Recommendation model server. |
-| `RATE_LIMIT_PER_SECOND` / `RATE_LIMIT_BURST` | `20` / `50` | Per-IP API rate limit; excess requests receive HTTP 429. |
-| `OPENAI_API_KEY` / `OPENAI_API_BASE` / `OPENAI_MODEL` | — | AI auto-titling of posts (optional). |
+| Variable                                  | Default            | Purpose                                                        |
+|-------------------------------------------|--------------------|----------------------------------------------------------------|
+| `DATABASE_URL`                            | required           | PostgreSQL connection string (compose DB: `localhost:55432`)   |
+| `AX_PG_PORT`                              | `55432`            | Host port for the compose PostgreSQL container                 |
+| `HOST` / `PORT`                           | `0.0.0.0` / `8000` | Bind address. `PORT=0` picks a free port                       |
+| `PORT_FILE`                               | `.server-port`     | The bound port is written here for the frontend dev proxy      |
+| `UPLOAD_DIR`                              | `uploads`          | Where uploaded files are stored                                |
+| `SESSION_SECRET_KEY`                      | random             | Cookie signing key (32+ chars). Unset = sessions reset on restart |
+| `RATE_LIMIT_PER_SECOND` / `RATE_LIMIT_BURST` | `20` / `50`     | Per-IP rate limit; excess requests get HTTP 429                |
+| `OPENAI_API_KEY` / `OPENAI_API_BASE` / `OPENAI_MODEL` | unset  | Enable AI titles for posts published without one               |
+| `RUST_LOG`                                | `info,sqlx=warn`   | Log filter                                                     |
 
-## Feature Highlights
+## Features
 
-Beyond user/post/comment/reaction CRUD, file attachments, search, and the ML-backed
-trending feed, the server provides:
+- **Posts** with optional title, search across title and content, sorting,
+  per-author listing, and up to six attachments (images and video preview inline).
+- **Comments** with attachments and reactions.
+- **Reactions**: one Like *or* Dislike per user per target; counters are
+  maintained by database triggers.
+- **Follows** and a *Following* timeline next to the public *Discover* one.
+- **Trending**: Hacker-News style ranking (likes ×2, comments ×3, dislikes −1,
+  decayed by age), computed in one SQL query.
+- **Notifications** for follows, comments and reactions, generated by triggers
+  so every write path produces them.
+- **Files**: public or private, streamed with HTTP Range support for media,
+  duplicate uploads (same SHA-256) replace the older copy.
+- **Admin**: promote/deactivate/delete users, moderate any post or comment,
+  view every file.
+- **AI titles** (optional): posts without a title get one from an
+  OpenAI-compatible model in the background.
 
-- **Follows & personalized feed** — `POST/DELETE /api/users/{id}/follow`,
-  `GET /api/users/{id}/followers|following|follow-stats`, and
-  `GET /api/posts/feed` (posts from followed users). The frontend home page has
-  an *All / Following* timeline toggle.
-- **Notifications** — generated by database triggers on follows, comments, and
-  reactions: `GET /api/notifications/get`, `GET /api/notifications/unread-count`,
-  `POST /api/notifications/read/{id}`, `POST /api/notifications/read-all`. The
-  frontend navbar shows an unread badge.
-- **Rate limiting** — per-IP token bucket on all endpoints.
-- **Vue frontend v1.2** — responsive Vue 3, TypeScript, Tailwind CSS 4 and
-  daisyUI interface covering feeds, search, posts, comments, reactions,
-  profiles, follows, notifications, files, account administration, and system
-  telemetry. Source and deployment files live in `frontend/v1.2`.
+Every response uses one envelope, and errors carry a real HTTP status:
 
----
+```json
+{ "code": 200, "message": "OK", "body": { "data": …, "pagination": { "limit": 10, "offset": 0, "count": 42 } } }
+{ "code": 403, "message": "You do not own this resource", "body": null }
+```
 
-## Operational Commands
+The full endpoint list is in [`docs/src/api.md`](docs/src/api.md).
 
-The project root contains a `justfile` providing the following automation recipes:
-- `just init-db`: Creates the database and runs migrations.
-- `just check`: Compiles the server codebase to check for errors.
-- `just test`: Runs all unit and integration tests.
-- `just run`: Launches the backend HTTP server.
-- `just start`: Launches all services (backend, frontend, recommendation) concurrently.
-- `just doc-build`: Builds the documentation book.
-- `just doc-serve`: Launches a local server to view documentation.
+## Layout
 
----
+```
+tweet_server/          Rust backend (one crate)
+  src/main.rs          startup: config, pool, migrations, middleware
+  src/routes.rs        URL table
+  src/handlers/        request handlers (auth, posts, comments, …)
+  src/db/              all SQL, one module per table
+  src/models/          request/response types and validation
+  src/services/        AI client and title queue
+  Dockerfile
+frontend/              Vue 3 app (Vite + Bun)
+  src/views/           one component per page
+  src/components/      cards, shell, reaction bar, …
+  src/api/             typed API client
+migrations/            SQLx migrations, applied on startup
+.sqlx/                 offline query cache (commit after `just sqlx-prepare`)
+docs/                  mdBook: architecture, API, database
+compose.yml            PostgreSQL for local development
+compose.prod.yml       full stack from the published images
+```
+
+## Deployment
+
+CI builds two images on every push to `main`:
+`ghcr.io/<owner>/ax-backend` and `ghcr.io/<owner>/ax-frontend` (nginx serving
+the SPA and proxying `/api` to the backend). Run the whole stack with:
+
+```bash
+SESSION_SECRET_KEY=$(openssl rand -hex 32) docker compose -f compose.prod.yml up -d
+```
 
 ## Documentation
 
-Full manuals, API specifications, database trigger details, and development guidelines are available in the `docs` folder. To build and view the manual locally:
 ```bash
-just doc-build
-just doc-serve
+just doc-build && just doc-serve   # http://localhost:3000
 ```
-Then navigate to `http://localhost:3000` in your web browser.

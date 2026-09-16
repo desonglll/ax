@@ -1,0 +1,82 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select p.* from posts p\n         where p.reply_to is null\n         order by\n           (p.like_count * 2 - p.dislike_count\n             + 3 * (select count(*) from comments c where c.reply_to = p.id))::float8\n           / power(extract(epoch from (now() - p.created_at)) / 3600.0 + 2.0, 1.5) desc,\n           p.created_at desc\n         limit $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "content",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 2,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 3,
+        "name": "user_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "user_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "like_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "dislike_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 7,
+        "name": "engagement_rate",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 8,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 9,
+        "name": "reply_to",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 10,
+        "name": "title",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "22afd0241d9b7481aedda9eb2a28a6cf01e6c8c1acbb50b3837482a86f1e64fc"
+}

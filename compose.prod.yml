@@ -1,0 +1,47 @@
+# Full stack from the published images:
+#   SESSION_SECRET_KEY=... docker compose -f compose.prod.yml up -d
+# then open http://localhost:8080
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ax
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ax"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    image: ghcr.io/desonglll/ax-backend:latest
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://postgres:password@postgres:5432/ax
+      SESSION_SECRET_KEY: ${SESSION_SECRET_KEY:?set a 32+ character secret}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_API_BASE: ${OPENAI_API_BASE:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-}
+    volumes:
+      - uploads:/data/uploads
+
+  frontend:
+    image: ghcr.io/desonglll/ax-frontend:latest
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      API_UPSTREAM: http://backend:8000
+    ports:
+      - "8080:80"
+
+volumes:
+  pgdata:
+  uploads:

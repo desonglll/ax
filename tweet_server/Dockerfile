@@ -1,38 +1,22 @@
-# Stage 1: Build the Rust binary
+# Build from the repository root: docker build -f tweet_server/Dockerfile .
 FROM rust:1-slim-bookworm AS builder
-
-RUN apt-get update && apt-get install -y \
-    pkg-config \
-    libssl-dev \
+RUN apt-get update && apt-get install -y --no-install-recommends pkg-config libssl-dev \
     && rm -rf /var/lib/apt/lists/*
-
 WORKDIR /app
-
-# Copy the Cargo workspace configurations and the crates
 COPY Cargo.toml Cargo.lock ./
 COPY .sqlx ./.sqlx
-COPY ai ./ai
+COPY migrations ./migrations
 COPY tweet_server ./tweet_server
+# Queries are checked against the committed .sqlx cache; no database at build time.
+ENV SQLX_OFFLINE=true
+RUN cargo build --release --manifest-path tweet_server/Cargo.toml
 
-# Build the release binary
-WORKDIR /app/tweet_server
-ARG DATABASE_URL
-ARG SQLX_OFFLINE=false
-ENV SQLX_OFFLINE=${SQLX_OFFLINE}
-RUN cargo build --release
-
-# Stage 2: Minimal runtime container
 FROM debian:bookworm-slim
-
-RUN apt-get update && apt-get install -y \
-    ca-certificates \
-    libssl3 \
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates libssl3 \
     && rm -rf /var/lib/apt/lists/*
-
 WORKDIR /app
-
-# Copy the compiled binary from the builder stage
 COPY --from=builder /app/target/release/tweet_server /app/tweet_server
-
+ENV UPLOAD_DIR=/data/uploads PORT=8000
+VOLUME /data/uploads
 EXPOSE 8000
 CMD ["/app/tweet_server"]
