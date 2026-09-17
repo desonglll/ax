@@ -39,7 +39,10 @@ export function useInfiniteList<T extends { id: string | number }>(
     try {
       const page = await fetchPage(offset, limit);
       if (gen !== generation) return;
-      items.value = reset ? page.items : [...items.value, ...page.items];
+      // Skip rows already shown (e.g. added locally before this page arrived).
+      const known = new Set(reset ? [] : items.value.map(item => item.id));
+      const fresh = page.items.filter(item => !known.has(item.id));
+      items.value = reset ? page.items : [...items.value, ...fresh];
       offset += page.items.length;
       total.value = page.count;
       done.value = page.items.length < limit || (page.count !== undefined && offset >= page.count);

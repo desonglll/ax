@@ -112,7 +112,8 @@ application any more; retained for compatibility.
 | `create_user_stats_trigger` | users | Creates the `user_stats` row for a new user |
 | `notify_on_follow_trigger` | follows | Inserts a `follow` notification for the followee |
 | `notify_on_comment_trigger` | comments | Inserts a `comment` notification for the post owner (not for self-comments) |
-| `notify_on_reaction_trigger` | reactions | Inserts a `reaction` notification for the post owner (not for self-reactions) |
+| `notify_on_reaction_trigger` | reactions | Inserts a `reaction` notification for the post owner (not for self-reactions, and at most one per actor and post) |
+| `withdraw_reaction_notification_trigger` | reactions | Removes that notification again, while unread, when the reaction is undone |
 
 Because counters and notifications are produced by triggers, every write
 path (API, scripts, future jobs) stays consistent without application code.

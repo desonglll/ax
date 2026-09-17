@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { Trash2 } from "lucide-vue-next";
+import { Reply, Trash2 } from "lucide-vue-next";
 import { commentApi } from "../api";
 import { getApiError } from "../api/client";
 import { fullDate, timeAgo } from "../lib/format";
@@ -15,8 +15,8 @@ import FilePreview from "./FilePreview.vue";
 import MarkdownBody from "./MarkdownBody.vue";
 import ReactionBar from "./ReactionBar.vue";
 
-const props = defineProps<{ comment: Comment }>();
-const emit = defineEmits<{ deleted: [id: string] }>();
+const props = defineProps<{ comment: Comment; highlight?: boolean }>();
+const emit = defineEmits<{ deleted: [id: string]; reply: [comment: Comment] }>();
 const { t } = useI18n();
 const auth = useAuthStore();
 const toast = useToastStore();
@@ -33,6 +33,7 @@ const remove = async () => {
   try {
     await commentApi.delete(props.comment.id);
     emit("deleted", props.comment.id);
+    toast.show(t("comments.deleted"), "success");
   } catch (error) {
     toast.show(getApiError(error, t("errors.delete")), "error");
   }
@@ -40,7 +41,7 @@ const remove = async () => {
 </script>
 
 <template>
-  <article class="rounded-box border border-base-300 bg-base-100 p-4">
+  <article :id="`comment-${comment.id}`" class="scroll-mt-24 rounded-box border bg-base-100 p-4 transition-colors duration-1000" :class="highlight ? 'border-primary/50 bg-primary/5' : 'border-base-300'">
     <header class="mb-2 flex items-center gap-3">
       <RouterLink :to="`/profile/${comment.userId}`"><Avatar :name="comment.userName" size="sm" tone="secondary" /></RouterLink>
       <div class="min-w-0 flex-1">
@@ -51,8 +52,9 @@ const remove = async () => {
     </header>
     <MarkdownBody :source="comment.content" compact />
     <div v-if="extraAttachments.length" class="mt-3 grid gap-2"><FilePreview v-for="file in extraAttachments" :key="file.id" :file="file" /></div>
-    <footer class="mt-2 border-t border-base-300 pt-2">
+    <footer class="mt-2 flex items-center gap-1 border-t border-base-300 pt-2">
       <ReactionBar v-model:likes="likes" v-model:dislikes="dislikes" v-model:mine="mine" :target-id="comment.id" target-type="comment" compact />
+      <button class="btn btn-ghost btn-xs" @click="emit('reply', comment)"><Reply :size="14" /> {{ t("comments.reply") }}</button>
     </footer>
   </article>
 </template>
