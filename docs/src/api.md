@@ -19,7 +19,7 @@ status and the same shape with `"body": null`:
 | 401    | Not signed in                                              |
 | 403    | Signed in but not allowed (not owner / not admin)          |
 | 404    | Resource not found                                         |
-| 429    | Rate limit exceeded (plain-text body, `Retry-After` header) |
+| 429    | Rate limit exceeded on a write request (plain-text body, `Retry-After` header) |
 | 500    | Unexpected server error                                    |
 
 List endpoints accept `limit` (1–100) and `offset` (≥ 0).
@@ -64,7 +64,7 @@ look like an address. `passwordHash` is never returned.
 | PUT    | `/posts/{id}`      | owner/admin | `{ content?, title?, attachments? }` (attachments replaces the whole set)    | `Post` |
 | DELETE | `/posts/{id}`      | owner/admin |                                                                              | `Post` |
 
-`search` matches title and content (case-insensitive). A post created
+`content` is Markdown. `search` matches title and content (case-insensitive). A post created
 without a title gets an AI-generated one later when `OPENAI_API_KEY` is set.
 
 `Post` fields: `id, title, content, createdAt, updatedAt, userId, userName,
@@ -112,7 +112,7 @@ reactions to your posts (never for your own actions).
 |--------|-------------------------|---------------------|----------------------------------------------------------|---------|
 | GET    | `/files`                | depends on scope    | `scope=public` (default, anonymous) / `mine` (✓) / `all` (admin) | `File[]` |
 | POST   | `/files`                | ✓                   | multipart: one or more `files` parts, optional `description`; query `public=true|false` (default true) | `File[]` |
-| GET    | `/files/{id}/download`  | public or owner/admin |                                                        | file bytes, `Content-Disposition: attachment` |
+| GET    | `/files/{id}/download`  | public or owner/admin | `If-None-Match` honoured                              | file bytes, `Content-Disposition: attachment`, `Cache-Control: immutable` (public) + `ETag` |
 | GET    | `/files/{id}/stream`    | public or owner/admin | `Range` header supported (max 4 MiB per request)       | 206 partial content |
 
 Uploading a file whose SHA-256 matches an earlier upload soft-deletes the

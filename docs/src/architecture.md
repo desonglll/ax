@@ -76,8 +76,31 @@ Pinia.
 | `src/api/`               | Axios instance (`/api`, cookies on) and typed endpoint functions |
 | `src/stores/`            | `auth` (current user) and `toast`                               |
 | `src/views/`             | One component per page                                          |
-| `src/components/`        | `AppShell` (nav + drawer), `PostCard`, `CommentCard`, `ReactionBar`, `ComposerCard`, `FilePreview`, `PaginationBar`, `Avatar`, `EmptyState`, `UserRow`, `NotificationBell`, `ToastHost` |
-| `src/lib/format.ts`      | `timeAgo`, `formatSize`, `initials`                            |
+| `src/components/`        | `AppShell` (nav + drawer), `PostCard`, `CommentCard`, `ReactionBar`, `ComposerCard`, `MarkdownEditor`, `MarkdownBody`, `FilePreview`, `PaginationBar`, `Avatar`, `EmptyState`, `UserRow`, `NotificationBell`, `ToastHost` |
+| `src/lib/markdown.ts`    | markdown-it + DOMPurify rendering, `embedsImage`, `excerpt`           |
+| `src/lib/format.ts`      | `timeAgo`, `formatSize`, `initials` (locale-aware)              |
+| `src/i18n/`              | vue-i18n setup and message files (`en.ts`, `zh-CN.ts`); every UI string goes through `t()` |
+| `src/composables/useInfiniteList.ts` | Append-only paginated list driving the `LoadMore` sentinel |
+
+### Content
+
+Post and comment bodies are Markdown. The editor uploads pasted, dropped or
+picked files immediately (`POST /api/files`) and inserts `![name](url)` for
+images or `[name](url)` for other files at the cursor; the same ids are sent
+as `attachments` so the server links them to the post. Rendering uses
+markdown-it (no raw HTML) sanitized with DOMPurify; attachments already
+embedded as images are not repeated below the body.
+
+### Navigation and lists
+
+List pages (`HomeView`, `TrendingView`, `PeopleView`, `ProfileView`,
+`NotificationsView`) are wrapped in `<KeepAlive>` so navigating into a post
+and back restores both content and scroll position; they re-sync with the
+route in `onBeforeRouteUpdate` / `onActivated`. Feeds load more as the
+`LoadMore` sentinel scrolls into view (IntersectionObserver) instead of
+paging. Page and list transitions live in `style.css` and are disabled under
+`prefers-reduced-motion`. On phones a bottom tab bar (`BottomNav`) replaces
+the sidebar.
 
 In development Vite proxies `/api` to the backend port found in
 `.server-port`. In production nginx serves `dist/` and proxies `/api` to

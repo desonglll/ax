@@ -40,27 +40,62 @@ fn authorize_read(session: &Session, file: &File) -> Result<(), AxError> {
     user.authorize_owner(file.user_id)
 }
 
+/// A stored file never changes (its id is the on-disk name), so clients may
+/// cache it aggressively; the SHA-256 doubles as a strong ETag.
+fn cache_headers(file: &File) -> [(&'static str, String); 2] {
+    let policy = if file.is_pub {
+        "public, max-age=31536000, immutable"
+    } else {
+        "private, max-age=3600"
+    };
+    [
+        ("Cache-Control", policy.to_string()),
+        ("ETag", format!("\"{}\"", file.checksum)),
+    ]
+}
+
+/// `304 Not Modified` when the client already holds this exact content.
+fn not_modified(req: &HttpRequest, file: &File) -> Option<HttpResponse> {
+    let sent = req.headers().get("If-None-Match")?.to_str().ok()?;
+    let etag = format!("\"{}\"", file.checksum);
+    (sent == etag || sent == "*").then(|| {
+        let mut response = HttpResponse::NotModified();
+        for (name, value) in cache_headers(file) {
+            response.insert_header((name, value));
+        }
+        response.finish()
+    })
+}
+
 /// `GET /api/files/{id}/download` — streams the file as an attachment.
 pub async fn download(
     session: Session,
     state: web::Data<AppState>,
     path: web::Path<Uuid>,
+    req: HttpRequest,
 ) -> Result<HttpResponse, AxError> {
     let file = db::file::find(&state.db, path.into_inner()).await?;
     authorize_read(&session, &file)?;
+    if let Some(response) = not_modified(&req, &file) {
+        return Ok(response);
+    }
 
     let handle = tokio::fs::File::open(&file.path).await?;
     let size = handle.metadata().await?.len();
     let encoded_name = percent_encode(file.name.as_bytes(), NON_ALPHANUMERIC);
 
-    Ok(HttpResponse::Ok()
-        .content_type(file.content_type)
+    let mut response = HttpResponse::Ok();
+    response
+        .content_type(file.content_type.clone())
         .insert_header(("Content-Length", size))
         .insert_header((
             "Content-Disposition",
             format!("attachment; filename*=UTF-8''{encoded_name}"),
-        ))
-        .streaming(tokio_util::io::ReaderStream::new(handle)))
+        ));
+    for (name, value) in cache_headers(&file) {
+        response.insert_header((name, value));
+    }
+    Ok(response.streaming(tokio_util::io::ReaderStream::new(handle)))
 }
 
 /// Largest window served per range request; clients ask for the rest.
@@ -97,11 +132,15 @@ pub async fn stream(
     let mut buffer = vec![0u8; (end - start + 1) as usize];
     handle.read_exact(&mut buffer).await?;
 
-    Ok(HttpResponse::PartialContent()
-        .content_type(file.content_type)
+    let mut response = HttpResponse::PartialContent();
+    response
+        .content_type(file.content_type.clone())
         .insert_header(("Accept-Ranges", "bytes"))
-        .insert_header(("Content-Range", format!("bytes {start}-{end}/{length}")))
-        .body(buffer))
+        .insert_header(("Content-Range", format!("bytes {start}-{end}/{length}")));
+    for (name, value) in cache_headers(&file) {
+        response.insert_header((name, value));
+    }
+    Ok(response.body(buffer))
 }
 
 /// Parses `bytes=<start>-<end>` (either bound optional); defaults to the whole file.

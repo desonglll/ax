@@ -27,13 +27,13 @@
   --color-warning-content: oklch(24% 0.05 82);
   --color-error: oklch(62% 0.22 28);
   --color-error-content: oklch(97% 0.01 28);
-  --radius-selector: 0.75rem;
-  --radius-field: 0.75rem;
-  --radius-box: 1rem;
+  --radius-selector: 0.5rem;
+  --radius-field: 0.5rem;
+  --radius-box: 0.75rem;
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
   --border: 1px;
-  --depth: 1;
+  --depth: 0;
   --noise: 0;
 }
 
@@ -61,21 +61,76 @@
   --color-warning-content: oklch(20% 0.04 82);
   --color-error: oklch(70% 0.18 28);
   --color-error-content: oklch(18% 0.04 28);
-  --radius-selector: 0.75rem;
-  --radius-field: 0.75rem;
-  --radius-box: 1rem;
+  --radius-selector: 0.5rem;
+  --radius-field: 0.5rem;
+  --radius-box: 0.75rem;
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
   --border: 1px;
-  --depth: 1;
+  --depth: 0;
   --noise: 0;
 }
 
 :root { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
-body { min-width: 320px; min-height: 100vh; background: var(--color-base-200); }
+body { min-width: 320px; min-height: 100vh; background: var(--color-base-200); overflow-x: clip; }
+.field-sizing-fixed { field-sizing: fixed; }
 .ax-container { width: min(100% - 2rem, 78rem); margin-inline: auto; }
-.ax-panel { @apply card card-border bg-base-100 shadow-sm; }
+.ax-panel { @apply card card-border bg-base-100; }
 .ax-muted { @apply text-base-content/60; }
-.ax-page-title { @apply text-2xl font-black tracking-tight md:text-3xl; }
-.ax-section-title { @apply text-sm font-bold uppercase tracking-[0.18em] text-base-content/55; }
-.ax-prose { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.75; }
+.ax-page-title { @apply text-2xl font-bold tracking-tight; }
+
+/* Rendered Markdown */
+.md { line-height: 1.7; overflow-wrap: anywhere; }
+.md > * + * { margin-top: 0.75em; }
+.md > :first-child { margin-top: 0; }
+.md img { cursor: zoom-in; }
+.md h1, .md h2, .md h3, .md h4 { font-weight: 700; line-height: 1.3; margin-top: 1.2em; }
+.md h1 { font-size: 1.5rem; }
+.md h2 { font-size: 1.25rem; }
+.md h3 { font-size: 1.1rem; }
+.md a { @apply link link-primary; }
+.md ul, .md ol { padding-left: 1.5rem; }
+.md ul { list-style: disc; }
+.md ol { list-style: decimal; }
+.md li + li { margin-top: 0.25em; }
+.md blockquote { @apply border-l-4 border-base-300 pl-4 text-base-content/70; }
+.md code { @apply rounded bg-base-200 px-1.5 py-0.5 font-mono text-[0.9em]; }
+.md pre { @apply overflow-x-auto rounded-box bg-base-200 p-4; }
+.md pre code { background: none; padding: 0; }
+.md img { @apply my-2 max-h-[34rem] w-auto max-w-full rounded-box border border-base-300 bg-base-200; }
+.md hr { @apply my-4 border-base-300; }
+.md table { @apply w-full text-sm; }
+.md th, .md td { @apply border border-base-300 px-2 py-1 text-left; }
+.md-compact { font-size: 0.925rem; }
+.md-compact img { max-height: 20rem; }
+
+/* Motion */
+.page-enter-active, .page-leave-active { transition: opacity 160ms ease, transform 160ms ease; }
+.page-enter-from { opacity: 0; transform: translateY(6px); }
+.page-leave-to { opacity: 0; transform: translateY(-4px); }
+
+.list-enter-active { transition: opacity 260ms ease, transform 260ms cubic-bezier(0.22, 1, 0.36, 1); }
+.list-leave-active { transition: opacity 180ms ease, transform 180ms ease; position: absolute; width: 100%; }
+.list-enter-from { opacity: 0; transform: translateY(12px) scale(0.98); }
+.list-leave-to { opacity: 0; transform: scale(0.98); }
+.list-move { transition: transform 260ms ease; }
+
+.collapse-enter-active, .collapse-leave-active { transition: opacity 200ms ease, transform 200ms ease; }
+.collapse-enter-from, .collapse-leave-to { opacity: 0; transform: translateY(-8px); }
+
+.spin-enter-active, .spin-leave-active { transition: transform 200ms ease, opacity 200ms ease; }
+.spin-enter-from { transform: rotate(-90deg) scale(0.6); opacity: 0; }
+.spin-leave-to { transform: rotate(90deg) scale(0.6); opacity: 0; }
+
+@keyframes pop { 0% { transform: scale(1); } 40% { transform: scale(1.35); } 100% { transform: scale(1); } }
+.pop { animation: pop 320ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+.pop-enter-active { animation: pop 320ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+.pop-leave-active { transition: opacity 120ms ease, transform 120ms ease; }
+.pop-leave-to { opacity: 0; transform: scale(0.5); }
+
+.btn { transition-property: color, background-color, border-color, box-shadow, transform; transition-duration: 150ms; }
+.btn:active:not(:disabled) { transform: scale(0.96); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
