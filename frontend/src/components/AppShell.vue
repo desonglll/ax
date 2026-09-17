@@ -4,6 +4,7 @@ import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 import { Bell, Flame, Home, Languages, LogIn, LogOut, Menu, Moon, Search, Sun, UsersRound } from "lucide-vue-next";
 import { locales, setLocale, type Locale } from "../i18n";
+import { pageTitle } from "../lib/title";
 import { useAuthStore } from "../stores/auth";
 import { useToastStore } from "../stores/toast";
 import Avatar from "./Avatar.vue";
@@ -30,7 +31,7 @@ const nav = computed(() => [
   { to: "/", label: t("nav.home"), icon: Home },
   { to: "/trending", label: t("nav.trending"), icon: Flame },
   { to: "/people", label: t("nav.people"), icon: UsersRound },
-  ...(auth.authenticated ? [{ to: "/notifications", label: t("nav.notifications"), icon: Bell }] : []),
+  ...(auth.authenticated ? [{ to: "/notifications", label: t("nav.notifications"), icon: Bell, badge: notifications.unread }] : []),
 ]);
 
 const applyTheme = (isDark: boolean) => {
@@ -42,13 +43,18 @@ const applyTheme = (isDark: boolean) => {
 // index.html applies the saved/system theme before first paint; mirror it here.
 dark.value = document.documentElement.dataset.theme === "axdark";
 
+/** Sign-in/register links come back to the current page (but not to the auth pages themselves). */
+const authQuery = computed(() => (route.meta.guest ? route.query : { redirect: route.fullPath }));
+
 const blur = () => (document.activeElement as HTMLElement | null)?.blur();
 const searchInput = ref<HTMLInputElement>();
 
 const titles: Record<string, string> = { home: "nav.home", trending: "nav.trending", people: "nav.people", notifications: "nav.notifications", profile: "nav.profile", login: "nav.signIn", register: "nav.register" };
-watch([() => route.name, locale], () => {
+watch([() => route.name, locale, pageTitle, () => notifications.unread], () => {
   const key = titles[String(route.name)];
-  document.title = key ? `${t(key)} · ${t("app.name")}` : t("app.name");
+  const page = pageTitle.value || (key ? t(key) : "");
+  const unread = notifications.unread ? `(${notifications.unread > 99 ? "99+" : notifications.unread}) ` : "";
+  document.title = `${unread}${page ? `${page} · ` : ""}${t("app.name")}`;
 }, { immediate: true });
 
 const onKey = (event: KeyboardEvent) => {
@@ -109,7 +115,7 @@ const logout = async () => {
           </button>
           <NotificationBell v-if="auth.authenticated" />
           <RouterLink v-if="auth.user" :to="`/profile/${auth.user.id}`" class="btn btn-ghost btn-circle" :aria-label="t('nav.yourProfile')"><Avatar :name="auth.user.userName" size="sm" tone="primary" /></RouterLink>
-          <RouterLink v-else :to="{ name: 'login', query: { redirect: route.fullPath } }" class="btn btn-primary btn-sm"><LogIn :size="16" /> {{ t("nav.signIn") }}</RouterLink>
+          <RouterLink v-else :to="{ name: 'login', query: authQuery }" class="btn btn-primary btn-sm"><LogIn :size="16" /> {{ t("nav.signIn") }}</RouterLink>
         </div>
         <Transition name="collapse">
           <form v-if="mobileSearch" class="absolute inset-x-0 top-full border-b border-base-300 bg-base-100 p-3 md:hidden" role="search" @submit.prevent="search">
@@ -128,7 +134,11 @@ const logout = async () => {
         <RouterLink to="/" class="mb-6 px-2 text-2xl font-bold" @click="drawer = false">{{ t("app.name") }}</RouterLink>
         <ul class="menu w-full gap-1 p-0">
           <li v-for="item in nav" :key="item.to">
-            <RouterLink :to="item.to" active-class="menu-active" @click="drawer = false"><component :is="item.icon" :size="19" />{{ item.label }}</RouterLink>
+            <RouterLink :to="item.to" active-class="menu-active" @click="drawer = false">
+              <component :is="item.icon" :size="19" />
+              <span class="flex-1">{{ item.label }}</span>
+              <Transition name="pop"><span v-if="'badge' in item && item.badge" class="badge badge-error badge-sm">{{ item.badge > 99 ? "99+" : item.badge }}</span></Transition>
+            </RouterLink>
           </li>
         </ul>
         <div class="mt-auto space-y-3 border-t border-base-300 pt-4">
@@ -144,8 +154,8 @@ const logout = async () => {
           </RouterLink>
           <button v-if="auth.user" class="btn btn-ghost btn-block justify-start" @click="logout"><LogOut :size="18" /> {{ t("nav.signOut") }}</button>
           <div v-else class="grid grid-cols-2 gap-2">
-            <RouterLink to="/login" class="btn btn-outline btn-sm" @click="drawer = false">{{ t("nav.signIn") }}</RouterLink>
-            <RouterLink to="/register" class="btn btn-primary btn-sm" @click="drawer = false">{{ t("nav.register") }}</RouterLink>
+            <RouterLink :to="{ name: 'login', query: authQuery }" class="btn btn-outline btn-sm" @click="drawer = false">{{ t("nav.signIn") }}</RouterLink>
+            <RouterLink :to="{ name: 'register', query: authQuery }" class="btn btn-primary btn-sm" @click="drawer = false">{{ t("nav.register") }}</RouterLink>
           </div>
         </div>
       </div>
