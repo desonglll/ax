@@ -59,9 +59,16 @@ const load = async () => {
 };
 
 const toggleFollow = async () => {
-  if (!auth.user) return router.push({ name: "login", query: { redirect: route.fullPath } });
+  const wasGuest = !auth.user;
+  if (!(await auth.ensure("follow"))) return;
+  if (own.value) return;
   busy.value = true;
   try {
+    // Just signed in: the viewer may already follow this person, so check before toggling.
+    if (wasGuest) {
+      follows.value = (await followApi.stats(targetId.value)).body?.data;
+      if (follows.value?.isFollowing) return;
+    }
     const response = follows.value?.isFollowing ? await followApi.unfollow(targetId.value) : await followApi.follow(targetId.value);
     follows.value = response.body?.data;
   } catch (error) {

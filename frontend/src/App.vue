@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppShell from "./components/AppShell.vue";
+import AuthDialog from "./components/AuthDialog.vue";
 import ConfirmDialog from "./components/ConfirmDialog.vue";
 import Lightbox from "./components/Lightbox.vue";
 import ToastHost from "./components/ToastHost.vue";
@@ -21,4 +22,5 @@ const keepAlive = ["HomeView", "TrendingView", "PeopleView", "ProfileView", "Not
   <ToastHost />
   <Lightbox />
   <ConfirmDialog />
+  <AuthDialog />
 </template>

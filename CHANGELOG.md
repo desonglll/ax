@@ -2,6 +2,35 @@
 
 This document logs the development history and version alterations of Project Ax.
 
+## [Unreleased]
+
+### Changed
+- **Sign in without leaving the page.** Guests who like, comment, follow or
+  open the Following tab get a sign-in/register dialog; once signed in the
+  action carries on. The login and register pages share the same form and
+  both honour `?redirect=`.
+- **Post cards open the post** when clicked anywhere that isn't a link,
+  button, image or text selection (⌘/Ctrl-click opens a new tab). A post
+  opened from a list renders instantly from the list's copy.
+- **Post detail:** the comment box is a single line that expands (drafts are
+  kept per post for the session), the comment button and `#comments` links
+  jump to it, new comments appear at the top highlighted, comments have a
+  Reply button that mentions the author, and deleting shows a confirmation
+  toast. Back goes home when the post was opened directly; a deleted post and
+  a failed load are told apart (with Retry).
+- **Likes, comment counts, edits and deletions stay in sync** across the
+  detail page and the kept-alive list pages (`stores/posts.ts`).
+- **Notifications:** the navbar dropdown now actually loads (daisyUI disables
+  pointer events on a focused trigger, so its click handler never ran), shows
+  load errors with Retry, and re-syncs the unread count when opened. The
+  sidebar shows the unread badge and the tab title is prefixed with it.
+- Reaction notifications are deduplicated per actor and post, and withdrawn
+  while unread when the reaction is undone.
+
+### Fixed
+- Clicking Like/Dislike inside a list card no longer also opens the post.
+- "Who to follow" no longer lists yourself after signing in from the dialog.
+
 ## [0.5.0] - 2026-09-16
 
 A simplification release: one database, one backend crate, one frontend, and

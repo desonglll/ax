@@ -21,13 +21,13 @@ const items = computed(() => [
         { to: "/notifications", label: t("nav.notifications"), icon: Bell, active: route.name === "notifications", badge: notifications.unread },
         { to: `/profile/${auth.user.id}`, label: t("nav.profile"), icon: UserRound, active: route.name === "profile" },
       ]
-    : [{ to: "/login", label: t("nav.signIn"), icon: UserRound, active: route.name === "login" }]),
+    : [{ to: { name: "login", query: route.meta.guest ? route.query : { redirect: route.fullPath } }, label: t("nav.signIn"), icon: UserRound, active: route.name === "login" || route.name === "register" }]),
 ]);
 </script>
 
 <template>
   <nav class="dock dock-sm border-t border-base-300 bg-base-100/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden" aria-label="Primary">
-    <RouterLink v-for="item in items" :key="item.to" :to="item.to" :class="{ 'dock-active': item.active }">
+    <RouterLink v-for="item in items" :key="item.label" :to="item.to" :class="{ 'dock-active': item.active }">
       <span class="indicator">
         <component :is="item.icon" :size="20" />
         <span v-if="'badge' in item && item.badge" class="badge badge-error badge-xs indicator-item">{{ item.badge > 99 ? "99+" : item.badge }}</span>
