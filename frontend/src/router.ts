@@ -13,6 +13,7 @@ export const router = createRouter({
     { path: "/profile/:id?", name: "profile", component: () => import("./views/ProfileView.vue") },
     { path: "/people", name: "people", component: () => import("./views/PeopleView.vue") },
     { path: "/notifications", name: "notifications", component: () => import("./views/NotificationsView.vue"), meta: { requiresAuth: true } },
+    { path: "/saved", name: "saved", component: () => import("./views/SavedView.vue"), meta: { requiresAuth: true } },
     { path: "/login", name: "login", component: () => import("./views/LoginView.vue"), meta: { guest: true } },
     { path: "/register", name: "register", component: () => import("./views/RegisterView.vue"), meta: { guest: true } },
     { path: "/:pathMatch(.*)*", redirect: "/" },

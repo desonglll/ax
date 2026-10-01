@@ -103,8 +103,8 @@ pub async fn list_for(
     ))
 }
 
-/// Attaches files, reaction counts and the viewer's own reaction to a page of
-/// comments with three batched queries.
+/// Attaches files, reaction counts, author avatars and the viewer's own
+/// reaction to a page of comments with one batched query each.
 pub async fn hydrate(
     pool: &PgPool,
     comments: Vec<Comment>,
@@ -134,6 +134,11 @@ pub async fn hydrate(
 
     let viewer_reactions = db::reaction::by_viewer(pool, viewer_id, "comment", &ids).await?;
 
+    let mut author_ids: Vec<i32> = comments.iter().map(|c| c.user_id).collect();
+    author_ids.sort_unstable();
+    author_ids.dedup();
+    let avatars = db::user::avatars(pool, &author_ids).await?;
+
     Ok(comments
         .into_iter()
         .map(|comment| {
@@ -143,6 +148,7 @@ pub async fn hydrate(
                 like_count,
                 dislike_count,
                 viewer_reaction: viewer_reactions.get(&comment.id).cloned(),
+                author_avatar: avatars.get(&comment.user_id).copied(),
                 comment,
             }
         })

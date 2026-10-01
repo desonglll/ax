@@ -28,6 +28,8 @@ pub struct CommentDetail {
     pub like_count: i64,
     pub dislike_count: i64,
     pub viewer_reaction: Option<String>,
+    /// The author's avatar file, if they set one.
+    pub author_avatar: Option<Uuid>,
 }
 
 #[derive(Deserialize, Debug, Clone)]

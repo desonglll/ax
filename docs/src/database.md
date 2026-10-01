@@ -18,7 +18,8 @@ after all migrations.
 | `last_login` | TIMESTAMPTZ NULL | updated on login |
 | `is_active` | BOOLEAN | deactivated users cannot log in |
 | `is_admin` | BOOLEAN | |
-| `profile_picture` | UUID NULL → `files.id` | ON DELETE SET NULL |
+| `profile_picture` | UUID NULL → `files.id` | avatar; ON DELETE SET NULL |
+| `bio` | VARCHAR(280) NULL | short self-description |
 
 ### `posts`
 | Column | Type | Notes |
@@ -63,6 +64,11 @@ API upserts on that key to flip Like ↔ Dislike.
 ### `follows`
 `(follower_id, followee_id)` PK, both → `users.id` ON DELETE CASCADE,
 `CHECK (follower_id <> followee_id)`, index on `followee_id`.
+
+### `bookmarks`
+`(user_id, post_id)` PK, `user_id` → `users.id` and `post_id` → `posts.id`,
+both ON DELETE CASCADE, plus `created_at`. Indexes on
+`(user_id, created_at DESC)` (the Saved list) and `post_id` (cascades).
 
 ### `notifications`
 | Column | Type | Notes |

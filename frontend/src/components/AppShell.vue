@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
-import { Bell, Flame, Home, Languages, LogIn, LogOut, Menu, Moon, Search, Sun, UsersRound } from "lucide-vue-next";
+import { Bell, Bookmark, Flame, Home, Languages, LogIn, LogOut, Menu, Moon, Search, Sun, UsersRound } from "lucide-vue-next";
 import { locales, setLocale, type Locale } from "../i18n";
 import { pageTitle } from "../lib/title";
 import { useAuthStore } from "../stores/auth";
@@ -31,7 +31,12 @@ const nav = computed(() => [
   { to: "/", label: t("nav.home"), icon: Home },
   { to: "/trending", label: t("nav.trending"), icon: Flame },
   { to: "/people", label: t("nav.people"), icon: UsersRound },
-  ...(auth.authenticated ? [{ to: "/notifications", label: t("nav.notifications"), icon: Bell, badge: notifications.unread }] : []),
+  ...(auth.authenticated
+    ? [
+        { to: "/notifications", label: t("nav.notifications"), icon: Bell, badge: notifications.unread },
+        { to: "/saved", label: t("nav.saved"), icon: Bookmark },
+      ]
+    : []),
 ]);
 
 const applyTheme = (isDark: boolean) => {
@@ -49,7 +54,7 @@ const authQuery = computed(() => (route.meta.guest ? route.query : { redirect: r
 const blur = () => (document.activeElement as HTMLElement | null)?.blur();
 const searchInput = ref<HTMLInputElement>();
 
-const titles: Record<string, string> = { home: "nav.home", trending: "nav.trending", people: "nav.people", notifications: "nav.notifications", profile: "nav.profile", login: "nav.signIn", register: "nav.register" };
+const titles: Record<string, string> = { home: "nav.home", trending: "nav.trending", people: "nav.people", notifications: "nav.notifications", saved: "nav.saved", profile: "nav.profile", login: "nav.signIn", register: "nav.register" };
 watch([() => route.name, locale, pageTitle, () => notifications.unread], () => {
   const key = titles[String(route.name)];
   const page = pageTitle.value || (key ? t(key) : "");
@@ -114,7 +119,7 @@ const logout = async () => {
             <Transition name="spin" mode="out-in"><Sun v-if="dark" :size="19" /><Moon v-else :size="19" /></Transition>
           </button>
           <NotificationBell v-if="auth.authenticated" />
-          <RouterLink v-if="auth.user" :to="`/profile/${auth.user.id}`" class="btn btn-ghost btn-circle" :aria-label="t('nav.yourProfile')"><Avatar :name="auth.user.userName" size="sm" tone="primary" /></RouterLink>
+          <RouterLink v-if="auth.user" :to="`/profile/${auth.user.id}`" class="btn btn-ghost btn-circle" :aria-label="t('nav.yourProfile')"><Avatar :name="auth.user.userName" :picture="auth.user.profilePicture" size="sm" tone="primary" /></RouterLink>
           <RouterLink v-else :to="{ name: 'login', query: authQuery }" class="btn btn-primary btn-sm"><LogIn :size="16" /> {{ t("nav.signIn") }}</RouterLink>
         </div>
         <Transition name="collapse">
@@ -149,7 +154,7 @@ const logout = async () => {
             <button class="btn btn-ghost btn-sm btn-square" :aria-label="dark ? t('nav.lightTheme') : t('nav.darkTheme')" @click="applyTheme(!dark)"><Sun v-if="dark" :size="18" /><Moon v-else :size="18" /></button>
           </div>
           <RouterLink v-if="auth.user" :to="`/profile/${auth.user.id}`" class="flex items-center gap-3 rounded-box p-2 hover:bg-base-200" @click="drawer = false">
-            <Avatar :name="auth.user.userName" size="sm" />
+            <Avatar :name="auth.user.userName" :picture="auth.user.profilePicture" size="sm" />
             <div class="min-w-0 flex-1"><strong class="block truncate text-sm">{{ auth.user.userName }}</strong><small class="ax-muted">{{ auth.user.isAdmin ? t("nav.admin") : t("nav.member") }}</small></div>
           </RouterLink>
           <button v-if="auth.user" class="btn btn-ghost btn-block justify-start" @click="logout"><LogOut :size="18" /> {{ t("nav.signOut") }}</button>
