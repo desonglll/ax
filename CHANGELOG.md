@@ -5,6 +5,15 @@ This document logs the development history and version alterations of Project Ax
 ## [Unreleased]
 
 ### Added
+- **Search.** A Search page (`/search?q=`, opened from the navbar search, the
+  sidebar or the mobile search button) with Posts and People tabs, result
+  counts, highlighted matches, a snippet around the first hit in long posts,
+  and infinite scroll; the box searches as you type and the query lives in the
+  URL. Backed by `GET /api/search/posts` (full-text over title and body with
+  `"phrase"` / `-exclude` syntax, plus literal substring matching for partial
+  words and Chinese text, ranked by relevance) and `GET /api/search/users`
+  (user name or full name). New full-text and trigram GIN indexes keep both
+  index-backed.
 - **Bookmarks.** Save any post for later with the bookmark button on post
   cards (guests get the sign-in dialog, then the post is saved); saved posts
   are listed newest-saved first on the new **Saved** page. API:

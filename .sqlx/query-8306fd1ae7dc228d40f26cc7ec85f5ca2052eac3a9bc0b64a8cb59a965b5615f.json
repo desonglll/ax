@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select count(*) as \"count!\"\n           from posts p, websearch_to_tsquery('simple', $1) q\n           where posts_search_document(p.title, p.content) @@ q\n              or p.title ilike $2\n              or p.content ilike $2",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "count!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "8306fd1ae7dc228d40f26cc7ec85f5ca2052eac3a9bc0b64a8cb59a965b5615f"
+}

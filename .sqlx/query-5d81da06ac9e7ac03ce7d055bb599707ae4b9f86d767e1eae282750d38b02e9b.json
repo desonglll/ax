@@ -1,0 +1,98 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select u.* from users u\n           where u.is_active\n             and (u.user_name ilike $2 or u.full_name ilike $2)\n           order by\n             (lower(u.user_name) = lower($1)) desc,\n             (u.user_name ilike $3 or u.full_name ilike $3) desc,\n             greatest(similarity(u.user_name, $1), similarity(coalesce(u.full_name, ''), $1)) desc,\n             u.id\n           limit $4 offset $5",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "user_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "email",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "password_hash",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "full_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "phone",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "last_login",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "is_active",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 10,
+        "name": "is_admin",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 11,
+        "name": "profile_picture",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 12,
+        "name": "bio",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text",
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "5d81da06ac9e7ac03ce7d055bb599707ae4b9f86d767e1eae282750d38b02e9b"
+}

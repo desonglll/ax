@@ -18,19 +18,20 @@ const auth = useAuthStore();
 const toast = useToastStore();
 const router = useRouter();
 const route = useRoute();
-const query = ref(String(route.query.search || ""));
+const query = ref(route.name === "search" ? String(route.query.q || "") : "");
 const dark = ref(false);
 const drawer = ref(false);
-const mobileSearch = ref(false);
 const notifications = useNotificationStore();
 watch(() => auth.authenticated, signedIn => (signedIn ? notifications.start() : notifications.stop()), { immediate: true });
 
-watch(() => route.query.search, value => { query.value = String(value || ""); });
+// Mirrors the search page's query; cleared elsewhere so the box does not show a stale term.
+watch(() => [route.name, route.query.q], () => { query.value = route.name === "search" ? String(route.query.q || "") : ""; });
 
 const nav = computed(() => [
   { to: "/", label: t("nav.home"), icon: Home },
   { to: "/trending", label: t("nav.trending"), icon: Flame },
   { to: "/people", label: t("nav.people"), icon: UsersRound },
+  { to: "/search", label: t("nav.openSearch"), icon: Search },
   ...(auth.authenticated
     ? [
         { to: "/notifications", label: t("nav.notifications"), icon: Bell, badge: notifications.unread },
@@ -54,7 +55,7 @@ const authQuery = computed(() => (route.meta.guest ? route.query : { redirect: r
 const blur = () => (document.activeElement as HTMLElement | null)?.blur();
 const searchInput = ref<HTMLInputElement>();
 
-const titles: Record<string, string> = { home: "nav.home", trending: "nav.trending", people: "nav.people", notifications: "nav.notifications", saved: "nav.saved", profile: "nav.profile", login: "nav.signIn", register: "nav.register" };
+const titles: Record<string, string> = { home: "nav.home", trending: "nav.trending", people: "nav.people", notifications: "nav.notifications", saved: "nav.saved", profile: "nav.profile", login: "nav.signIn", register: "nav.register", search: "search.title" };
 watch([() => route.name, locale, pageTitle, () => notifications.unread], () => {
   const key = titles[String(route.name)];
   const page = pageTitle.value || (key ? t(key) : "");
@@ -77,8 +78,7 @@ const chooseLocale = (value: Locale) => { setLocale(value); blur(); };
 const search = () => {
   const value = query.value.trim();
   drawer.value = false;
-  mobileSearch.value = false;
-  router.push({ path: "/", query: value ? { search: value } : {} });
+  router.push({ name: "search", query: value ? { q: value } : {} });
 };
 
 /** Skip link target: move keyboard focus past the navigation. */
@@ -112,7 +112,7 @@ const logout = async () => {
           </form>
         </div>
         <div class="navbar-end gap-1">
-          <button class="btn btn-ghost btn-circle md:hidden" :aria-label="t('nav.openSearch')" :aria-expanded="mobileSearch" @click="mobileSearch = !mobileSearch"><Search :size="19" /></button>
+          <RouterLink to="/search" class="btn btn-ghost btn-circle md:hidden" :aria-label="t('nav.openSearch')"><Search :size="19" /></RouterLink>
           <div class="dropdown dropdown-end hidden md:block">
             <button tabindex="0" class="btn btn-ghost btn-circle" :aria-label="t('nav.language')"><Languages :size="19" /></button>
             <ul tabindex="0" class="dropdown-content menu z-50 mt-2 w-40 rounded-box border border-base-300 bg-base-100 p-2 shadow-xl">
@@ -126,11 +126,6 @@ const logout = async () => {
           <RouterLink v-if="auth.user" :to="`/profile/${auth.user.id}`" class="btn btn-ghost btn-circle" :aria-label="t('nav.yourProfile')"><Avatar :name="auth.user.userName" :picture="auth.user.profilePicture" size="sm" tone="primary" /></RouterLink>
           <RouterLink v-else :to="{ name: 'login', query: authQuery }" class="btn btn-primary btn-sm"><LogIn :size="16" /> {{ t("nav.signIn") }}</RouterLink>
         </div>
-        <Transition name="collapse">
-          <form v-if="mobileSearch" class="absolute inset-x-0 top-full border-b border-base-300 bg-base-100 p-3 md:hidden" role="search" @submit.prevent="search">
-            <label class="input flex w-full items-center gap-2"><Search :size="16" class="text-base-content/45" /><input v-model="query" type="search" class="grow" :placeholder="t('nav.search')" :aria-label="t('nav.search')" autofocus /></label>
-          </form>
-        </Transition>
       </header>
       <main id="main" tabindex="-1" class="pb-24 pt-5 outline-none md:py-8"><slot /></main>
       <BottomNav />

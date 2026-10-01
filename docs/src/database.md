@@ -21,6 +21,8 @@ after all migrations.
 | `profile_picture` | UUID NULL → `files.id` | avatar; ON DELETE SET NULL |
 | `bio` | VARCHAR(280) NULL | short self-description |
 
+Indexes: trigram GIN on `user_name` and `full_name` (people search).
+
 ### `posts`
 | Column | Type | Notes |
 |--------|------|-------|
@@ -35,7 +37,10 @@ after all migrations.
 | `created_at`, `updated_at` | TIMESTAMPTZ NOT NULL | |
 
 Indexes: `user_id`, `reply_to`, `created_at DESC`, trigram GIN on `content`
-(for `ILIKE` search).
+and `title` (for `ILIKE` search), and a full-text GIN index on
+`posts_search_document(title, content)` — an immutable SQL function building
+a `'simple'`-config `tsvector` with the title weighted `A` and the body `B`.
+Search queries must call that function to use the index.
 
 ### `comments`
 | Column | Type | Notes |
