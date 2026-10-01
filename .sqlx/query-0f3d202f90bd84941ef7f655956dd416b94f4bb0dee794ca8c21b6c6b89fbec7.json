@@ -62,6 +62,11 @@
         "ordinal": 11,
         "name": "profile_picture",
         "type_info": "Uuid"
+      },
+      {
+        "ordinal": 12,
+        "name": "bio",
+        "type_info": "Varchar"
       }
     ],
     "parameters": {
@@ -85,6 +90,7 @@
       true,
       false,
       false,
+      true,
       true
     ]
   },

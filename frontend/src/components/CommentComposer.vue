@@ -88,7 +88,7 @@ const submit = async () => {
 <template>
   <div ref="root" class="scroll-mt-24">
     <button v-if="!expanded" type="button" class="flex w-full items-center gap-3 rounded-box border border-base-300 bg-base-100 p-3 text-left transition hover:border-base-content/20" @click="activate">
-      <Avatar v-if="auth.user" :name="auth.user.userName" size="sm" />
+      <Avatar v-if="auth.user" :name="auth.user.userName" :picture="auth.user.profilePicture" size="sm" />
       <span class="flex-1 px-1 text-base-content/50">{{ t("comments.placeholder") }}</span>
       <span class="btn btn-primary btn-sm pointer-events-none"><Send :size="15" /> {{ t("comments.submit") }}</span>
     </button>

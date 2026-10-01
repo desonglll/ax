@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed, onActivated, onMounted, ref } from "vue";
+import { computed, nextTick, onActivated, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { onBeforeRouteUpdate, useRoute, useRouter } from "vue-router";
-import { CalendarDays, Pencil, UserMinus, UserPlus, UserRound } from "lucide-vue-next";
-import { followApi, postApi, userApi } from "../api";
+import { CalendarDays, ImageUp, Pencil, Trash2, UserMinus, UserPlus, UserRound, X } from "lucide-vue-next";
+import { fileApi, followApi, postApi, userApi } from "../api";
 import { getApiError } from "../api/client";
 import Avatar from "../components/Avatar.vue";
 import EmptyState from "../components/EmptyState.vue";
@@ -31,8 +31,11 @@ const follows = ref<FollowStats>();
 const relationship = ref<{ title: string; users: User[] }>({ title: "", users: [] });
 const loading = ref(true);
 const busy = ref(false);
-const editing = ref(false);
-const form = ref({ userName: "", email: "", fullName: "", phone: "", password: "" });
+const editDialog = ref<HTMLDialogElement>();
+const avatarInput = ref<HTMLInputElement>();
+const uploading = ref(false);
+const form = ref({ userName: "", email: "", fullName: "", phone: "", bio: "", profilePicture: null as string | null, password: "" });
+const BIO_MAX = 280;
 const own = computed(() => auth.user?.id === targetId.value);
 
 const posts = useInfiniteList<Post>(async (offset, limit) => {
@@ -43,12 +46,11 @@ const posts = useInfiniteList<Post>(async (offset, limit) => {
 const load = async () => {
   if (!targetId.value) return router.push({ name: "login", query: { redirect: route.fullPath } });
   loading.value = true;
-  editing.value = false;
+  editDialog.value?.close();
   try {
     const [userResponse, statsResponse] = await Promise.all([userApi.get(targetId.value), followApi.stats(targetId.value)]);
     profile.value = userResponse.body?.data;
     follows.value = statsResponse.body?.data;
-    if (profile.value) form.value = { userName: profile.value.userName, email: profile.value.email, fullName: profile.value.fullName || "", phone: profile.value.phone || "", password: "" };
     posts.reset();
   } catch (error) {
     profile.value = undefined;
@@ -84,15 +86,49 @@ const showRelationships = async (kind: "followers" | "following") => {
   (document.getElementById("relationships-modal") as HTMLDialogElement).showModal();
 };
 
-const save = async () => {
-  if (!profile.value) return;
-  busy.value = true;
+const openEditor = async () => {
+  const user = profile.value;
+  if (!user) return;
+  form.value = { userName: user.userName, email: user.email, fullName: user.fullName || "", phone: user.phone || "", bio: user.bio || "", profilePicture: user.profilePicture || null, password: "" };
+  await nextTick();
+  editDialog.value?.showModal();
+};
+
+/** Uploads the chosen picture right away; it becomes the avatar when the form is saved. */
+const pickAvatar = async (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  input.value = "";
+  if (!file) return;
+  if (!file.type.startsWith("image/")) return toast.show(t("profile.avatarNotImage"), "error");
+  uploading.value = true;
   try {
-    const response = await userApi.update(profile.value.id, { ...form.value, password: form.value.password || undefined });
+    const saved = (await fileApi.upload([file], { isPublic: true })).body?.data?.[0];
+    if (saved) form.value.profilePicture = saved.id;
+  } catch (error) {
+    toast.show(getApiError(error, t("errors.upload")), "error");
+  } finally {
+    uploading.value = false;
+  }
+};
+
+const save = async () => {
+  if (!profile.value || uploading.value) return;
+  busy.value = true;
+  const { password, profilePicture, ...fields } = form.value;
+  try {
+    const response = await userApi.update(profile.value.id, {
+      ...fields,
+      password: password || undefined,
+      // Only send the avatar when it changed; `null` removes it.
+      ...(profilePicture !== (profile.value.profilePicture || null) ? { profilePicture } : {}),
+    });
     profile.value = response.body?.data;
-    editing.value = false;
+    editDialog.value?.close();
     form.value.password = "";
     await auth.restore();
+    // The cards on this page show the author's avatar too.
+    posts.reset();
     toast.show(t("profile.updated"), "success");
   } catch (error) {
     toast.show(getApiError(error, t("errors.save")), "error");
@@ -131,9 +167,9 @@ onMounted(load);
       <section class="ax-panel">
         <div class="card-body p-5 md:p-6">
           <div class="flex flex-wrap items-start justify-between gap-4">
-            <Avatar :name="profile.userName" size="xl" />
+            <Avatar :name="profile.userName" :picture="profile.profilePicture" size="xl" />
             <div class="flex gap-2">
-              <button v-if="own" class="btn btn-outline btn-sm" @click="editing = !editing"><Pencil :size="16" /> {{ editing ? t("common.close") : t("profile.edit") }}</button>
+              <button v-if="own" class="btn btn-outline btn-sm" @click="openEditor"><Pencil :size="16" /> {{ t("profile.edit") }}</button>
               <button v-else class="btn btn-sm transition-all" :class="follows?.isFollowing ? 'btn-outline' : 'btn-primary'" :disabled="busy" @click="toggleFollow">
                 <UserMinus v-if="follows?.isFollowing" :size="16" /><UserPlus v-else :size="16" />{{ follows?.isFollowing ? t("profile.unfollow") : t("profile.follow") }}
               </button>
@@ -146,6 +182,7 @@ onMounted(load);
               <span v-if="!profile.isActive" class="badge badge-warning">{{ t("profile.deactivated") }}</span>
             </div>
             <p class="text-base-content/55">@{{ profile.userName }}</p>
+            <p v-if="profile.bio" class="mt-3 max-w-prose whitespace-pre-line break-words">{{ profile.bio }}</p>
             <p v-if="own" class="ax-muted mt-2 text-sm">{{ profile.email }}<template v-if="profile.phone"> · {{ profile.phone }}</template></p>
             <p v-if="profile.createdAt" class="ax-muted mt-2 flex items-center gap-2 text-sm"><CalendarDays :size="15" /> {{ t("profile.joined", { date: shortDate(profile.createdAt) }) }}</p>
           </div>
@@ -157,22 +194,6 @@ onMounted(load);
         </div>
       </section>
 
-      <Transition name="collapse">
-        <section v-if="editing" class="ax-panel">
-          <form class="card-body" @submit.prevent="save">
-            <h2 class="card-title">{{ t("profile.edit") }}</h2>
-            <div class="grid gap-4 md:grid-cols-2">
-              <label class="fieldset"><span class="fieldset-legend">{{ t("profile.username") }}</span><input v-model="form.userName" class="input w-full" minlength="3" maxlength="32" required /></label>
-              <label class="fieldset"><span class="fieldset-legend">{{ t("profile.email") }}</span><input v-model="form.email" type="email" class="input w-full" required /></label>
-              <label class="fieldset"><span class="fieldset-legend">{{ t("profile.fullName") }}</span><input v-model="form.fullName" class="input w-full" /></label>
-              <label class="fieldset"><span class="fieldset-legend">{{ t("profile.phone") }}</span><input v-model="form.phone" class="input w-full" /></label>
-              <label class="fieldset md:col-span-2"><span class="fieldset-legend">{{ t("profile.newPassword") }}</span><input v-model="form.password" type="password" class="input w-full" minlength="8" maxlength="128" autocomplete="new-password" :placeholder="t('profile.keepPassword')" /></label>
-            </div>
-            <div class="card-actions justify-end"><button type="button" class="btn btn-ghost" @click="editing = false">{{ t("common.cancel") }}</button><button type="submit" class="btn btn-primary" :disabled="busy">{{ t("profile.saveChanges") }}</button></div>
-          </form>
-        </section>
-      </Transition>
-
       <div>
         <h2 class="mb-3 text-lg font-bold">{{ t("profile.postsTitle") }}</h2>
         <div v-if="posts.loading.value" class="space-y-4"><PostSkeleton v-for="n in 2" :key="n" /></div>
@@ -183,6 +204,51 @@ onMounted(load);
         <LoadMore v-if="!posts.loading.value" :loading="posts.loadingMore.value" :done="posts.done.value" :count="posts.items.value.length" :error="posts.error.value" @more="posts.loadMore()" />
       </div>
     </template>
+
+    <dialog ref="editDialog" class="modal modal-bottom sm:modal-middle" aria-labelledby="edit-profile-title">
+      <form v-if="profile" class="modal-box max-w-2xl pb-[max(1.5rem,env(safe-area-inset-bottom))]" @submit.prevent="save">
+        <button type="button" class="btn btn-ghost btn-circle btn-sm absolute right-3 top-3" :aria-label="t('common.close')" @click="editDialog?.close()"><X :size="18" /></button>
+        <h2 id="edit-profile-title" class="text-lg font-bold">{{ t("profile.edit") }}</h2>
+
+        <div class="mt-5 flex flex-wrap items-center gap-4">
+          <Avatar :name="form.userName || profile.userName" :picture="form.profilePicture" size="xl" />
+          <div class="space-y-2">
+            <span class="block text-sm font-semibold">{{ t("profile.avatar") }}</span>
+            <div class="flex flex-wrap gap-2">
+              <button type="button" class="btn btn-sm" :disabled="uploading" @click="avatarInput?.click()">
+                <span v-if="uploading" class="loading loading-spinner loading-xs"></span><ImageUp v-else :size="16" /> {{ t("profile.changeAvatar") }}
+              </button>
+              <button v-if="form.profilePicture" type="button" class="btn btn-ghost btn-sm text-error" :disabled="uploading" @click="form.profilePicture = null"><Trash2 :size="15" /> {{ t("profile.removeAvatar") }}</button>
+            </div>
+            <p class="ax-muted text-xs">{{ t("profile.avatarHint") }}</p>
+            <input ref="avatarInput" type="file" accept="image/png,image/jpeg,image/gif,image/webp" class="hidden" :aria-label="t('profile.changeAvatar')" @change="pickAvatar" />
+          </div>
+        </div>
+
+        <div class="mt-4 grid gap-4">
+          <label class="fieldset"><span class="fieldset-legend">{{ t("profile.fullName") }}</span><input v-model="form.fullName" class="input w-full" maxlength="64" autocomplete="name" /></label>
+          <label class="fieldset">
+            <span class="fieldset-legend">{{ t("profile.bio") }}</span>
+            <textarea v-model="form.bio" class="textarea w-full" rows="3" :maxlength="BIO_MAX" :placeholder="t('profile.bioPlaceholder')"></textarea>
+            <span class="label justify-end" :class="{ 'text-warning': form.bio.length > BIO_MAX - 20 }">{{ form.bio.length }} / {{ BIO_MAX }}</span>
+          </label>
+        </div>
+
+        <h3 class="mt-4 text-sm font-semibold">{{ t("profile.account") }}</h3>
+        <div class="grid gap-4 md:grid-cols-2">
+          <label class="fieldset"><span class="fieldset-legend">{{ t("profile.username") }}</span><input v-model="form.userName" class="input w-full" minlength="3" maxlength="32" required autocomplete="username" /></label>
+          <label class="fieldset"><span class="fieldset-legend">{{ t("profile.email") }}</span><input v-model="form.email" type="email" class="input w-full" required autocomplete="email" /></label>
+          <label class="fieldset"><span class="fieldset-legend">{{ t("profile.phone") }}</span><input v-model="form.phone" class="input w-full" autocomplete="tel" /></label>
+          <label class="fieldset"><span class="fieldset-legend">{{ t("profile.newPassword") }}</span><input v-model="form.password" type="password" class="input w-full" minlength="8" maxlength="128" autocomplete="new-password" :placeholder="t('profile.keepPassword')" /></label>
+        </div>
+
+        <div class="modal-action">
+          <button type="button" class="btn btn-ghost" @click="editDialog?.close()">{{ t("common.cancel") }}</button>
+          <button type="submit" class="btn btn-primary" :disabled="busy || uploading"><span v-if="busy" class="loading loading-spinner loading-xs"></span>{{ t("profile.saveChanges") }}</button>
+        </div>
+      </form>
+      <form method="dialog" class="modal-backdrop"><button>{{ t("common.close") }}</button></form>
+    </dialog>
 
     <dialog id="relationships-modal" class="modal">
       <div class="modal-box">

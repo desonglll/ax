@@ -4,6 +4,19 @@ This document logs the development history and version alterations of Project Ax
 
 ## [Unreleased]
 
+### Added
+- **Bookmarks.** Save any post for later with the bookmark button on post
+  cards (guests get the sign-in dialog, then the post is saved); saved posts
+  are listed newest-saved first on the new **Saved** page. API:
+  `PUT`/`DELETE /api/posts/{id}/bookmark`, `GET /api/bookmarks`; post
+  payloads carry `viewerBookmarked`, hydrated in the same batch as reactions.
+- **Profile editing:** a bio (up to 280 characters, shown on the profile) and
+  a profile picture, edited together with full name and account details in an
+  Edit profile dialog. Avatars show on post and comment cards, people lists
+  and the navbar (`authorAvatar` on posts and comments). The picture must be a
+  public image uploaded by the profile's owner; `profilePicture: null`
+  removes it, and an empty full name or bio clears the field.
+
 ### Changed
 - **Sign in without leaving the page.** Guests who like, comment, follow or
   open the Following tab get a sign-in/register dialog; once signed in the

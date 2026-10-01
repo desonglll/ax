@@ -88,13 +88,13 @@ const publish = async () => {
 <template>
   <section ref="root" class="ax-panel">
     <button v-if="!expanded" type="button" class="flex w-full items-center gap-3 p-3 text-left transition hover:bg-base-200/60" @click="expand">
-      <Avatar v-if="auth.user" :name="auth.user.userName" size="sm" />
+      <Avatar v-if="auth.user" :name="auth.user.userName" :picture="auth.user.profilePicture" size="sm" />
       <span class="input input-ghost flex-1 cursor-text items-center text-base-content/50">{{ t("composer.placeholder") }}</span>
       <span class="btn btn-primary btn-sm pointer-events-none hidden sm:inline-flex"><Send :size="16" /> {{ t("composer.post") }}</span>
     </button>
     <form v-else class="card-body min-w-0 gap-3 p-4" @submit.prevent="publish">
       <div class="flex items-center gap-3">
-        <Avatar v-if="auth.user" :name="auth.user.userName" size="sm" />
+        <Avatar v-if="auth.user" :name="auth.user.userName" :picture="auth.user.profilePicture" size="sm" />
         <input v-model="title" class="input input-ghost min-w-0 w-full px-1 text-lg font-bold focus:outline-none" maxlength="120" :placeholder="t('composer.titlePlaceholder')" />
       </div>
       <MarkdownEditor v-model="content" v-model:attachments="attachments" :placeholder="t('composer.placeholder')" @submit="publish" />

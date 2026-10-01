@@ -4,7 +4,7 @@ import { authApi } from "../api";
 import type { User } from "../types";
 
 /** Why the sign-in dialog was opened; picks the explanatory line under its title. */
-export type AuthReason = "generic" | "like" | "comment" | "follow" | "following" | "post";
+export type AuthReason = "generic" | "like" | "comment" | "follow" | "following" | "post" | "bookmark";
 
 export const useAuthStore = defineStore("auth", () => {
   const user = ref<User | null>(null);

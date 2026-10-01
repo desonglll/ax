@@ -43,7 +43,7 @@ const remove = async () => {
 <template>
   <article :id="`comment-${comment.id}`" class="scroll-mt-24 rounded-box border bg-base-100 p-4 transition-colors duration-1000" :class="highlight ? 'border-primary/50 bg-primary/5' : 'border-base-300'">
     <header class="mb-2 flex items-center gap-3">
-      <RouterLink :to="`/profile/${comment.userId}`"><Avatar :name="comment.userName" size="sm" tone="secondary" /></RouterLink>
+      <RouterLink :to="`/profile/${comment.userId}`"><Avatar :name="comment.userName" :picture="comment.authorAvatar" size="sm" tone="secondary" /></RouterLink>
       <div class="min-w-0 flex-1">
         <RouterLink :to="`/profile/${comment.userId}`" class="text-sm font-bold hover:text-primary">{{ comment.userName }}</RouterLink>
         <small class="block text-base-content/45" :title="fullDate(comment.createdAt)">{{ timeAgo(comment.createdAt) }}</small>
