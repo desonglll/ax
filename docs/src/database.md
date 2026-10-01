@@ -1,6 +1,6 @@
 # Database Schema & Triggers
 
-PostgreSQL 16. Schema changes are SQLx migrations in `migrations/`, applied
+PostgreSQL 17. Schema changes are SQLx migrations in `migrations/`, applied
 automatically when the backend starts. The tables below reflect the schema
 after all migrations.
 
@@ -18,7 +18,10 @@ after all migrations.
 | `last_login` | TIMESTAMPTZ NULL | updated on login |
 | `is_active` | BOOLEAN | deactivated users cannot log in |
 | `is_admin` | BOOLEAN | |
-| `profile_picture` | UUID NULL → `files.id` | ON DELETE SET NULL |
+| `profile_picture` | UUID NULL → `files.id` | avatar; ON DELETE SET NULL |
+| `bio` | VARCHAR(280) NULL | short self-description |
+
+Indexes: trigram GIN on `user_name` and `full_name` (people search).
 
 ### `posts`
 | Column | Type | Notes |
@@ -34,7 +37,10 @@ after all migrations.
 | `created_at`, `updated_at` | TIMESTAMPTZ NOT NULL | |
 
 Indexes: `user_id`, `reply_to`, `created_at DESC`, trigram GIN on `content`
-(for `ILIKE` search).
+and `title` (for `ILIKE` search), and a full-text GIN index on
+`posts_search_document(title, content)` — an immutable SQL function building
+a `'simple'`-config `tsvector` with the title weighted `A` and the body `B`.
+Search queries must call that function to use the index.
 
 ### `comments`
 | Column | Type | Notes |
@@ -62,7 +68,13 @@ API upserts on that key to flip Like ↔ Dislike.
 
 ### `follows`
 `(follower_id, followee_id)` PK, both → `users.id` ON DELETE CASCADE,
-`CHECK (follower_id <> followee_id)`, index on `followee_id`.
+`CHECK (follower_id <> followee_id)`, indexes on `(followee_id, created_at DESC)`
+and `(follower_id, created_at DESC)` (follower / following lists).
+
+### `bookmarks`
+`(user_id, post_id)` PK, `user_id` → `users.id` and `post_id` → `posts.id`,
+both ON DELETE CASCADE, plus `created_at`. Indexes on
+`(user_id, created_at DESC)` (the Saved list) and `post_id` (cascades).
 
 ### `notifications`
 | Column | Type | Notes |
@@ -75,7 +87,9 @@ API upserts on that key to flip Like ↔ Dislike.
 | `is_read` | BOOLEAN DEFAULT false | |
 | `created_at` | TIMESTAMPTZ | |
 
-Indexes: `(user_id, created_at DESC)` and a partial one on unread rows.
+Indexes: `(user_id, created_at DESC)`, a partial one on unread rows,
+`(post_id, actor_id)` (reaction de-dup / withdraw and the post cascade),
+`comment_id` and `actor_id` (comment / user cascades).
 
 ### `files`
 | Column | Type | Notes |
@@ -94,22 +108,24 @@ Indexes: `(user_id, created_at DESC)` and a partial one on unread rows.
 | `comment_id` | UUID NULL → `comments.id` | attachment link |
 | `created_at`, `updated_at` | TIMESTAMPTZ NULL | |
 
-### `user_stats`
-Per-user aggregates kept by the `update_user_stats` trigger. Not read by the
-application any more; retained for compatibility.
+### `user_stats` (view)
+Per-user aggregates (`liked_posts_count`, `average_like_count`,
+`average_comment_count`, `recent_activity_score`, `engagement_rate`),
+computed when queried. Not read by the application; kept for ad-hoc use.
+Until migration `20261001300000` it was a table recomputed by a trigger on
+every like, which made reactions and bulk inserts slow.
 
 ## Triggers
 
 | Trigger | Table | What it does |
 |---------|-------|--------------|
-| `set_user_name` / `update_user_name` | posts | Copies `users.user_name` into `posts.user_name` |
+| `set_user_name` / `update_user_name` | posts | Copies `users.user_name` into `posts.user_name` on insert / `user_id` change |
 | `set_comments_user_name` / `update_comments_user_name` | comments | Same for comments |
+| `propagate_user_name_trigger` | users | On rename, updates the cached `user_name` on the user's posts and comments |
 | `trg_set_comment_reply_to_type` | comments | Sets `reply_to_type` by looking up the target |
 | `trg_set_reaction_to_type` | reactions | Sets `to_type` by looking up the target |
 | `update_reaction_counts` | reactions | Incrementally adjusts `posts.like_count` / `dislike_count` (post targets only) |
 | `calculate_engagement_rate_trigger` | posts | Recomputes `engagement_rate` when counts change |
-| `update_user_stats_trigger` | posts | Refreshes `user_stats` for the author |
-| `create_user_stats_trigger` | users | Creates the `user_stats` row for a new user |
 | `notify_on_follow_trigger` | follows | Inserts a `follow` notification for the followee |
 | `notify_on_comment_trigger` | comments | Inserts a `comment` notification for the post owner (not for self-comments) |
 | `notify_on_reaction_trigger` | reactions | Inserts a `reaction` notification for the post owner (not for self-reactions, and at most one per actor and post) |
@@ -117,6 +133,25 @@ application any more; retained for compatibility.
 
 Because counters and notifications are produced by triggers, every write
 path (API, scripts, future jobs) stays consistent without application code.
+
+## Performance notes
+
+Measured on a seeded database (2k users, 50k posts, 100k comments, 180k
+reactions, 40k follows, 320k notifications) when migration
+`20261001300000` was written:
+
+| Operation | Before | After |
+|-----------|--------|-------|
+| `GET /posts/trending` query | 3.9 s | ≈ 60 ms (newest 5 000 posts scored, `float8` math) |
+| Un-like (reaction delete + notification withdraw) | 110 ms | 1.2 ms |
+| Like (reaction insert + triggers) | 27 ms | 6.6 ms |
+| Delete a post (cascades) | 116 ms | 1.0 ms |
+| Followers list | 7.7 ms | 1.0 ms |
+
+Deliberately *not* indexed: `posts.like_count` / `dislike_count` /
+`engagement_rate`. Those columns change on every reaction, and an index on
+them would turn each like into a non-HOT update; the app only sorts by
+`created_at`.
 
 ## Demo data
 

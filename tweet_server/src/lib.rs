@@ -5,6 +5,7 @@
 //! - `handlers`  — request handlers: auth checks, validation, response shaping.
 //! - `db`        — all SQL, one module per table.
 //! - `models`    — request/response and row types.
+//! - `middleware`— security headers, request ids, CORS.
 //! - `services`  — background work (AI title generation).
 
 pub mod auth;
@@ -13,6 +14,7 @@ pub mod db;
 pub mod errors;
 pub mod handlers;
 pub mod hash;
+pub mod middleware;
 pub mod models;
 pub mod response;
 pub mod routes;

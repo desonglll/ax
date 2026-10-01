@@ -75,7 +75,7 @@ onMounted(load);
       <article v-for="person in filtered" :key="person.id" class="ax-panel transition-shadow hover:shadow-sm" :class="{ 'opacity-60': !person.isActive }">
         <div class="card-body gap-3">
           <div class="flex items-start gap-3">
-            <RouterLink :to="`/profile/${person.id}`"><Avatar :name="person.userName" size="lg" /></RouterLink>
+            <RouterLink :to="`/profile/${person.id}`"><Avatar :name="person.userName" :picture="person.profilePicture" size="lg" /></RouterLink>
             <div class="min-w-0 flex-1">
               <RouterLink :to="`/profile/${person.id}`" class="font-bold hover:text-primary">{{ person.fullName || person.userName }}</RouterLink>
               <p class="ax-muted truncate text-sm">@{{ person.userName }}</p>

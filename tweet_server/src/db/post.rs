@@ -144,23 +144,41 @@ pub async fn feed(
 
 /// Trending: a Hacker-News style score, `popularity / (age_hours + 2)^1.5`,
 /// where popularity weights likes ×2, dislikes ×−1 and comments ×3.
+///
+/// Only the newest [`TRENDING_CANDIDATES`] top-level posts are scored: the age
+/// penalty makes anything older irrelevant in practice, and it keeps the
+/// query bounded (≈60 ms instead of ≈3.9 s on 50k posts). The arithmetic is
+/// done in `float8`; `extract(epoch …)` returns `numeric`, whose `power()`
+/// was most of the original cost.
 pub async fn trending(pool: &PgPool, limit: i64) -> Result<Vec<Post>, AxError> {
-    let posts = sqlx::query_as!(
-        Post,
-        "select p.* from posts p
-         where p.reply_to is null
+    // Runtime-checked like `list`: the macro cannot infer non-null columns
+    // through the CTE, and `r.*` keeps this in step with the `posts` table.
+    let posts = sqlx::query_as::<_, Post>(
+        "with recent as (
+           select * from posts
+           where reply_to is null
+           order by created_at desc
+           limit $2
+         )
+         select r.* from recent r
+         cross join lateral (
+           select count(*) as n from comments c where c.reply_to = r.id
+         ) c
          order by
-           (p.like_count * 2 - p.dislike_count
-             + 3 * (select count(*) from comments c where c.reply_to = p.id))::float8
-           / power(extract(epoch from (now() - p.created_at)) / 3600.0 + 2.0, 1.5) desc,
-           p.created_at desc
+           (r.like_count * 2 - r.dislike_count + 3 * c.n)::float8
+           / power(extract(epoch from (now() - r.created_at))::float8 / 3600.0 + 2.0, 1.5) desc,
+           r.created_at desc
          limit $1",
-        limit
     )
+    .bind(limit)
+    .bind(TRENDING_CANDIDATES)
     .fetch_all(pool)
     .await?;
     Ok(posts)
 }
+
+/// How many of the newest posts [`trending`] considers.
+pub const TRENDING_CANDIDATES: i64 = 5000;
 
 /// Updates the given fields and, when `attachments` is present, replaces the
 /// attachment set atomically.
@@ -213,8 +231,9 @@ pub async fn delete(pool: &PgPool, id: Uuid) -> Result<Post, AxError> {
         .map_err(not_found)
 }
 
-/// Attaches files, comment counts and the viewer's own reaction to a page of
-/// posts using three batched queries instead of one round-trip per post.
+/// Attaches files, comment counts, author avatars and the viewer's own
+/// reaction and bookmark to a page of posts using one batched query each
+/// instead of one round-trip per post.
 pub async fn hydrate(
     pool: &PgPool,
     posts: Vec<Post>,
@@ -239,6 +258,12 @@ pub async fn hydrate(
     .collect();
 
     let viewer_reactions = db::reaction::by_viewer(pool, viewer_id, "post", &ids).await?;
+    let viewer_bookmarks = db::bookmark::by_viewer(pool, viewer_id, &ids).await?;
+
+    let mut author_ids: Vec<i32> = posts.iter().map(|p| p.user_id).collect();
+    author_ids.sort_unstable();
+    author_ids.dedup();
+    let avatars = db::user::avatars(pool, &author_ids).await?;
 
     Ok(posts
         .into_iter()
@@ -246,6 +271,8 @@ pub async fn hydrate(
             attachments: attachments.remove(&post.id).unwrap_or_default(),
             comment_count: comment_counts.get(&post.id).copied().unwrap_or(0),
             viewer_reaction: viewer_reactions.get(&post.id).cloned(),
+            viewer_bookmarked: viewer_bookmarks.contains(&post.id),
+            author_avatar: avatars.get(&post.user_id).copied(),
             post,
         })
         .collect())

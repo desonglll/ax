@@ -1,0 +1,85 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select p.id, p.title, p.content, p.created_at, p.updated_at, p.user_id,\n                  p.reply_to, p.user_name, p.like_count, p.dislike_count, p.engagement_rate\n           from posts p, websearch_to_tsquery('simple', $1) q\n           where posts_search_document(p.title, p.content) @@ q\n              or p.title ilike $2\n              or p.content ilike $2\n           order by\n             ts_rank(posts_search_document(p.title, p.content), q)\n               + case when p.title ilike $2 then 1.0 else 0.0 end\n               + case when p.content ilike $2 then 0.25 else 0.0 end desc,\n             p.created_at desc,\n             p.id\n           limit $3 offset $4",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "title",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "content",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 4,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 5,
+        "name": "user_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "reply_to",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 7,
+        "name": "user_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 8,
+        "name": "like_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 9,
+        "name": "dislike_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 10,
+        "name": "engagement_rate",
+        "type_info": "Float8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "1d9773c5a41b97242f02490022032bd1827a027ea3d792208e4338213c4123fb"
+}

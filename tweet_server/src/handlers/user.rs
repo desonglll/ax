@@ -2,10 +2,10 @@ use actix_session::Session;
 use actix_web::{web, HttpResponse};
 
 use crate::{
-    auth::require_user,
+    auth::{require_user, viewer},
     db,
     errors::AxError,
-    models::user::{CreateUser, UpdateUser},
+    models::user::{validate_avatar, view_all, CreateUser, UpdateUser},
     response::{ok, ok_paged, PageQuery},
     state::AppState,
 };
@@ -18,26 +18,32 @@ pub async fn register(
     let mut payload = body.into_inner();
     payload.normalize()?;
     let user = db::user::insert(&state.db, payload).await?;
-    Ok(ok("Account created", user))
+    Ok(ok("Account created", user.private_view()))
 }
 
 /// `GET /api/users`
 pub async fn list(
+    session: Session,
     state: web::Data<AppState>,
     query: web::Query<PageQuery>,
 ) -> Result<HttpResponse, AxError> {
     let (limit, offset) = query.bounds(50);
     let (users, pagination) = db::user::list(&state.db, limit, offset).await?;
-    Ok(ok_paged("OK", users, pagination))
+    Ok(ok_paged(
+        "OK",
+        view_all(users, viewer(&session)),
+        pagination,
+    ))
 }
 
 /// `GET /api/users/{id}`
 pub async fn get(
+    session: Session,
     state: web::Data<AppState>,
     path: web::Path<i32>,
 ) -> Result<HttpResponse, AxError> {
     let user = db::user::find_by_id(&state.db, path.into_inner()).await?;
-    Ok(ok("OK", user))
+    Ok(ok("OK", user.view(viewer(&session))))
 }
 
 /// `PUT /api/users/{id}` — self or admin. Only admins may change
@@ -58,8 +64,17 @@ pub async fn update(
         payload.is_active = None;
         payload.is_admin = None;
     }
+    // The avatar must be the profile owner's own public image, even when an
+    // admin is doing the editing.
+    if let Some(Some(file_id)) = payload.profile_picture {
+        let file = db::file::find(&state.db, file_id).await?;
+        validate_avatar(&file, target_id)?;
+    }
     let user = db::user::update(&state.db, target_id, payload).await?;
-    Ok(ok("Profile updated", user))
+    Ok(ok(
+        "Profile updated",
+        user.view(Some((current.id, current.is_admin))),
+    ))
 }
 
 /// `DELETE /api/users/{id}` — self or admin.
@@ -75,5 +90,8 @@ pub async fn remove(
     if current.id == target_id {
         session.purge();
     }
-    Ok(ok("Account deleted", user))
+    Ok(ok(
+        "Account deleted",
+        user.view(Some((current.id, current.is_admin))),
+    ))
 }

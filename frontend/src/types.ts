@@ -21,7 +21,8 @@ export interface User {
   lastLogin?: string;
   isActive: boolean;
   isAdmin: boolean;
-  profilePicture?: string;
+  profilePicture?: string | null;
+  bio?: string | null;
 }
 
 export interface FileRecord {
@@ -59,6 +60,14 @@ export interface Post {
   attachments: FileRecord[];
   commentCount: number;
   viewerReaction: ReactionKind | null;
+  viewerBookmarked: boolean;
+  /** File id of the author's avatar, if they set one. */
+  authorAvatar?: string | null;
+}
+
+export interface BookmarkState {
+  postId: string;
+  bookmarked: boolean;
 }
 
 export interface Comment {
@@ -73,6 +82,7 @@ export interface Comment {
   likeCount: number;
   dislikeCount: number;
   viewerReaction: ReactionKind | null;
+  authorAvatar?: string | null;
 }
 
 export interface Reaction {

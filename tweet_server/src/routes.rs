@@ -3,13 +3,15 @@
 use actix_web::web::{self, delete, get, post, put};
 
 use crate::handlers::{
-    auth, comment, file, follow, notification, post as posts, reaction, upload, user,
+    auth, bookmark, comment, file, follow, notification, post as posts, reaction, search, upload,
+    user,
 };
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/api")
             .route("/health", get().to(health))
+            .route("/health/ready", get().to(ready))
             .service(
                 web::scope("/auth")
                     .route("/login", post().to(auth::login))
@@ -37,7 +39,15 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .route("/trending", get().to(posts::trending))
                     .route("/{id}", get().to(posts::get))
                     .route("/{id}", put().to(posts::update))
-                    .route("/{id}", delete().to(posts::remove)),
+                    .route("/{id}", delete().to(posts::remove))
+                    .route("/{id}/bookmark", put().to(bookmark::add))
+                    .route("/{id}/bookmark", delete().to(bookmark::remove)),
+            )
+            .route("/bookmarks", get().to(bookmark::list))
+            .service(
+                web::scope("/search")
+                    .route("/posts", get().to(search::posts))
+                    .route("/users", get().to(search::users)),
             )
             .service(
                 web::scope("/comments")
@@ -69,4 +79,15 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
 
 async fn health() -> actix_web::HttpResponse {
     crate::response::ok_message("ok")
+}
+
+/// Readiness: also checks that the database answers (503 when it does not).
+async fn ready(
+    state: web::Data<crate::state::AppState>,
+) -> Result<actix_web::HttpResponse, crate::errors::AxError> {
+    sqlx::query("select 1")
+        .execute(&state.db)
+        .await
+        .map_err(|e| crate::errors::AxError::Unavailable(format!("database: {e}")))?;
+    Ok(crate::response::ok_message("ok"))
 }

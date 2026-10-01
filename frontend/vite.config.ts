@@ -19,8 +19,30 @@ const backendTarget = () => {
   return `http://127.0.0.1:${port}`;
 };
 
+/** Long-lived vendor chunks: app deploys don't invalidate the framework or Markdown caches. */
+const VENDOR_CHUNKS: [name: string, test: RegExp][] = [
+  ["vue", /node_modules[\\/](@vue|vue|vue-router|pinia|vue-i18n|@intlify)[\\/]/],
+  ["markdown", /node_modules[\\/](markdown-it|entities|linkify-it|mdurl|punycode\.js|uc\.micro|dompurify)[\\/]/],
+];
+
 export default defineConfig({
   plugins: [vue(), tailwindcss()],
+  define: {
+    // Composition API only: drop vue-i18n's legacy API, global components and prod devtools hooks.
+    __VUE_OPTIONS_API__: "false",
+    __VUE_I18N_FULL_INSTALL__: "false",
+    __VUE_I18N_LEGACY_API__: "false",
+    __INTLIFY_PROD_DEVTOOLS__: "false",
+  },
+  build: {
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: VENDOR_CHUNKS.map(([name, test]) => ({ name, test })),
+        },
+      },
+    },
+  },
   server: {
     host: "0.0.0.0",
     proxy: {

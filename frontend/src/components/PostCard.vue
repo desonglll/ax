@@ -13,10 +13,11 @@ import { usePostStore } from "../stores/posts";
 import { useToastStore } from "../stores/toast";
 import type { FileRecord, Post } from "../types";
 import Avatar from "./Avatar.vue";
+import BookmarkButton from "./BookmarkButton.vue";
 import FilePreview from "./FilePreview.vue";
 import MarkdownBody from "./MarkdownBody.vue";
-import MarkdownEditor from "./MarkdownEditor.vue";
 import ReactionBar from "./ReactionBar.vue";
+import { loadMarkdownEditor, MarkdownEditor } from "../lib/editor";
 
 /**
  * In lists the whole card opens the post (except its links, buttons, images
@@ -38,6 +39,7 @@ const view = computed(() => posts.view(props.post));
 const likes = computed({ get: () => view.value.likeCount, set: likeCount => posts.patch(props.post.id, { likeCount }) });
 const dislikes = computed({ get: () => view.value.dislikeCount, set: dislikeCount => posts.patch(props.post.id, { dislikeCount }) });
 const mine = computed({ get: () => view.value.viewerReaction, set: viewerReaction => posts.patch(props.post.id, { viewerReaction }) });
+const bookmarked = computed({ get: () => Boolean(view.value.viewerBookmarked), set: viewerBookmarked => posts.patch(props.post.id, { viewerBookmarked }) });
 
 const editing = ref(false);
 const busy = ref(false);
@@ -69,8 +71,9 @@ const onComment = () => {
   else router.push(`${link.value}#comments`);
 };
 
-const startEdit = () => {
+const startEdit = async () => {
   (document.activeElement as HTMLElement | null)?.blur();
+  await loadMarkdownEditor();
   editTitle.value = view.value.title;
   editContent.value = view.value.content;
   editAttachments.value = [...(view.value.attachments || [])];
@@ -125,10 +128,10 @@ const remove = async () => {
   >
     <div class="card-body gap-4 p-4 md:p-5">
       <header class="flex items-start gap-3">
-        <RouterLink :to="`/profile/${view.userId}`"><Avatar :name="view.userName" /></RouterLink>
+        <RouterLink :to="`/profile/${view.userId}`"><Avatar :name="view.userName" :picture="view.authorAvatar" /></RouterLink>
         <div class="min-w-0 flex-1">
           <RouterLink :to="`/profile/${view.userId}`" class="font-bold hover:text-primary">{{ view.userName }}</RouterLink>
-          <div class="text-xs text-base-content/50">
+          <div class="text-xs text-base-content/65">
             <RouterLink v-if="!detailed" :to="link" class="hover:underline" :title="fullDate(view.createdAt)">{{ timeAgo(view.createdAt) }}</RouterLink>
             <span v-else :title="fullDate(view.createdAt)">{{ fullDate(view.createdAt) }}</span>
             <span v-if="edited" :title="fullDate(view.updatedAt)"> · {{ t("common.edited") }}</span>
@@ -168,6 +171,7 @@ const remove = async () => {
       <footer class="flex flex-wrap items-center gap-1 border-t border-base-300 pt-3">
         <ReactionBar v-model:likes="likes" v-model:dislikes="dislikes" v-model:mine="mine" :target-id="post.id" target-type="post" />
         <button class="btn btn-ghost btn-sm" :aria-label="t('post.comments')" @click="onComment"><MessageCircle :size="17" /> {{ view.commentCount }}</button>
+        <BookmarkButton v-model="bookmarked" :post-id="post.id" class="ml-auto" />
       </footer>
     </div>
   </article>

@@ -2,10 +2,12 @@
 //! returns `Result<_, AxError>`. All SQL is parameterized and checked at
 //! compile time by SQLx (see `.sqlx/` for the offline cache).
 
+pub mod bookmark;
 pub mod comment;
 pub mod file;
 pub mod follow;
 pub mod notification;
 pub mod post;
 pub mod reaction;
+pub mod search;
 pub mod user;

@@ -16,12 +16,15 @@ md.renderer.rules.link_open = (tokens, idx, options, env, self) => {
 
 md.renderer.rules.image = (tokens, idx, options, env, self) => {
   tokens[idx].attrSet("loading", "lazy");
+  tokens[idx].attrSet("decoding", "async");
+  // Focusable so keyboard users can open it in the viewer (see MarkdownBody).
+  tokens[idx].attrSet("tabindex", "0");
   return self.renderToken(tokens, idx, options);
 };
 
 /** Markdown → sanitized HTML. */
 export const renderMarkdown = (source: string) =>
-  DOMPurify.sanitize(md.render(source), { ADD_ATTR: ["target", "loading"] });
+  DOMPurify.sanitize(md.render(source), { ADD_ATTR: ["target", "loading", "decoding", "tabindex"] });
 
 /** Plain-text excerpt for previews and titles. */
 export const excerpt = (source: string, max = 140) => {
