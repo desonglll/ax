@@ -6,8 +6,9 @@
 --     the title is weighted above the body for ranking.
 --   * substring: `title ILIKE '%q%' OR content ILIKE '%q%'` — catches partial
 --     words and CJK text, which the 'simple' parser does not split into words.
--- Both sides are served by GIN indexes (the trigram ones need a query of at
--- least three characters; shorter ones fall back to a scan, which is fine).
+-- Both sides are served by GIN indexes (`content` already has its trigram
+-- index, idx_posts_content_trgm; trigram lookups need a query of at least
+-- three characters, shorter ones fall back to a scan, which is fine).
 --
 -- The 'simple' configuration is used rather than 'english' so non-English
 -- posts are not mangled by an English stemmer.
@@ -29,8 +30,6 @@ CREATE INDEX IF NOT EXISTS posts_search_document_idx
     ON posts USING gin (posts_search_document(title, content));
 CREATE INDEX IF NOT EXISTS posts_title_trgm_idx
     ON posts USING gin (title gin_trgm_ops);
-CREATE INDEX IF NOT EXISTS posts_content_trgm_idx
-    ON posts USING gin (content gin_trgm_ops);
 
 CREATE INDEX IF NOT EXISTS users_user_name_trgm_idx
     ON users USING gin (user_name gin_trgm_ops);
