@@ -3,7 +3,7 @@
 use actix_web::web::{self, delete, get, post, put};
 
 use crate::handlers::{
-    auth, comment, file, follow, notification, post as posts, reaction, upload, user,
+    auth, comment, file, follow, notification, post as posts, reaction, search, upload, user,
 };
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
@@ -38,6 +38,11 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .route("/{id}", get().to(posts::get))
                     .route("/{id}", put().to(posts::update))
                     .route("/{id}", delete().to(posts::remove)),
+            )
+            .service(
+                web::scope("/search")
+                    .route("/posts", get().to(search::posts))
+                    .route("/users", get().to(search::users)),
             )
             .service(
                 web::scope("/comments")
