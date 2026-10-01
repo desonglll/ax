@@ -49,8 +49,8 @@ on the workstream branch.
 
 - [x] PostgreSQL 17 compose + `just run` offline compile (`4b41276`)
 - [ ] Search
-- [ ] Bookmarks + profile editing
+- [x] Bookmarks + profile editing (merged)
 - [ ] Backend performance + hardening
 - [ ] Frontend performance + a11y
-- [ ] Infra / docs
+- [x] Infra / docs
 - [ ] Integration: merge all into `dev`, full `just ci`, smoke test on a fresh DB
