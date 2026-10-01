@@ -6,7 +6,7 @@ import Lightbox from "./components/Lightbox.vue";
 import ToastHost from "./components/ToastHost.vue";
 
 /** List pages stay mounted so going back restores their content and scroll position. */
-const keepAlive = ["HomeView", "TrendingView", "PeopleView", "ProfileView", "NotificationsView"];
+const keepAlive = ["HomeView", "TrendingView", "PeopleView", "ProfileView", "NotificationsView", "SavedView"];
 </script>
 
 <template>

@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
-import { Bell, Flame, Home, Languages, LogIn, LogOut, Menu, Moon, Search, Sun, UsersRound } from "lucide-vue-next";
+import { Bell, Bookmark, Flame, Home, Languages, LogIn, LogOut, Menu, Moon, Search, Sun, UsersRound } from "lucide-vue-next";
 import { locales, setLocale, type Locale } from "../i18n";
 import { pageTitle } from "../lib/title";
 import { useAuthStore } from "../stores/auth";
@@ -31,7 +31,12 @@ const nav = computed(() => [
   { to: "/", label: t("nav.home"), icon: Home },
   { to: "/trending", label: t("nav.trending"), icon: Flame },
   { to: "/people", label: t("nav.people"), icon: UsersRound },
-  ...(auth.authenticated ? [{ to: "/notifications", label: t("nav.notifications"), icon: Bell, badge: notifications.unread }] : []),
+  ...(auth.authenticated
+    ? [
+        { to: "/notifications", label: t("nav.notifications"), icon: Bell, badge: notifications.unread },
+        { to: "/saved", label: t("nav.saved"), icon: Bookmark },
+      ]
+    : []),
 ]);
 
 const applyTheme = (isDark: boolean) => {
@@ -49,7 +54,7 @@ const authQuery = computed(() => (route.meta.guest ? route.query : { redirect: r
 const blur = () => (document.activeElement as HTMLElement | null)?.blur();
 const searchInput = ref<HTMLInputElement>();
 
-const titles: Record<string, string> = { home: "nav.home", trending: "nav.trending", people: "nav.people", notifications: "nav.notifications", profile: "nav.profile", login: "nav.signIn", register: "nav.register" };
+const titles: Record<string, string> = { home: "nav.home", trending: "nav.trending", people: "nav.people", notifications: "nav.notifications", saved: "nav.saved", profile: "nav.profile", login: "nav.signIn", register: "nav.register" };
 watch([() => route.name, locale, pageTitle, () => notifications.unread], () => {
   const key = titles[String(route.name)];
   const page = pageTitle.value || (key ? t(key) : "");
@@ -76,6 +81,9 @@ const search = () => {
   router.push({ path: "/", query: value ? { search: value } : {} });
 };
 
+/** Skip link target: move keyboard focus past the navigation. */
+const skipToMain = () => document.getElementById("main")?.focus();
+
 const logout = async () => {
   await auth.logout();
   toast.show(t("auth.signedOut"), "success");
@@ -84,6 +92,7 @@ const logout = async () => {
 </script>
 
 <template>
+  <a href="#main" class="ax-skip btn btn-primary btn-sm" @click.prevent="skipToMain">{{ t("common.skipToContent") }}</a>
   <div class="drawer lg:drawer-open">
     <input id="ax-drawer" v-model="drawer" type="checkbox" class="drawer-toggle" />
     <div class="drawer-content min-h-screen">
@@ -95,15 +104,15 @@ const logout = async () => {
         <div class="navbar-center hidden w-full max-w-xl md:flex">
           <form class="join w-full" role="search" @submit.prevent="search">
             <label class="input join-item flex w-full items-center gap-2">
-              <Search :size="17" class="text-base-content/45" />
-              <input ref="searchInput" v-model="query" type="search" class="grow" :placeholder="t('nav.search')" />
+              <Search :size="17" class="text-base-content/45" aria-hidden="true" />
+              <input ref="searchInput" v-model="query" type="search" class="grow" :placeholder="t('nav.search')" :aria-label="t('nav.search')" />
               <kbd class="kbd kbd-xs hidden lg:inline-flex">/</kbd>
             </label>
             <button class="btn join-item" type="submit">{{ t("nav.searchButton") }}</button>
           </form>
         </div>
         <div class="navbar-end gap-1">
-          <button class="btn btn-ghost btn-circle md:hidden" :aria-label="t('nav.openSearch')" @click="mobileSearch = !mobileSearch"><Search :size="19" /></button>
+          <button class="btn btn-ghost btn-circle md:hidden" :aria-label="t('nav.openSearch')" :aria-expanded="mobileSearch" @click="mobileSearch = !mobileSearch"><Search :size="19" /></button>
           <div class="dropdown dropdown-end hidden md:block">
             <button tabindex="0" class="btn btn-ghost btn-circle" :aria-label="t('nav.language')"><Languages :size="19" /></button>
             <ul tabindex="0" class="dropdown-content menu z-50 mt-2 w-40 rounded-box border border-base-300 bg-base-100 p-2 shadow-xl">
@@ -114,16 +123,16 @@ const logout = async () => {
             <Transition name="spin" mode="out-in"><Sun v-if="dark" :size="19" /><Moon v-else :size="19" /></Transition>
           </button>
           <NotificationBell v-if="auth.authenticated" />
-          <RouterLink v-if="auth.user" :to="`/profile/${auth.user.id}`" class="btn btn-ghost btn-circle" :aria-label="t('nav.yourProfile')"><Avatar :name="auth.user.userName" size="sm" tone="primary" /></RouterLink>
+          <RouterLink v-if="auth.user" :to="`/profile/${auth.user.id}`" class="btn btn-ghost btn-circle" :aria-label="t('nav.yourProfile')"><Avatar :name="auth.user.userName" :picture="auth.user.profilePicture" size="sm" tone="primary" /></RouterLink>
           <RouterLink v-else :to="{ name: 'login', query: authQuery }" class="btn btn-primary btn-sm"><LogIn :size="16" /> {{ t("nav.signIn") }}</RouterLink>
         </div>
         <Transition name="collapse">
           <form v-if="mobileSearch" class="absolute inset-x-0 top-full border-b border-base-300 bg-base-100 p-3 md:hidden" role="search" @submit.prevent="search">
-            <label class="input flex w-full items-center gap-2"><Search :size="16" class="text-base-content/45" /><input v-model="query" type="search" class="grow" :placeholder="t('nav.search')" autofocus /></label>
+            <label class="input flex w-full items-center gap-2"><Search :size="16" class="text-base-content/45" /><input v-model="query" type="search" class="grow" :placeholder="t('nav.search')" :aria-label="t('nav.search')" autofocus /></label>
           </form>
         </Transition>
       </header>
-      <main class="pb-24 pt-5 md:py-8"><slot /></main>
+      <main id="main" tabindex="-1" class="pb-24 pt-5 outline-none md:py-8"><slot /></main>
       <BottomNav />
       <ScrollTop />
     </div>
@@ -132,7 +141,7 @@ const logout = async () => {
       <label for="ax-drawer" class="drawer-overlay" :aria-label="t('nav.closeMenu')"></label>
       <div class="flex min-h-full w-64 flex-col bg-base-100 p-4">
         <RouterLink to="/" class="mb-6 px-2 text-2xl font-bold" @click="drawer = false">{{ t("app.name") }}</RouterLink>
-        <ul class="menu w-full gap-1 p-0">
+        <ul class="menu w-full gap-1 p-0" :aria-label="t('nav.main')">
           <li v-for="item in nav" :key="item.to">
             <RouterLink :to="item.to" active-class="menu-active" @click="drawer = false">
               <component :is="item.icon" :size="19" />
@@ -149,7 +158,7 @@ const logout = async () => {
             <button class="btn btn-ghost btn-sm btn-square" :aria-label="dark ? t('nav.lightTheme') : t('nav.darkTheme')" @click="applyTheme(!dark)"><Sun v-if="dark" :size="18" /><Moon v-else :size="18" /></button>
           </div>
           <RouterLink v-if="auth.user" :to="`/profile/${auth.user.id}`" class="flex items-center gap-3 rounded-box p-2 hover:bg-base-200" @click="drawer = false">
-            <Avatar :name="auth.user.userName" size="sm" />
+            <Avatar :name="auth.user.userName" :picture="auth.user.profilePicture" size="sm" />
             <div class="min-w-0 flex-1"><strong class="block truncate text-sm">{{ auth.user.userName }}</strong><small class="ax-muted">{{ auth.user.isAdmin ? t("nav.admin") : t("nav.member") }}</small></div>
           </RouterLink>
           <button v-if="auth.user" class="btn btn-ghost btn-block justify-start" @click="logout"><LogOut :size="18" /> {{ t("nav.signOut") }}</button>

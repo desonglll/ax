@@ -11,7 +11,7 @@ defineProps<{ title: string; icon?: Component; to?: string; action?: string }>()
       <component :is="icon" v-if="icon" :size="16" class="text-primary" />
       <h2 class="text-sm font-semibold">{{ title }}</h2>
       <slot name="action">
-        <RouterLink v-if="to && action" :to="to" class="link link-hover ml-auto text-xs text-base-content/60">{{ action }}</RouterLink>
+        <RouterLink v-if="to && action" :to="to" class="link link-hover ml-auto text-xs text-base-content/65">{{ action }}</RouterLink>
       </slot>
     </header>
     <div class="card-body gap-1 p-3">

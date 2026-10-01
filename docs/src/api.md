@@ -41,7 +41,7 @@ Deactivated accounts receive 403 on login.
 | POST   | `/users`                     | –           | `{ userName, email, password, fullName?, phone? }` | `User` |
 | GET    | `/users`                     | –           | `limit`, `offset`                                 | `User[]` |
 | GET    | `/users/{id}`                | –           |                                                   | `User` |
-| PUT    | `/users/{id}`                | self/admin  | any of `userName, email, password, fullName, phone`; admins also `isActive, isAdmin` | `User` |
+| PUT    | `/users/{id}`                | self/admin  | any of `userName, email, password, fullName, phone, bio, profilePicture`; admins also `isActive, isAdmin` | `User` |
 | DELETE | `/users/{id}`                | self/admin  |                                                   | `User` |
 | POST   | `/users/{id}/follow`         | ✓           |                                                   | `FollowStats` |
 | DELETE | `/users/{id}/follow`         | ✓           |                                                   | `FollowStats` |
@@ -50,7 +50,13 @@ Deactivated accounts receive 403 on login.
 | GET    | `/users/{id}/following`      | –           | `limit`, `offset`                                 | `User[]` |
 
 Validation: `userName` 3–32 chars, `password` 8–128 chars, `email` must
-look like an address. `passwordHash` is never returned.
+look like an address, `fullName` ≤ 64 chars, `bio` ≤ 280 chars. An empty
+`fullName` or `bio` clears it. `profilePicture` is a file id (the avatar) and
+must be a public image uploaded by the profile's owner; `null` removes it,
+leaving it out keeps the current one. `passwordHash` is never returned.
+
+`User` fields: `id, userName, email, fullName, phone, bio, profilePicture,
+createdAt, updatedAt, lastLogin, isActive, isAdmin`.
 
 ## Posts
 
@@ -63,13 +69,25 @@ look like an address. `passwordHash` is never returned.
 | GET    | `/posts/{id}`      | –           |                                                                              | `Post` |
 | PUT    | `/posts/{id}`      | owner/admin | `{ content?, title?, attachments? }` (attachments replaces the whole set)    | `Post` |
 | DELETE | `/posts/{id}`      | owner/admin |                                                                              | `Post` |
+| PUT    | `/posts/{id}/bookmark` | ✓       |                                                                              | `{ postId, bookmarked: true }` (idempotent; 404 for unknown posts) |
+| DELETE | `/posts/{id}/bookmark` | ✓       |                                                                              | `{ postId, bookmarked: false }` (idempotent) |
 
 `content` is Markdown. `search` matches title and content (case-insensitive). A post created
 without a title gets an AI-generated one later when `OPENAI_API_KEY` is set.
 
 `Post` fields: `id, title, content, createdAt, updatedAt, userId, userName,
 likeCount, dislikeCount, engagementRate, attachments: File[], commentCount,
-viewerReaction: "Like" | "Dislike" | null`.
+viewerReaction: "Like" | "Dislike" | null, viewerBookmarked, authorAvatar`.
+`viewerBookmarked` is always `false` for guests; `authorAvatar` is the
+author's `profilePicture` (or `null`).
+
+## Bookmarks
+
+| Method | Path          | Auth | Query             | Returns |
+|--------|---------------|------|-------------------|---------|
+| GET    | `/bookmarks`  | ✓    | `limit`, `offset` | `Post[]` the caller saved, most recently saved first |
+
+Save and unsave with `PUT` / `DELETE /posts/{id}/bookmark` (above).
 
 ## Comments
 
@@ -80,7 +98,7 @@ viewerReaction: "Like" | "Dislike" | null`.
 | DELETE | `/comments/{id}`  | owner/admin |                                                | `Comment` |
 
 `Comment` fields: `id, content, replyTo, userId, userName, createdAt,
-updatedAt, attachments, likeCount, dislikeCount, viewerReaction`.
+updatedAt, attachments, likeCount, dislikeCount, viewerReaction, authorAvatar`.
 
 ## Reactions
 

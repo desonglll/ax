@@ -70,7 +70,7 @@ const readAll = async () => {
           <button class="btn btn-ghost btn-xs" :disabled="!store.unread" @click="readAll"><CheckCheck :size="15" /> {{ t("notifications.readAll") }}</button>
         </div>
         <div v-if="loading && !items.length" class="grid place-items-center py-8"><LoaderCircle class="animate-spin text-base-content/40" /></div>
-        <div v-else-if="error && !items.length" class="flex flex-col items-center gap-2 py-6 text-sm text-base-content/60">
+        <div v-else-if="error && !items.length" class="flex flex-col items-center gap-2 py-6 text-sm text-base-content/65">
           <span>{{ error }}</span>
           <button class="btn btn-ghost btn-xs" @click="load">{{ t("common.retry") }}</button>
         </div>
@@ -79,11 +79,11 @@ const readAll = async () => {
             <span class="grid size-8 shrink-0 place-items-center rounded-full" :class="item.isRead ? 'bg-base-200 text-base-content/60' : 'bg-primary text-primary-content'"><component :is="icons[item.kind]" :size="15" /></span>
             <span class="min-w-0 flex-1">
               <span class="block text-sm"><strong>{{ item.actorName || t("notifications.user", { id: item.actorId }) }}</strong> {{ t(`notifications.${item.kind}`) }}</span>
-              <small class="mt-0.5 block text-base-content/50">{{ timeAgo(item.createdAt) }}</small>
+              <small class="mt-0.5 block text-base-content/65">{{ timeAgo(item.createdAt) }}</small>
             </span>
             <span v-if="!item.isRead" class="status status-primary mt-2"></span>
           </button>
-          <p v-if="!items.length" class="py-8 text-center text-sm text-base-content/55">{{ t("notifications.empty") }}</p>
+          <p v-if="!items.length" class="py-8 text-center text-sm text-base-content/65">{{ t("notifications.empty") }}</p>
         </template>
         <RouterLink to="/notifications" class="btn btn-ghost btn-sm mt-1" @click="close">{{ t("notifications.viewAll") }}</RouterLink>
       </div>

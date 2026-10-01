@@ -115,7 +115,7 @@ onMounted(() => { feed.reset(); loadSidebar(); });
     <aside class="min-w-0 space-y-4">
       <SectionCard v-if="trending.length" :title="t('home.trending')" :icon="Flame" to="/trending" :action="t('home.seeAll')">
         <RouterLink v-for="(post, index) in trending" :key="post.id" :to="`/posts/${post.id}`" class="flex gap-3 rounded-box p-2 transition hover:bg-base-200">
-          <span class="w-4 shrink-0 pt-0.5 text-sm font-bold text-base-content/40">{{ index + 1 }}</span>
+          <span class="w-4 shrink-0 pt-0.5 text-sm font-bold text-base-content/65">{{ index + 1 }}</span>
           <span class="min-w-0">
             <span class="line-clamp-2 text-sm">{{ post.title || excerpt(post.content, 80) }}</span>
             <small class="ax-muted block truncate">{{ post.userName }} · {{ t("home.likesComments", { likes: post.likeCount, comments: post.commentCount }) }}</small>

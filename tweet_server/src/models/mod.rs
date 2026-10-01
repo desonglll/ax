@@ -1,3 +1,4 @@
+pub mod bookmark;
 pub mod comment;
 pub mod file;
 pub mod follow;

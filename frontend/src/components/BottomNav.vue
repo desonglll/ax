@@ -26,7 +26,7 @@ const items = computed(() => [
 </script>
 
 <template>
-  <nav class="dock dock-sm border-t border-base-300 bg-base-100/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden" aria-label="Primary">
+  <nav class="dock dock-sm border-t border-base-300 bg-base-100/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden" :aria-label="t('nav.main')">
     <RouterLink v-for="item in items" :key="item.label" :to="item.to" :class="{ 'dock-active': item.active }">
       <span class="indicator">
         <component :is="item.icon" :size="20" />
