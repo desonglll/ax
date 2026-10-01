@@ -3,7 +3,7 @@
 # Host port 55432 (not 5432) so it does not collide with other local Postgres instances.
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:17
     restart: unless-stopped
     shm_size: 128mb
     ports:

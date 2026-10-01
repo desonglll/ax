@@ -13,9 +13,10 @@ db:
 db-down:
     docker compose down
 
-# Run the backend (migrations are applied automatically on startup)
+# Run the backend (migrations are applied automatically on startup).
+# Compiles against the committed .sqlx cache, so an empty database is fine.
 run:
-    cargo run --manifest-path tweet_server/Cargo.toml
+    SQLX_OFFLINE=true cargo run --manifest-path tweet_server/Cargo.toml
 
 # Type-check the backend without a database
 check:

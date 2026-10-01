@@ -3,7 +3,7 @@
 # then open http://localhost:8080
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:17
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
