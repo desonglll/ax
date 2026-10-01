@@ -28,7 +28,7 @@ pub async fn login(
     store_user(&session, &user)?;
     db::user::touch_last_login(&state.db, user.id).await?;
     tracing::info!(user = %user.user_name, "signed in");
-    Ok(ok("Signed in", user))
+    Ok(ok("Signed in", user.private_view()))
 }
 
 /// `POST /api/auth/logout`
@@ -42,5 +42,5 @@ pub async fn logout(session: Session) -> HttpResponse {
 pub async fn me(session: Session, state: web::Data<AppState>) -> Result<HttpResponse, AxError> {
     let current = require_user(&session)?;
     let user = db::user::find_by_id(&state.db, current.id).await?;
-    Ok(ok("OK", user))
+    Ok(ok("OK", user.private_view()))
 }

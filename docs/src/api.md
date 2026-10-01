@@ -19,8 +19,17 @@ status and the same shape with `"body": null`:
 | 401    | Not signed in                                              |
 | 403    | Signed in but not allowed (not owner / not admin)          |
 | 404    | Resource not found                                         |
+| 413    | Upload larger than `MAX_UPLOAD_MB`                         |
 | 429    | Rate limit exceeded on a write request (plain-text body, `Retry-After` header) |
 | 500    | Unexpected server error                                    |
+| 503    | Database unavailable / connection pool exhausted — retry   |
+
+Every response carries an `X-Request-Id` (an incoming one of up to 64
+`[A-Za-z0-9._-]` characters is kept, so ids can be traced through a proxy;
+it is also in the access log), plus `X-Content-Type-Options: nosniff`,
+`X-Frame-Options: DENY`, `Referrer-Policy` and a deny-all
+`Content-Security-Policy`. JSON responses are compressed (gzip, brotli or
+zstd) when the client accepts it; file bodies never are.
 
 List endpoints accept `limit` (1–100) and `offset` (≥ 0).
 
@@ -56,7 +65,11 @@ must be a public image uploaded by the profile's owner; `null` removes it,
 leaving it out keeps the current one. `passwordHash` is never returned.
 
 `User` fields: `id, userName, email, fullName, phone, bio, profilePicture,
-createdAt, updatedAt, lastLogin, isActive, isAdmin`.
+createdAt, updatedAt, lastLogin, isActive, isAdmin`. `email`, `phone` and
+`lastLogin` are only present when the viewer is that user or an admin
+(sign-in, `/auth/me`, registration and profile edits always include them);
+lists, profiles, follower lists and people search omit them for everyone
+else.
 
 ## Posts
 
@@ -147,13 +160,20 @@ reactions to your posts (never for your own actions).
 |--------|-------------------------|---------------------|----------------------------------------------------------|---------|
 | GET    | `/files`                | depends on scope    | `scope=public` (default, anonymous) / `mine` (✓) / `all` (admin) | `File[]` |
 | POST   | `/files`                | ✓                   | multipart: one or more `files` parts, optional `description`; query `public=true|false` (default true) | `File[]` |
-| GET    | `/files/{id}/download`  | public or owner/admin | `If-None-Match` honoured                              | file bytes, `Content-Disposition: attachment`, `Cache-Control: immutable` (public) + `ETag` |
-| GET    | `/files/{id}/stream`    | public or owner/admin | `Range` header supported (max 4 MiB per request)       | 206 partial content |
+| GET    | `/files/{id}/download`  | public or owner/admin | `If-None-Match` honoured (304)                        | file bytes, `Content-Disposition: attachment`, `Cache-Control: immutable` (public) + `ETag` |
+| GET    | `/files/{id}/stream`    | public or owner/admin | `Range` header supported incl. `bytes=-N` (max 4 MiB per request); `If-None-Match` honoured | 206 partial content |
 
-Uploading a file whose SHA-256 matches an earlier upload soft-deletes the
-older record. Attach files to a post or comment by passing their ids in
+Uploading a file whose SHA-256 matches one of *your own* earlier uploads
+soft-deletes that older record, unless it is attached to a post or comment
+or used as an avatar; other users' files are never touched. One upload
+request may carry at most `MAX_UPLOAD_MB` (default 300) in total and a
+`description` of at most 4 KB (413 beyond either). Attach files to a post or comment by passing their ids in
 `attachments`; only the uploader's own files can be attached.
 
 ## Health
 
-`GET /api/health` → `{ "code": 200, "message": "ok" }`.
+`GET /api/health` → `{ "code": 200, "message": "ok" }` (liveness: the process
+answers).
+
+`GET /api/health/ready` → the same, but only after a `select 1` round-trip to
+PostgreSQL succeeds; `503` otherwise (readiness probes, load balancers).

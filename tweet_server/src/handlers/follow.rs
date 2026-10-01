@@ -2,9 +2,10 @@ use actix_session::Session;
 use actix_web::{web, HttpResponse};
 
 use crate::{
-    auth::{current_user, require_user},
+    auth::{current_user, require_user, viewer},
     db,
     errors::AxError,
+    models::user::view_all,
     response::{ok, ok_paged, PageQuery},
     state::AppState,
 };
@@ -53,6 +54,7 @@ pub async fn stats(
 
 /// `GET /api/users/{id}/followers`
 pub async fn followers(
+    session: Session,
     state: web::Data<AppState>,
     path: web::Path<i32>,
     query: web::Query<PageQuery>,
@@ -60,11 +62,16 @@ pub async fn followers(
     let (limit, offset) = query.bounds(20);
     let (users, pagination) =
         db::follow::followers(&state.db, path.into_inner(), limit, offset).await?;
-    Ok(ok_paged("OK", users, pagination))
+    Ok(ok_paged(
+        "OK",
+        view_all(users, viewer(&session)),
+        pagination,
+    ))
 }
 
 /// `GET /api/users/{id}/following`
 pub async fn following(
+    session: Session,
     state: web::Data<AppState>,
     path: web::Path<i32>,
     query: web::Query<PageQuery>,
@@ -72,5 +79,9 @@ pub async fn following(
     let (limit, offset) = query.bounds(20);
     let (users, pagination) =
         db::follow::following(&state.db, path.into_inner(), limit, offset).await?;
-    Ok(ok_paged("OK", users, pagination))
+    Ok(ok_paged(
+        "OK",
+        view_all(users, viewer(&session)),
+        pagination,
+    ))
 }

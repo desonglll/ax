@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update files set is_deleted = true\n         where checksum = $1 and user_id = $2 and is_deleted = false\n           and post_id is null and comment_id is null\n           and not exists (select 1 from users u where u.profile_picture = files.id)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "7ae61539eca11a4f2323679d1ce75ea2cdc8a545676e3bfd82f750fa961c6aa5"
+}

@@ -5,6 +5,13 @@ This document logs the development history and version alterations of Project Ax
 ## [Unreleased]
 
 ### Added
+- `GET /api/health/ready` checks the database (503 when it is unreachable);
+  `/api/health` stays a plain liveness check.
+- Every response carries an `X-Request-Id` (kept from the request when
+  valid), which is also written to the access log.
+- Graceful shutdown: in-flight requests get `SHUTDOWN_TIMEOUT_SECS` (30) to
+  finish on SIGINT/SIGTERM, then the database pool is closed. The backend
+  retries the initial database connection for ~20 s instead of exiting.
 - **Search.** A Search page (`/search?q=`, opened from the navbar search, the
   sidebar or the mobile search button) with Posts and People tabs, result
   counts, highlighted matches, a snippet around the first hit in long posts,
@@ -27,6 +34,23 @@ This document logs the development history and version alterations of Project Ax
   removes it, and an empty full name or bio clears the field.
 
 ### Performance
+- **Trending is ~60× faster** (3.9 s → ≈60 ms on 50k posts): the score is
+  computed in `float8` (`extract(epoch …)` returns `numeric`, whose `power()`
+  dominated) over the newest 5 000 top-level posts only.
+- **Likes, un-likes and deletes no longer scan notifications.** New indexes
+  on `notifications (post_id, actor_id)`, `comment_id` and `actor_id`: un-like
+  110 ms → 1.2 ms, deleting a post 116 ms → 1 ms. Follower/following lists
+  get `(…, created_at DESC)` indexes.
+- **No more per-like stats recomputation.** `user_stats` (unused by the app)
+  was rebuilt from all of the author's posts and comments on every reaction
+  and post insert/delete; it is now a view computed on demand. A like went
+  27 ms → 6.6 ms and bulk post imports are no longer quadratic. The cached
+  `user_name` is no longer re-looked-up on every post/comment update.
+- JSON responses are compressed (gzip/brotli/zstd; a 50-post page is
+  78 KB → 37 KB); file bodies are sent as-is.
+- PostgreSQL pool size and acquire timeout are configurable
+  (`DB_MAX_CONNECTIONS`, `DB_ACQUIRE_TIMEOUT_SECS`); an exhausted pool returns
+  503 instead of hanging.
 - **Smaller frontend bundle.** axios is replaced by a ~1 KB `fetch` client
   (`src/api/client.ts`, same `api.get/post/put/delete` shape, `ApiError` +
   `apiStatus()` instead of `AxiosError`); vue-i18n's legacy API, global
@@ -50,6 +74,29 @@ This document logs the development history and version alterations of Project Ax
   4.5:1 contrast in the light theme (`.ax-muted` and timestamps were 3.2–4.4:1).
 - Editing a post focuses the editor (the `autofocus` attribute never applied
   to editors mounted after page load).
+
+### Security
+- **Uploading a file could hide another user's file.** Re-upload de-duplication
+  soft-deleted *every* earlier file with the same SHA-256, so anyone could
+  remove someone else's attachment or avatar by uploading identical bytes. It
+  is now limited to the uploader's own files, and never removes a copy that is
+  attached to a post/comment or used as an avatar.
+- **Email addresses and phone numbers are private.** `GET /api/users`,
+  `/users/{id}`, follower/following lists and people search returned every
+  user's `email`, `phone` and `lastLogin` to anyone; they are now included
+  only for the user themself and admins.
+- Upload requests are capped (`MAX_UPLOAD_MB`, default 300 MB, 413 beyond it;
+  4 KB for `description`); previously multipart bodies were unbounded.
+- Security headers on every response (`nosniff`, `X-Frame-Options: DENY`,
+  `Referrer-Policy`, deny-all + `sandbox` CSP, which also neutralises an
+  uploaded HTML/SVG file opened directly).
+- `CORS_ALLOWED_ORIGINS` restricts cross-origin access to a list of origins
+  (unset keeps today's allow-any default); `SESSION_COOKIE_SECURE` marks the
+  session cookie `Secure`.
+- `TRUST_PROXY` rate-limits by the client address from `X-Real-IP` /
+  `X-Forwarded-For`; behind nginx every request used to share the proxy's
+  bucket. Enabled in `compose.prod.yml`.
+- The database password is no longer printed when the connection fails.
 
 ### Changed
 - **Sign in without leaving the page.** Guests who like, comment, follow or
@@ -75,6 +122,15 @@ This document logs the development history and version alterations of Project Ax
   while unread when the reaction is undone.
 
 ### Fixed
+- Renaming a user now updates the author name shown on their existing posts
+  and comments (it was only refreshed when the post itself was edited).
+- `GET /api/files/{id}/stream` serves suffix ranges (`Range: bytes=-N`, used
+  by some media players) and answers `If-None-Match` with 304; both file
+  endpoints accept weak and comma-separated entity tags.
+- More constraint violations (foreign key, check, too-long or malformed
+  values) are reported as 400 instead of 500.
+- The access log now also records responses produced by middleware (429s,
+  CORS rejections).
 - Clicking Like/Dislike inside a list card no longer also opens the post.
 - "Who to follow" no longer lists yourself after signing in from the dialog.
 
