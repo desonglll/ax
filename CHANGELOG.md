@@ -17,6 +17,31 @@ This document logs the development history and version alterations of Project Ax
   public image uploaded by the profile's owner; `profilePicture: null`
   removes it, and an empty full name or bio clears the field.
 
+### Performance
+- **Smaller frontend bundle.** axios is replaced by a ~1 KB `fetch` client
+  (`src/api/client.ts`, same `api.get/post/put/delete` shape, `ApiError` +
+  `apiStatus()` instead of `AxiosError`); vue-i18n's legacy API, global
+  components and the Options API are compiled out; the Markdown editor is a
+  lazy chunk loaded when someone starts writing (prefetched on hover/focus);
+  Vue/router/Pinia/i18n and Markdown/DOMPurify are long-lived vendor chunks.
+  JS loaded for the home page: 157.1 KB → 134.0 KB gzip (`index` 84.0 +
+  `api` 73.1 before; `vue` 56.6 + `markdown` 51.6 + `index` 19.7 + `api` 6.0
+  after; the editor's 3.9 KB now loads on demand).
+- Embedded Markdown images and attachment previews decode asynchronously.
+
+### Accessibility
+- The image viewer is a modal `<dialog>`: focus moves into it, stays there,
+  Esc or a backdrop click closes it, and focus returns to the image.
+  Markdown images and attachment previews can be opened from the keyboard.
+- Sign-in and confirmation dialogs are labelled by their headings; a
+  "Skip to content" link leads the page; search fields, the mobile search
+  toggle and the navigation landmarks have accessible names (the bottom
+  nav's label is translated).
+- Visible `:focus-visible` outline everywhere; muted text raised to at least
+  4.5:1 contrast in the light theme (`.ax-muted` and timestamps were 3.2–4.4:1).
+- Editing a post focuses the editor (the `autofocus` attribute never applied
+  to editors mounted after page load).
+
 ### Changed
 - **Sign in without leaving the page.** Guests who like, comment, follow or
   open the Following tab get a sign-in/register dialog; once signed in the

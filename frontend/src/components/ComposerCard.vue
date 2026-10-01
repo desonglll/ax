@@ -8,7 +8,7 @@ import { useAuthStore } from "../stores/auth";
 import { useToastStore } from "../stores/toast";
 import type { FileRecord, Post } from "../types";
 import Avatar from "./Avatar.vue";
-import MarkdownEditor from "./MarkdownEditor.vue";
+import { loadMarkdownEditor, MarkdownEditor } from "../lib/editor";
 
 /**
  * Collapsed by default (one line), expands into the full Markdown editor on
@@ -55,6 +55,7 @@ const discard = () => {
 };
 
 const expand = async () => {
+  await loadMarkdownEditor();
   expanded.value = true;
   await nextTick();
   root.value?.querySelector("textarea")?.focus();
@@ -87,9 +88,9 @@ const publish = async () => {
 
 <template>
   <section ref="root" class="ax-panel">
-    <button v-if="!expanded" type="button" class="flex w-full items-center gap-3 p-3 text-left transition hover:bg-base-200/60" @click="expand">
+    <button v-if="!expanded" type="button" class="flex w-full items-center gap-3 p-3 text-left transition hover:bg-base-200/60" @click="expand" @pointerenter="loadMarkdownEditor" @focus="loadMarkdownEditor">
       <Avatar v-if="auth.user" :name="auth.user.userName" :picture="auth.user.profilePicture" size="sm" />
-      <span class="input input-ghost flex-1 cursor-text items-center text-base-content/50">{{ t("composer.placeholder") }}</span>
+      <span class="input input-ghost flex-1 cursor-text items-center text-base-content/65">{{ t("composer.placeholder") }}</span>
       <span class="btn btn-primary btn-sm pointer-events-none hidden sm:inline-flex"><Send :size="16" /> {{ t("composer.post") }}</span>
     </button>
     <form v-else class="card-body min-w-0 gap-3 p-4" @submit.prevent="publish">
