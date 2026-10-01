@@ -73,12 +73,25 @@ pub async fn list(
     Ok(files)
 }
 
-/// Soft-deletes earlier uploads with the same checksum so re-uploading a file
-/// replaces it instead of duplicating it. Returns how many rows were hidden.
-pub async fn soft_delete_by_checksum(pool: &PgPool, checksum: &str) -> Result<u64, AxError> {
+/// Soft-deletes the uploader's own earlier, unused uploads with the same
+/// checksum so re-uploading a file replaces it instead of duplicating it.
+///
+/// Scoped to `user_id`: identical bytes uploaded by someone else must never
+/// hide their file. Copies still attached to a post or comment, or used as an
+/// avatar, are kept so existing content does not lose its files.
+/// Returns how many rows were hidden.
+pub async fn soft_delete_by_checksum(
+    pool: &PgPool,
+    user_id: i32,
+    checksum: &str,
+) -> Result<u64, AxError> {
     let result = sqlx::query!(
-        "update files set is_deleted = true where checksum = $1 and is_deleted = false",
-        checksum
+        "update files set is_deleted = true
+         where checksum = $1 and user_id = $2 and is_deleted = false
+           and post_id is null and comment_id is null
+           and not exists (select 1 from users u where u.profile_picture = files.id)",
+        checksum,
+        user_id
     )
     .execute(pool)
     .await?;

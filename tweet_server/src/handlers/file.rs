@@ -42,7 +42,10 @@ fn authorize_read(session: &Session, file: &File) -> Result<(), AxError> {
 
 /// A stored file never changes (its id is the on-disk name), so clients may
 /// cache it aggressively; the SHA-256 doubles as a strong ETag.
-fn cache_headers(file: &File) -> [(&'static str, String); 2] {
+/// `Content-Encoding: identity` keeps the `Compress` middleware away from
+/// file bodies: most uploads are already compressed, and re-encoding would
+/// break `Content-Length` and byte ranges.
+fn cache_headers(file: &File) -> [(&'static str, String); 3] {
     let policy = if file.is_pub {
         "public, max-age=31536000, immutable"
     } else {
@@ -51,19 +54,27 @@ fn cache_headers(file: &File) -> [(&'static str, String); 2] {
     [
         ("Cache-Control", policy.to_string()),
         ("ETag", format!("\"{}\"", file.checksum)),
+        ("Content-Encoding", "identity".to_string()),
     ]
 }
 
 /// `304 Not Modified` when the client already holds this exact content.
 fn not_modified(req: &HttpRequest, file: &File) -> Option<HttpResponse> {
     let sent = req.headers().get("If-None-Match")?.to_str().ok()?;
-    let etag = format!("\"{}\"", file.checksum);
-    (sent == etag || sent == "*").then(|| {
+    etag_matches(sent, &file.checksum).then(|| {
         let mut response = HttpResponse::NotModified();
         for (name, value) in cache_headers(file) {
             response.insert_header((name, value));
         }
         response.finish()
+    })
+}
+
+/// `If-None-Match` may hold `*` or a comma-separated list of (possibly weak)
+/// entity tags; a weak comparison is what RFC 9110 asks for here.
+fn etag_matches(header: &str, checksum: &str) -> bool {
+    header.split(',').map(str::trim).any(|tag| {
+        tag == "*" || tag.strip_prefix("W/").unwrap_or(tag).trim_matches('"') == checksum
     })
 }
 
@@ -110,11 +121,17 @@ pub async fn stream(
 ) -> Result<HttpResponse, AxError> {
     let file = db::file::find(&state.db, path.into_inner()).await?;
     authorize_read(&session, &file)?;
+    if let Some(response) = not_modified(&req, &file) {
+        return Ok(response);
+    }
 
     let mut handle = tokio::fs::File::open(&file.path).await?;
     let length = handle.metadata().await?.len();
     if length == 0 {
-        return Ok(HttpResponse::Ok().content_type(file.content_type).finish());
+        return Ok(HttpResponse::Ok()
+            .content_type(file.content_type)
+            .insert_header(("Content-Encoding", "identity"))
+            .finish());
     }
 
     let (start, requested_end) = parse_range(
@@ -124,6 +141,7 @@ pub async fn stream(
     if start >= length || start > requested_end {
         return Ok(HttpResponse::RangeNotSatisfiable()
             .insert_header(("Content-Range", format!("bytes */{length}")))
+            .insert_header(("Content-Encoding", "identity"))
             .finish());
     }
     let end = requested_end.min(length - 1).min(start + MAX_CHUNK - 1);
@@ -143,7 +161,8 @@ pub async fn stream(
     Ok(response.body(buffer))
 }
 
-/// Parses `bytes=<start>-<end>` (either bound optional); defaults to the whole file.
+/// Parses `bytes=<start>-<end>` (either bound optional; `bytes=-N` is the
+/// last N bytes); defaults to the whole file. `length` must be non-zero.
 fn parse_range(header: Option<&str>, length: u64) -> (u64, u64) {
     let default = (0, length - 1);
     let Some(spec) = header.and_then(|h| h.strip_prefix("bytes=")) else {
@@ -152,6 +171,12 @@ fn parse_range(header: Option<&str>, length: u64) -> (u64, u64) {
     let Some((start, end)) = spec.split_once('-') else {
         return default;
     };
+    if start.trim().is_empty() {
+        return match end.trim().parse::<u64>() {
+            Ok(suffix) if suffix > 0 => (length - suffix.min(length), length - 1),
+            _ => default,
+        };
+    }
     let start = start.trim().parse::<u64>().unwrap_or(0);
     let end = end.trim().parse::<u64>().unwrap_or(length - 1);
     (start, end)
@@ -159,7 +184,17 @@ fn parse_range(header: Option<&str>, length: u64) -> (u64, u64) {
 
 #[cfg(test)]
 mod tests {
-    use super::parse_range;
+    use super::{etag_matches, parse_range};
+
+    #[test]
+    fn etags_are_compared() {
+        assert!(etag_matches("\"abc\"", "abc"));
+        assert!(etag_matches("W/\"abc\"", "abc"));
+        assert!(etag_matches("\"x\", \"abc\"", "abc"));
+        assert!(etag_matches("*", "abc"));
+        assert!(!etag_matches("\"abcd\"", "abc"));
+        assert!(!etag_matches("", "abc"));
+    }
 
     #[test]
     fn range_header_is_parsed() {
@@ -167,5 +202,7 @@ mod tests {
         assert_eq!(parse_range(Some("bytes=10-20"), 100), (10, 20));
         assert_eq!(parse_range(Some("bytes=10-"), 100), (10, 99));
         assert_eq!(parse_range(Some("garbage"), 100), (0, 99));
+        assert_eq!(parse_range(Some("bytes=-10"), 100), (90, 99));
+        assert_eq!(parse_range(Some("bytes=-1000"), 100), (0, 99));
     }
 }

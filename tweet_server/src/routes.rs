@@ -10,6 +10,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/api")
             .route("/health", get().to(health))
+            .route("/health/ready", get().to(ready))
             .service(
                 web::scope("/auth")
                     .route("/login", post().to(auth::login))
@@ -69,4 +70,15 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
 
 async fn health() -> actix_web::HttpResponse {
     crate::response::ok_message("ok")
+}
+
+/// Readiness: also checks that the database answers (503 when it does not).
+async fn ready(
+    state: web::Data<crate::state::AppState>,
+) -> Result<actix_web::HttpResponse, crate::errors::AxError> {
+    sqlx::query("select 1")
+        .execute(&state.db)
+        .await
+        .map_err(|e| crate::errors::AxError::Unavailable(format!("database: {e}")))?;
+    Ok(crate::response::ok_message("ok"))
 }
