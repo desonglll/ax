@@ -50,7 +50,25 @@ on the workstream branch.
 - [x] PostgreSQL 17 compose + `just run` offline compile (`4b41276`)
 - [x] Search (merged)
 - [x] Bookmarks + profile editing (merged)
-- [ ] Backend performance + hardening
+- [x] Backend performance + hardening (merged)
 - [x] Frontend performance + a11y (merged)
 - [x] Infra / docs
-- [ ] Integration: merge all into `dev`, full `just ci`, smoke test on a fresh DB
+- [x] Integration: merge all into `dev`, full `just ci`, smoke test on a fresh DB
+
+## Integration result (2026-10-01)
+
+- All four branches merged into `dev`; `.sqlx/` regenerated against a fresh
+  database with every migration applied — no drift.
+- `just ci` (fmt, clippy -D warnings, 29 unit tests, typecheck, build) passes.
+- API smoke test on a fresh DB: health/ready, lists, trending, search, login,
+  bookmark/unbookmark, email/phone hidden from other users, gzip + security
+  headers. Browser smoke test (Playwright): home, trending, people, search
+  (highlighted hits), sign-in, saved, notifications, bookmark buttons.
+
+## Follow-ups (not done this round)
+
+- `GET /api/files` is unpaginated.
+- Image width/height are not stored, so attachments can still shift layout.
+- Legacy `GET /api/posts?search=` is unused by the UI and does not escape
+  `%`/`_`; remove it or route it through the search module.
+- `users.profile_picture` has no index (fine at current scale).
