@@ -26,6 +26,8 @@ services:
     environment:
       DATABASE_URL: postgres://postgres:password@postgres:5432/ax
       SESSION_SECRET_KEY: ${SESSION_SECRET_KEY:?set a 32+ character secret}
+      # nginx in the frontend container sets X-Real-IP; rate-limit per client.
+      TRUST_PROXY: "true"
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_API_BASE: ${OPENAI_API_BASE:-}
       OPENAI_MODEL: ${OPENAI_MODEL:-}

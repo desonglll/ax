@@ -74,6 +74,12 @@ All settings are environment variables (see `.env.example`).
 | `UPLOAD_DIR`                              | `uploads`          | Where uploaded files are stored                                |
 | `SESSION_SECRET_KEY`                      | random             | Cookie signing key (32+ chars). Unset = sessions reset on restart |
 | `RATE_LIMIT_PER_SECOND` / `RATE_LIMIT_BURST` | `20` / `50`     | Per-IP rate limit on write requests (POST/PUT/DELETE); excess gets HTTP 429 |
+| `TRUST_PROXY`                             | `false`            | Behind a reverse proxy: rate-limit by `X-Real-IP` / `X-Forwarded-For` instead of the proxy's address (only enable when a proxy sets them) |
+| `CORS_ALLOWED_ORIGINS`                    | unset (any)        | Comma-separated origins allowed to call the API cross-origin with cookies. Not needed when the frontend proxies `/api` |
+| `SESSION_COOKIE_SECURE`                   | `false`            | Mark the session cookie `Secure` (set when served over HTTPS) |
+| `DB_MAX_CONNECTIONS` / `DB_ACQUIRE_TIMEOUT_SECS` | `10` / `5`  | PostgreSQL pool size and max wait for a connection (503 after) |
+| `MAX_UPLOAD_MB`                           | `300`              | Max total size of one upload request (413 beyond it)          |
+| `SHUTDOWN_TIMEOUT_SECS`                   | `30`               | Grace period for in-flight requests on SIGINT/SIGTERM         |
 | `OPENAI_API_KEY` / `OPENAI_API_BASE` / `OPENAI_MODEL` | unset  | Enable AI titles for posts published without one               |
 | `RUST_LOG`                                | `info,sqlx=warn`   | Log filter                                                     |
 

@@ -28,6 +28,11 @@ impl SessionUser {
     }
 }
 
+/// `(id, is_admin)` of the signed-in user, for [`User::view`].
+pub fn viewer(session: &Session) -> Option<(i32, bool)> {
+    current_user(session).map(|u| (u.id, u.is_admin))
+}
+
 /// The signed-in user, if any. A corrupt cookie reads as signed out.
 pub fn current_user(session: &Session) -> Option<SessionUser> {
     let id = session.get::<i32>(USER_ID).ok().flatten()?;

@@ -16,6 +16,13 @@ use actix_web::cookie::Key;
 /// | `SESSION_SECRET_KEY`    | random             | Cookie signing key (>= 32 chars) so sessions persist |
 /// | `RATE_LIMIT_PER_SECOND` | `20`               | Per-IP sustained request rate                        |
 /// | `RATE_LIMIT_BURST`      | `50`               | Per-IP burst allowance                               |
+/// | `TRUST_PROXY`           | `false`            | Rate-limit by `X-Forwarded-For` / `X-Real-IP`        |
+/// | `CORS_ALLOWED_ORIGINS`  | unset (any origin) | Comma-separated origins allowed cross-origin         |
+/// | `SESSION_COOKIE_SECURE` | `false`            | Send the session cookie over HTTPS only              |
+/// | `DB_MAX_CONNECTIONS`    | `10`               | PostgreSQL pool size                                 |
+/// | `DB_ACQUIRE_TIMEOUT_SECS` | `5`              | Max wait for a pooled connection before a 500        |
+/// | `MAX_UPLOAD_MB`         | `300`              | Max total size of one upload request                 |
+/// | `SHUTDOWN_TIMEOUT_SECS` | `30`               | Grace period for in-flight requests on shutdown      |
 #[derive(Debug, Clone)]
 pub struct ServerConfig {
     pub database_url: String,
@@ -25,6 +32,14 @@ pub struct ServerConfig {
     pub upload_dir: PathBuf,
     pub rate_per_second: u64,
     pub rate_burst: u32,
+    pub trust_proxy: bool,
+    /// `None` keeps the permissive development default (any origin).
+    pub cors_origins: Option<Vec<String>>,
+    pub cookie_secure: bool,
+    pub db_max_connections: u32,
+    pub db_acquire_timeout_secs: u64,
+    pub max_upload_bytes: u64,
+    pub shutdown_timeout_secs: u64,
 }
 
 impl ServerConfig {
@@ -38,6 +53,15 @@ impl ServerConfig {
             upload_dir: std::path::absolute(&upload_dir).unwrap_or(upload_dir),
             rate_per_second: env_parse("RATE_LIMIT_PER_SECOND", 20),
             rate_burst: env_parse("RATE_LIMIT_BURST", 50),
+            trust_proxy: env_bool("TRUST_PROXY", false),
+            cors_origins: std::env::var("CORS_ALLOWED_ORIGINS")
+                .ok()
+                .map(|v| parse_origins(&v)),
+            cookie_secure: env_bool("SESSION_COOKIE_SECURE", false),
+            db_max_connections: env_parse("DB_MAX_CONNECTIONS", 10u32).max(1),
+            db_acquire_timeout_secs: env_parse("DB_ACQUIRE_TIMEOUT_SECS", 5),
+            max_upload_bytes: env_parse("MAX_UPLOAD_MB", 300u64).saturating_mul(1024 * 1024),
+            shutdown_timeout_secs: env_parse("SHUTDOWN_TIMEOUT_SECS", 30),
         }
     }
 
@@ -70,6 +94,45 @@ impl ServerConfig {
     }
 }
 
+/// `DATABASE_URL` with any password replaced, safe to log.
+pub fn redact_url(url: &str) -> String {
+    let Some((scheme, rest)) = url.split_once("://") else {
+        return url.to_string();
+    };
+    let Some((credentials, host)) = rest.rsplit_once('@') else {
+        return url.to_string();
+    };
+    match credentials.split_once(':') {
+        Some((user, _)) => format!("{scheme}://{user}:***@{host}"),
+        None => url.to_string(),
+    }
+}
+
+/// Comma-separated origins, trimmed, empty entries and trailing slashes dropped.
+fn parse_origins(value: &str) -> Vec<String> {
+    value
+        .split(',')
+        .map(|o| o.trim().trim_end_matches('/'))
+        .filter(|o| !o.is_empty())
+        .map(str::to_string)
+        .collect()
+}
+
+fn parse_bool(value: &str) -> Option<bool> {
+    match value.trim().to_ascii_lowercase().as_str() {
+        "1" | "true" | "yes" | "on" => Some(true),
+        "0" | "false" | "no" | "off" | "" => Some(false),
+        _ => None,
+    }
+}
+
+fn env_bool(key: &str, default: bool) -> bool {
+    std::env::var(key)
+        .ok()
+        .and_then(|v| parse_bool(&v))
+        .unwrap_or(default)
+}
+
 fn env_or(key: &str, default: &str) -> String {
     std::env::var(key).unwrap_or_else(|_| default.to_string())
 }
@@ -79,4 +142,43 @@ fn env_parse<T: std::str::FromStr>(key: &str, default: T) -> T {
         .ok()
         .and_then(|v| v.parse().ok())
         .unwrap_or(default)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{parse_bool, parse_origins, redact_url};
+
+    #[test]
+    fn password_is_redacted() {
+        assert_eq!(
+            redact_url("postgres://postgres:secret@localhost:5432/ax"),
+            "postgres://postgres:***@localhost:5432/ax"
+        );
+        assert_eq!(
+            redact_url("postgres://u:p@ss@db/ax"),
+            "postgres://u:***@db/ax"
+        );
+        assert_eq!(
+            redact_url("postgres://localhost/ax"),
+            "postgres://localhost/ax"
+        );
+        assert_eq!(redact_url("postgres://user@db/ax"), "postgres://user@db/ax");
+    }
+
+    #[test]
+    fn origins_are_parsed() {
+        assert_eq!(
+            parse_origins(" https://a.example/, ,http://localhost:5173"),
+            vec!["https://a.example", "http://localhost:5173"]
+        );
+        assert!(parse_origins("").is_empty());
+    }
+
+    #[test]
+    fn booleans_are_parsed() {
+        assert_eq!(parse_bool("TRUE"), Some(true));
+        assert_eq!(parse_bool(" 1 "), Some(true));
+        assert_eq!(parse_bool("off"), Some(false));
+        assert_eq!(parse_bool("maybe"), None);
+    }
 }

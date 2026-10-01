@@ -22,11 +22,13 @@ pub async fn posts(
 
 /// `GET /api/search/users?q=` — active users by user name or full name.
 pub async fn users(
+    session: Session,
     state: web::Data<AppState>,
     query: web::Query<SearchQuery>,
 ) -> Result<HttpResponse, AxError> {
     let term = query.term()?;
     let (limit, offset) = query.page().bounds(20);
     let (users, pagination) = db::search::users(&state.db, &term, limit, offset).await?;
+    let users = crate::models::user::view_all(users, crate::auth::viewer(&session));
     Ok(ok_paged("OK", users, pagination))
 }

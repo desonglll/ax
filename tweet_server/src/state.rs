@@ -11,6 +11,8 @@ pub struct AppState {
     pub title_queue: Option<UnboundedSender<Uuid>>,
     /// Absolute directory where uploaded files are stored.
     pub upload_dir: PathBuf,
+    /// Cap on the total bytes of one multipart upload request.
+    pub max_upload_bytes: u64,
 }
 
 impl AppState {

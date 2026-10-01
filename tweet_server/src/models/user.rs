@@ -27,6 +27,67 @@ pub struct User {
     pub bio: Option<String>,
 }
 
+/// A user as returned to clients. Contact details (`email`, `phone`) and
+/// `lastLogin` are included only for the user themself and for admins; for
+/// everyone else the keys are absent.
+#[derive(Serialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserView {
+    pub id: i32,
+    pub user_name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
+    pub full_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub phone: Option<String>,
+    pub created_at: Option<DateTime<Utc>>,
+    pub updated_at: Option<DateTime<Utc>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub last_login: Option<DateTime<Utc>>,
+    pub is_active: bool,
+    pub is_admin: bool,
+    pub profile_picture: Option<Uuid>,
+    pub bio: Option<String>,
+}
+
+impl User {
+    /// The payload `viewer` may see. `viewer` is `(id, is_admin)` of the
+    /// signed-in user, or `None` for guests.
+    pub fn view(self, viewer: Option<(i32, bool)>) -> UserView {
+        let private = can_see_private(viewer, self.id);
+        UserView {
+            id: self.id,
+            user_name: self.user_name,
+            email: private.then_some(self.email),
+            full_name: self.full_name,
+            phone: if private { self.phone } else { None },
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+            last_login: if private { self.last_login } else { None },
+            is_active: self.is_active,
+            is_admin: self.is_admin,
+            profile_picture: self.profile_picture,
+            bio: self.bio,
+        }
+    }
+
+    /// The full payload, for responses that only ever go to the user
+    /// themself or an admin (sign-in, `me`, profile edits).
+    pub fn private_view(self) -> UserView {
+        let id = self.id;
+        self.view(Some((id, false)))
+    }
+}
+
+/// Views a list of users for `viewer` (see [`User::view`]).
+pub fn view_all(users: Vec<User>, viewer: Option<(i32, bool)>) -> Vec<UserView> {
+    users.into_iter().map(|u| u.view(viewer)).collect()
+}
+
+fn can_see_private(viewer: Option<(i32, bool)>, user_id: i32) -> bool {
+    matches!(viewer, Some((id, is_admin)) if id == user_id || is_admin)
+}
+
 /// Public registration payload. Privilege flags are never client-controlled.
 #[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -170,6 +231,48 @@ pub fn validate_password(password: &str) -> Result<(), AxError> {
         ));
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod view_tests {
+    use super::User;
+
+    fn user(id: i32) -> User {
+        User {
+            id,
+            user_name: "joe".into(),
+            email: "joe@example.com".into(),
+            password_hash: "hash".into(),
+            full_name: Some("Joe".into()),
+            phone: Some("123".into()),
+            created_at: None,
+            updated_at: None,
+            last_login: Some(chrono::Utc::now()),
+            is_active: true,
+            is_admin: false,
+            profile_picture: None,
+            bio: None,
+        }
+    }
+
+    #[test]
+    fn contact_details_are_private() {
+        for viewer in [None, Some((2, false))] {
+            let json = serde_json::to_value(user(1).view(viewer)).unwrap();
+            assert!(json.get("email").is_none(), "{viewer:?}");
+            assert!(json.get("phone").is_none(), "{viewer:?}");
+            assert!(json.get("lastLogin").is_none(), "{viewer:?}");
+            assert_eq!(json["userName"], "joe");
+            assert!(json.get("passwordHash").is_none());
+        }
+        for viewer in [Some((1, false)), Some((2, true))] {
+            let json = serde_json::to_value(user(1).view(viewer)).unwrap();
+            assert_eq!(json["email"], "joe@example.com", "{viewer:?}");
+            assert_eq!(json["phone"], "123", "{viewer:?}");
+        }
+        let json = serde_json::to_value(user(1).private_view()).unwrap();
+        assert_eq!(json["email"], "joe@example.com");
+    }
 }
 
 #[cfg(test)]
