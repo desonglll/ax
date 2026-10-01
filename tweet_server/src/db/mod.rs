@@ -9,4 +9,5 @@ pub mod follow;
 pub mod notification;
 pub mod post;
 pub mod reaction;
+pub mod search;
 pub mod user;

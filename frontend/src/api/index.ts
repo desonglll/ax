@@ -51,6 +51,11 @@ export const postApi = {
   delete: (id: string) => unwrap(api.delete<ApiResponse<Post>>(`/posts/${id}`)),
 };
 
+export const searchApi = {
+  posts: (q: string, params?: Page) => unwrap(api.get<ApiResponse<Post[]>>("/search/posts", { params: { q, ...params } })),
+  users: (q: string, params?: Page) => unwrap(api.get<ApiResponse<User[]>>("/search/users", { params: { q, ...params } })),
+};
+
 export const bookmarkApi = {
   add: (postId: string) => unwrap(api.put<ApiResponse<BookmarkState>>(`/posts/${postId}/bookmark`)),
   remove: (postId: string) => unwrap(api.delete<ApiResponse<BookmarkState>>(`/posts/${postId}/bookmark`)),

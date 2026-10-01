@@ -89,6 +89,23 @@ author's `profilePicture` (or `null`).
 
 Save and unsave with `PUT` / `DELETE /posts/{id}/bookmark` (above).
 
+## Search
+
+| Method | Path             | Auth | Query                           | Returns |
+|--------|------------------|------|---------------------------------|---------|
+| GET    | `/search/posts`  | –    | `q` (required), `limit`, `offset` | `Post[]` best match first |
+| GET    | `/search/users`  | –    | `q` (required), `limit`, `offset` | `User[]` (active users only) |
+
+`q` is 1–100 characters after trimming (whitespace runs collapse); a missing
+or blank `q` is a 400. Posts match when their words match the query
+(`websearch_to_tsquery` syntax: `"exact phrase"`, `or`, `-excluded`) **or**
+their title/content contains the query literally, which also covers partial
+words and Chinese text. Results are ranked by relevance (title hits first),
+then newest, and are hydrated like every other post list. People match on
+`userName` or `fullName` containing `q`: exact user name, then prefix
+matches, then closest by similarity. `%`, `_` and `\` in `q` match
+literally. `pagination.count` is the total number of matches.
+
 ## Comments
 
 | Method | Path              | Auth        | Body / Query                                   | Returns |

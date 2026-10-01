@@ -3,7 +3,8 @@
 use actix_web::web::{self, delete, get, post, put};
 
 use crate::handlers::{
-    auth, bookmark, comment, file, follow, notification, post as posts, reaction, upload, user,
+    auth, bookmark, comment, file, follow, notification, post as posts, reaction, search, upload,
+    user,
 };
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
@@ -42,6 +43,11 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .route("/{id}/bookmark", delete().to(bookmark::remove)),
             )
             .route("/bookmarks", get().to(bookmark::list))
+            .service(
+                web::scope("/search")
+                    .route("/posts", get().to(search::posts))
+                    .route("/users", get().to(search::users)),
+            )
             .service(
                 web::scope("/comments")
                     .route("", get().to(comment::list))

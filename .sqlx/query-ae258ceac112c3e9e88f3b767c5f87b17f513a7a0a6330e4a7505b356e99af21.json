@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select count(*) as \"count!\" from users u\n           where u.is_active\n             and (u.user_name ilike $1 or u.full_name ilike $1)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "count!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "ae258ceac112c3e9e88f3b767c5f87b17f513a7a0a6330e4a7505b356e99af21"
+}
