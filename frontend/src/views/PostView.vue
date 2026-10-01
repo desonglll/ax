@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { AxiosError } from "axios";
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { onBeforeRouteUpdate, useRoute, useRouter } from "vue-router";
 import { ArrowLeft, CircleAlert, MessageCircle, RefreshCw } from "lucide-vue-next";
 import { commentApi, postApi } from "../api";
+import { apiStatus } from "../api/client";
 import CommentCard from "../components/CommentCard.vue";
 import CommentComposer from "../components/CommentComposer.vue";
 import EmptyState from "../components/EmptyState.vue";
@@ -70,7 +70,7 @@ const load = async () => {
     if (first) honourHash();
   } catch (error) {
     if (id !== postId.value) return;
-    const status = error instanceof AxiosError ? error.response?.status : undefined;
+    const status = apiStatus(error);
     if (status === 404 || status === 400) state.value = "missing";
     else if (!post.value) state.value = "error";
   }

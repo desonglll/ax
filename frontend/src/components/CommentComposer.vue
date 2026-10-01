@@ -8,7 +8,7 @@ import { useAuthStore } from "../stores/auth";
 import { useToastStore } from "../stores/toast";
 import type { Comment, FileRecord } from "../types";
 import Avatar from "./Avatar.vue";
-import MarkdownEditor from "./MarkdownEditor.vue";
+import { loadMarkdownEditor, MarkdownEditor } from "../lib/editor";
 
 /**
  * One-line "Write a comment…" box that expands into the editor. Guests get
@@ -46,6 +46,7 @@ watch([content, attachments], () => {
 /** Opens the editor (after sign-in if needed) with the caret at the end. */
 const activate = async () => {
   if (!(await auth.ensure("comment"))) return false;
+  await loadMarkdownEditor();
   expanded.value = true;
   await nextTick();
   const textarea = root.value?.querySelector("textarea");
@@ -87,9 +88,9 @@ const submit = async () => {
 
 <template>
   <div ref="root" class="scroll-mt-24">
-    <button v-if="!expanded" type="button" class="flex w-full items-center gap-3 rounded-box border border-base-300 bg-base-100 p-3 text-left transition hover:border-base-content/20" @click="activate">
+    <button v-if="!expanded" type="button" class="flex w-full items-center gap-3 rounded-box border border-base-300 bg-base-100 p-3 text-left transition hover:border-base-content/20" @click="activate" @pointerenter="loadMarkdownEditor" @focus="loadMarkdownEditor">
       <Avatar v-if="auth.user" :name="auth.user.userName" size="sm" />
-      <span class="flex-1 px-1 text-base-content/50">{{ t("comments.placeholder") }}</span>
+      <span class="flex-1 px-1 text-base-content/65">{{ t("comments.placeholder") }}</span>
       <span class="btn btn-primary btn-sm pointer-events-none"><Send :size="15" /> {{ t("comments.submit") }}</span>
     </button>
     <form v-else class="space-y-2" @submit.prevent="submit">

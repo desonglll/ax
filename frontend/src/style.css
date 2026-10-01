@@ -76,7 +76,7 @@ body { min-width: 320px; min-height: 100vh; background: var(--color-base-200); o
 .field-sizing-fixed { field-sizing: fixed; }
 .ax-container { width: min(100% - 2rem, 78rem); margin-inline: auto; }
 .ax-panel { @apply card card-border bg-base-100; }
-.ax-muted { @apply text-base-content/60; }
+.ax-muted { @apply text-base-content/65; }
 .ax-page-title { @apply text-2xl font-bold tracking-tight; }
 
 /* Rendered Markdown */
@@ -103,6 +103,19 @@ body { min-width: 320px; min-height: 100vh; background: var(--color-base-200); o
 .md th, .md td { @apply border border-base-300 px-2 py-1 text-left; }
 .md-compact { font-size: 0.925rem; }
 .md-compact img { max-height: 20rem; }
+
+/* Image viewer (a modal <dialog> covering the viewport) */
+.ax-lightbox { position: fixed; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: transparent; }
+.ax-lightbox::backdrop { background: rgb(0 0 0 / 0.85); backdrop-filter: blur(4px); }
+.ax-lightbox[open], .ax-lightbox[open]::backdrop { animation: fade-in 160ms ease; }
+@keyframes fade-in { from { opacity: 0; } }
+
+/* Keyboard focus stays visible on custom controls (cards, icon buttons, links). */
+:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+
+/* Skip link: hidden until focused with the keyboard. */
+.ax-skip { position: fixed; left: 0.75rem; top: 0.75rem; z-index: 100; transform: translateY(-200%); }
+.ax-skip:focus-visible { transform: none; }
 
 /* Motion */
 .page-enter-active, .page-leave-active { transition: opacity 160ms ease, transform 160ms ease; }

@@ -7,8 +7,8 @@ const props = defineProps<{ source: string; compact?: boolean }>();
 const html = computed(() => renderMarkdown(props.source));
 const lightbox = useLightboxStore();
 
-/** Clicking an embedded image opens it full-screen. */
-const onClick = (event: MouseEvent) => {
+/** Clicking an embedded image (or Enter/Space on a focused one) opens it full-screen. */
+const onClick = (event: MouseEvent | KeyboardEvent) => {
   const target = event.target as HTMLElement;
   if (target instanceof HTMLImageElement) {
     event.preventDefault();
@@ -18,5 +18,5 @@ const onClick = (event: MouseEvent) => {
 </script>
 
 <template>
-  <div class="md" :class="{ 'md-compact': compact }" @click="onClick" v-html="html"></div>
+  <div class="md" :class="{ 'md-compact': compact }" @click="onClick" @keydown.enter="onClick" @keydown.space="onClick" v-html="html"></div>
 </template>

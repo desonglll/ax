@@ -21,6 +21,7 @@ export const en = {
     member: "Member",
     yourProfile: "Your profile",
     newPost: "New post",
+    main: "Main navigation",
   },
   common: {
     loading: "Loading…",
@@ -45,6 +46,8 @@ export const en = {
     confirmDelete: "Delete this? This cannot be undone.",
     confirm: "OK",
     backToTop: "Back to top",
+    imagePreview: "Image preview",
+    skipToContent: "Skip to content",
     irreversible: "This cannot be undone.",
   },
   errors: {

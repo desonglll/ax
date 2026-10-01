@@ -23,6 +23,7 @@ export const zhCN: Messages = {
     member: "成员",
     yourProfile: "我的主页",
     newPost: "发帖",
+    main: "主导航",
   },
   common: {
     loading: "加载中…",
@@ -47,6 +48,8 @@ export const zhCN: Messages = {
     confirmDelete: "确定删除？此操作不可撤销。",
     confirm: "确定",
     backToTop: "回到顶部",
+    imagePreview: "图片预览",
+    skipToContent: "跳到主要内容",
     irreversible: "此操作不可撤销。",
   },
   errors: {

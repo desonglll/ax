@@ -145,7 +145,7 @@ onMounted(load);
               <span v-if="profile.isAdmin" class="badge badge-primary">{{ t("nav.admin") }}</span>
               <span v-if="!profile.isActive" class="badge badge-warning">{{ t("profile.deactivated") }}</span>
             </div>
-            <p class="text-base-content/55">@{{ profile.userName }}</p>
+            <p class="text-base-content/65">@{{ profile.userName }}</p>
             <p v-if="own" class="ax-muted mt-2 text-sm">{{ profile.email }}<template v-if="profile.phone"> · {{ profile.phone }}</template></p>
             <p v-if="profile.createdAt" class="ax-muted mt-2 flex items-center gap-2 text-sm"><CalendarDays :size="15" /> {{ t("profile.joined", { date: shortDate(profile.createdAt) }) }}</p>
           </div>

@@ -76,6 +76,9 @@ const search = () => {
   router.push({ path: "/", query: value ? { search: value } : {} });
 };
 
+/** Skip link target: move keyboard focus past the navigation. */
+const skipToMain = () => document.getElementById("main")?.focus();
+
 const logout = async () => {
   await auth.logout();
   toast.show(t("auth.signedOut"), "success");
@@ -84,6 +87,7 @@ const logout = async () => {
 </script>
 
 <template>
+  <a href="#main" class="ax-skip btn btn-primary btn-sm" @click.prevent="skipToMain">{{ t("common.skipToContent") }}</a>
   <div class="drawer lg:drawer-open">
     <input id="ax-drawer" v-model="drawer" type="checkbox" class="drawer-toggle" />
     <div class="drawer-content min-h-screen">
@@ -95,15 +99,15 @@ const logout = async () => {
         <div class="navbar-center hidden w-full max-w-xl md:flex">
           <form class="join w-full" role="search" @submit.prevent="search">
             <label class="input join-item flex w-full items-center gap-2">
-              <Search :size="17" class="text-base-content/45" />
-              <input ref="searchInput" v-model="query" type="search" class="grow" :placeholder="t('nav.search')" />
+              <Search :size="17" class="text-base-content/45" aria-hidden="true" />
+              <input ref="searchInput" v-model="query" type="search" class="grow" :placeholder="t('nav.search')" :aria-label="t('nav.search')" />
               <kbd class="kbd kbd-xs hidden lg:inline-flex">/</kbd>
             </label>
             <button class="btn join-item" type="submit">{{ t("nav.searchButton") }}</button>
           </form>
         </div>
         <div class="navbar-end gap-1">
-          <button class="btn btn-ghost btn-circle md:hidden" :aria-label="t('nav.openSearch')" @click="mobileSearch = !mobileSearch"><Search :size="19" /></button>
+          <button class="btn btn-ghost btn-circle md:hidden" :aria-label="t('nav.openSearch')" :aria-expanded="mobileSearch" @click="mobileSearch = !mobileSearch"><Search :size="19" /></button>
           <div class="dropdown dropdown-end hidden md:block">
             <button tabindex="0" class="btn btn-ghost btn-circle" :aria-label="t('nav.language')"><Languages :size="19" /></button>
             <ul tabindex="0" class="dropdown-content menu z-50 mt-2 w-40 rounded-box border border-base-300 bg-base-100 p-2 shadow-xl">
@@ -119,11 +123,11 @@ const logout = async () => {
         </div>
         <Transition name="collapse">
           <form v-if="mobileSearch" class="absolute inset-x-0 top-full border-b border-base-300 bg-base-100 p-3 md:hidden" role="search" @submit.prevent="search">
-            <label class="input flex w-full items-center gap-2"><Search :size="16" class="text-base-content/45" /><input v-model="query" type="search" class="grow" :placeholder="t('nav.search')" autofocus /></label>
+            <label class="input flex w-full items-center gap-2"><Search :size="16" class="text-base-content/45" /><input v-model="query" type="search" class="grow" :placeholder="t('nav.search')" :aria-label="t('nav.search')" autofocus /></label>
           </form>
         </Transition>
       </header>
-      <main class="pb-24 pt-5 md:py-8"><slot /></main>
+      <main id="main" tabindex="-1" class="pb-24 pt-5 outline-none md:py-8"><slot /></main>
       <BottomNav />
       <ScrollTop />
     </div>
@@ -132,7 +136,7 @@ const logout = async () => {
       <label for="ax-drawer" class="drawer-overlay" :aria-label="t('nav.closeMenu')"></label>
       <div class="flex min-h-full w-64 flex-col bg-base-100 p-4">
         <RouterLink to="/" class="mb-6 px-2 text-2xl font-bold" @click="drawer = false">{{ t("app.name") }}</RouterLink>
-        <ul class="menu w-full gap-1 p-0">
+        <ul class="menu w-full gap-1 p-0" :aria-label="t('nav.main')">
           <li v-for="item in nav" :key="item.to">
             <RouterLink :to="item.to" active-class="menu-active" @click="drawer = false">
               <component :is="item.icon" :size="19" />

@@ -38,7 +38,7 @@ onMounted(async () => {
     <EmptyState v-else-if="!posts.length" :icon="Flame" :title="t('trending.empty')" />
     <TransitionGroup v-else name="list" tag="ol" class="relative space-y-4">
       <li v-for="(post, index) in posts" :key="post.id" class="relative">
-        <span class="absolute -left-3 top-4 hidden size-7 -translate-x-full place-items-center rounded-full bg-base-300 text-sm font-bold text-base-content/60 md:grid">{{ index + 1 }}</span>
+        <span class="absolute -left-3 top-4 hidden size-7 -translate-x-full place-items-center rounded-full bg-base-300 text-sm font-bold text-base-content/70 md:grid">{{ index + 1 }}</span>
         <PostCard :post="post" @deleted="id => posts = posts.filter(item => item.id !== id)" @updated="value => posts = posts.map(item => item.id === value.id ? value : item)" />
       </li>
     </TransitionGroup>
