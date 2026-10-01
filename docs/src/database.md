@@ -1,6 +1,6 @@
 # Database Schema & Triggers
 
-PostgreSQL 16. Schema changes are SQLx migrations in `migrations/`, applied
+PostgreSQL 17. Schema changes are SQLx migrations in `migrations/`, applied
 automatically when the backend starts. The tables below reflect the schema
 after all migrations.
 

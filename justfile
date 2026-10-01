@@ -22,6 +22,10 @@ run:
 check:
     SQLX_OFFLINE=true cargo check --manifest-path tweet_server/Cargo.toml --all-targets
 
+# Check backend formatting (as CI does)
+fmt-check:
+    cargo fmt --all --check
+
 # Lint the backend
 clippy:
     SQLX_OFFLINE=true cargo clippy --manifest-path tweet_server/Cargo.toml --all-targets -- -D warnings
@@ -54,8 +58,8 @@ fe-check:
 fe-build:
     cd frontend && bun run build
 
-# Everything CI runs: backend check + clippy + tests, frontend typecheck + build
-ci: check clippy test fe-check fe-build
+# Everything CI runs: backend fmt + check + clippy + tests, frontend typecheck + build
+ci: fmt-check check clippy test fe-check fe-build
 
 # Start backend (random port) and frontend dev server together
 start:
@@ -63,7 +67,7 @@ start:
     set -euo pipefail
     rm -f .server-port
     trap 'kill 0' INT TERM EXIT
-    PORT=0 PORT_FILE=.server-port cargo run --manifest-path tweet_server/Cargo.toml &
+    PORT=0 PORT_FILE=.server-port SQLX_OFFLINE=true cargo run --manifest-path tweet_server/Cargo.toml &
     backend=$!
     for _ in $(seq 1 600); do
         test -s .server-port && break
