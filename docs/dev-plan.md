@@ -51,6 +51,6 @@ on the workstream branch.
 - [ ] Search
 - [x] Bookmarks + profile editing (merged)
 - [ ] Backend performance + hardening
-- [ ] Frontend performance + a11y
+- [x] Frontend performance + a11y (merged)
 - [x] Infra / docs
 - [ ] Integration: merge all into `dev`, full `just ci`, smoke test on a fresh DB
