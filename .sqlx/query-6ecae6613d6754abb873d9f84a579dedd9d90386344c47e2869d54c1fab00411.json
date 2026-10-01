@@ -1,0 +1,84 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select p.* from posts p\n         join bookmarks b on b.post_id = p.id\n         where b.user_id = $1\n         order by b.created_at desc, p.id\n         limit $2 offset $3",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "content",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 2,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 3,
+        "name": "user_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "user_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "like_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "dislike_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 7,
+        "name": "engagement_rate",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 8,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 9,
+        "name": "reply_to",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 10,
+        "name": "title",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "6ecae6613d6754abb873d9f84a579dedd9d90386344c47e2869d54c1fab00411"
+}

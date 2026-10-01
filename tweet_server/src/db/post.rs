@@ -213,8 +213,9 @@ pub async fn delete(pool: &PgPool, id: Uuid) -> Result<Post, AxError> {
         .map_err(not_found)
 }
 
-/// Attaches files, comment counts and the viewer's own reaction to a page of
-/// posts using three batched queries instead of one round-trip per post.
+/// Attaches files, comment counts, author avatars and the viewer's own
+/// reaction and bookmark to a page of posts using one batched query each
+/// instead of one round-trip per post.
 pub async fn hydrate(
     pool: &PgPool,
     posts: Vec<Post>,
@@ -239,6 +240,12 @@ pub async fn hydrate(
     .collect();
 
     let viewer_reactions = db::reaction::by_viewer(pool, viewer_id, "post", &ids).await?;
+    let viewer_bookmarks = db::bookmark::by_viewer(pool, viewer_id, &ids).await?;
+
+    let mut author_ids: Vec<i32> = posts.iter().map(|p| p.user_id).collect();
+    author_ids.sort_unstable();
+    author_ids.dedup();
+    let avatars = db::user::avatars(pool, &author_ids).await?;
 
     Ok(posts
         .into_iter()
@@ -246,6 +253,8 @@ pub async fn hydrate(
             attachments: attachments.remove(&post.id).unwrap_or_default(),
             comment_count: comment_counts.get(&post.id).copied().unwrap_or(0),
             viewer_reaction: viewer_reactions.get(&post.id).cloned(),
+            viewer_bookmarked: viewer_bookmarks.contains(&post.id),
+            author_avatar: avatars.get(&post.user_id).copied(),
             post,
         })
         .collect())

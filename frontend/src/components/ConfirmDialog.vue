@@ -28,11 +28,11 @@ const cancel = () => dialog.settle(dialog.current?.input ? null : false);
 </script>
 
 <template>
-  <dialog ref="el" class="modal modal-bottom sm:modal-middle" @cancel.prevent="cancel">
+  <dialog ref="el" class="modal modal-bottom sm:modal-middle" aria-labelledby="ax-confirm-title" :aria-describedby="dialog.current?.message ? 'ax-confirm-message' : undefined" @cancel.prevent="cancel">
     <form v-if="dialog.current" class="modal-box" @submit.prevent="submit">
-      <h3 class="text-lg font-bold">{{ dialog.current.title }}</h3>
-      <p v-if="dialog.current.message" class="ax-muted mt-2">{{ dialog.current.message }}</p>
-      <input v-if="dialog.current.input" ref="input" v-model="value" class="input mt-4 w-full" :placeholder="dialog.current.input.placeholder" />
+      <h2 id="ax-confirm-title" class="text-lg font-bold">{{ dialog.current.title }}</h2>
+      <p v-if="dialog.current.message" id="ax-confirm-message" class="ax-muted mt-2">{{ dialog.current.message }}</p>
+      <input v-if="dialog.current.input" ref="input" v-model="value" class="input mt-4 w-full" :placeholder="dialog.current.input.placeholder" :aria-label="dialog.current.input.placeholder || dialog.current.title" />
       <div class="modal-action">
         <button type="button" class="btn btn-ghost" @click="cancel">{{ t("common.cancel") }}</button>
         <button type="submit" class="btn" :class="dialog.current.danger ? 'btn-error' : 'btn-primary'">{{ dialog.current.confirmLabel || t("common.confirm") }}</button>

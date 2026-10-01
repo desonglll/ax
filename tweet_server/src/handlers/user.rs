@@ -5,7 +5,7 @@ use crate::{
     auth::require_user,
     db,
     errors::AxError,
-    models::user::{CreateUser, UpdateUser},
+    models::user::{validate_avatar, CreateUser, UpdateUser},
     response::{ok, ok_paged, PageQuery},
     state::AppState,
 };
@@ -57,6 +57,12 @@ pub async fn update(
     if !current.is_admin {
         payload.is_active = None;
         payload.is_admin = None;
+    }
+    // The avatar must be the profile owner's own public image, even when an
+    // admin is doing the editing.
+    if let Some(Some(file_id)) = payload.profile_picture {
+        let file = db::file::find(&state.db, file_id).await?;
+        validate_avatar(&file, target_id)?;
     }
     let user = db::user::update(&state.db, target_id, payload).await?;
     Ok(ok("Profile updated", user))

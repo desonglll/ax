@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Bold, Code, Columns2, Eye, Heading2, ImagePlus, Italic, Link2, List, LoaderCircle, Paperclip, PenLine, Quote, X } from "lucide-vue-next";
-import { computed, nextTick, ref } from "vue";
+import { computed, nextTick, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { fileApi } from "../api";
 import { getApiError } from "../api/client";
@@ -43,6 +43,11 @@ const focusAt = async (pos: number) => {
   textarea.value?.focus();
   textarea.value?.setSelectionRange(pos, pos);
 };
+
+// The HTML autofocus attribute only applies on page load, so focus explicitly when mounted later (e.g. editing a post).
+onMounted(() => {
+  if (props.autofocus) focusAt(content.value.length);
+});
 
 const wrap = async (before: string, after = before, placeholder = t("editor.text")) => {
   const el = textarea.value;
@@ -179,7 +184,7 @@ const tools = computed(() => [
 
     <TransitionGroup v-if="attachments.length" name="list" tag="div" class="flex flex-wrap gap-2 border-t border-base-300 px-3 py-2">
       <span v-for="file in attachments" :key="file.id" class="flex items-center gap-2 rounded-box border border-base-300 bg-base-200 py-1 pl-1 pr-2 text-xs">
-        <img v-if="isImage(file)" :src="fileApi.downloadUrl(file.id)" :alt="file.name" class="size-8 rounded object-cover" />
+        <img v-if="isImage(file)" :src="fileApi.downloadUrl(file.id)" :alt="file.name" class="size-8 rounded object-cover" loading="lazy" decoding="async" />
         <Paperclip v-else :size="14" class="ml-1" />
         <span class="max-w-40 truncate">{{ file.name }}</span>
         <small class="opacity-60">{{ formatSize(file.size) }}</small>
@@ -187,7 +192,7 @@ const tools = computed(() => [
       </span>
     </TransitionGroup>
 
-    <div class="flex items-center justify-between gap-3 px-3 py-1 text-xs text-base-content/45">
+    <div class="flex items-center justify-between gap-3 px-3 py-1 text-xs text-base-content/65">
       <span class="min-w-0 truncate">{{ t("editor.hint") }}</span>
       <span class="shrink-0 tabular-nums" :class="{ 'text-warning': remaining < 500 }">{{ remaining }}</span>
     </div>

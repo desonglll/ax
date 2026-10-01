@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "update users set\n            user_name = coalesce($2, user_name),\n            email = coalesce($3, email),\n            password_hash = coalesce($4, password_hash),\n            full_name = coalesce($5, full_name),\n            phone = coalesce($6, phone),\n            is_active = coalesce($7, is_active),\n            is_admin = coalesce($8, is_admin),\n            updated_at = now()\n         where id = $1\n         returning *",
+  "query": "update users set\n            user_name = coalesce($2, user_name),\n            email = coalesce($3, email),\n            password_hash = coalesce($4, password_hash),\n            full_name = case when $5::text is null then full_name else nullif($5, '') end,\n            phone = coalesce($6, phone),\n            is_active = coalesce($7, is_active),\n            is_admin = coalesce($8, is_admin),\n            bio = case when $9::text is null then bio else nullif($9, '') end,\n            profile_picture = case when $10 then $11 else profile_picture end,\n            updated_at = now()\n         where id = $1\n         returning *",
   "describe": {
     "columns": [
       {
@@ -62,6 +62,11 @@
         "ordinal": 11,
         "name": "profile_picture",
         "type_info": "Uuid"
+      },
+      {
+        "ordinal": 12,
+        "name": "bio",
+        "type_info": "Varchar"
       }
     ],
     "parameters": {
@@ -70,10 +75,13 @@
         "Varchar",
         "Varchar",
         "Varchar",
-        "Varchar",
+        "Text",
         "Varchar",
         "Bool",
-        "Bool"
+        "Bool",
+        "Text",
+        "Bool",
+        "Uuid"
       ]
     },
     "nullable": [
@@ -88,8 +96,9 @@
       true,
       false,
       false,
+      true,
       true
     ]
   },
-  "hash": "4af65292e7571c123d59dbd317470fe5a5351a5866df8a02eabf863f9d03cd89"
+  "hash": "b352c48807a954c4801fcd83264e3f7719e9a9738ba5cfa80f689b724af333f5"
 }

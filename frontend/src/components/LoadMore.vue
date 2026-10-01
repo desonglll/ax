@@ -35,7 +35,7 @@ watch(() => [props.loading, props.count], () => {
 </script>
 
 <template>
-  <div ref="el" class="flex min-h-12 items-center justify-center py-4 text-sm text-base-content/50">
+  <div ref="el" class="flex min-h-12 items-center justify-center py-4 text-sm text-base-content/65">
     <span v-if="loading" class="flex items-center gap-2"><LoaderCircle :size="16" class="animate-spin" /> {{ t("common.loadingMore") }}</span>
     <button v-else-if="error" class="btn btn-ghost btn-sm" @click="emit('more')">{{ error }} · {{ t("common.retry") }}</button>
     <span v-else-if="done && count > 0">{{ t("common.end") }}</span>

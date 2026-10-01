@@ -23,13 +23,13 @@ watch(() => auth.prompt, async reason => {
 </script>
 
 <template>
-  <dialog ref="el" class="modal modal-bottom sm:modal-middle" @cancel.prevent="auth.settlePrompt(false)">
+  <dialog ref="el" class="modal modal-bottom sm:modal-middle" aria-labelledby="ax-auth-dialog-title" @cancel.prevent="auth.settlePrompt(false)">
     <div v-if="auth.prompt" class="modal-box max-w-sm pb-[max(1.5rem,env(safe-area-inset-bottom))]">
       <button type="button" class="btn btn-ghost btn-circle btn-sm absolute right-3 top-3" :aria-label="t('common.close')" @click="auth.settlePrompt(false)"><X :size="18" /></button>
       <div class="mb-4 flex items-start gap-3 pr-8">
-        <span class="grid size-10 shrink-0 place-items-center rounded-full bg-primary/12 text-primary"><LockKeyhole :size="19" /></span>
+        <span class="grid size-10 shrink-0 place-items-center rounded-full bg-primary/12 text-primary" aria-hidden="true"><LockKeyhole :size="19" /></span>
         <div>
-          <h3 class="text-lg font-bold leading-tight">{{ mode === "register" ? t("auth.promptRegisterTitle") : t("auth.promptTitle") }}</h3>
+          <h2 id="ax-auth-dialog-title" class="text-lg font-bold leading-tight">{{ mode === "register" ? t("auth.promptRegisterTitle") : t("auth.promptTitle") }}</h2>
           <p class="ax-muted mt-1 text-sm">{{ t(`auth.reasons.${auth.prompt}`) }}</p>
         </div>
       </div>

@@ -100,10 +100,10 @@ const countLabel = (count: number | undefined) => (count === undefined ? "" : co
 <template>
   <div class="ax-container max-w-4xl space-y-4">
     <header class="space-y-3">
-      <h1 class="ax-page-title flex items-center gap-2"><Search :size="22" /> {{ t("search.title") }}</h1>
+      <h1 class="ax-page-title flex items-center gap-2"><Search :size="22" aria-hidden="true" /> {{ t("search.title") }}</h1>
       <form role="search" @submit.prevent="commit(false)">
         <label class="input input-lg flex w-full items-center gap-2">
-          <Search :size="18" class="text-base-content/45" />
+          <Search :size="18" class="text-base-content/45" aria-hidden="true" />
           <input ref="input" v-model="draft" type="search" class="grow" :maxlength="MAX_LENGTH" :placeholder="t('search.placeholder')" :aria-label="t('search.placeholder')" enterkeyhint="search" />
         </label>
       </form>
@@ -114,11 +114,11 @@ const countLabel = (count: number | undefined) => (count === undefined ? "" : co
     <template v-else>
       <div role="tablist" class="tabs tabs-box tabs-sm w-fit" :aria-label="t('search.title')">
         <button role="tab" class="tab gap-1.5" :class="{ 'tab-active': tab === 'posts' }" :aria-selected="tab === 'posts'" @click="setTab('posts')">
-          <FileText :size="14" /> {{ t("search.posts") }}
+          <FileText :size="14" aria-hidden="true" /> {{ t("search.posts") }}
           <span v-if="!postResults.loading.value && postResults.total.value !== undefined" class="badge badge-ghost badge-xs">{{ countLabel(postResults.total.value) }}</span>
         </button>
         <button role="tab" class="tab gap-1.5" :class="{ 'tab-active': tab === 'people' }" :aria-selected="tab === 'people'" @click="setTab('people')">
-          <UsersRound :size="14" /> {{ t("search.people") }}
+          <UsersRound :size="14" aria-hidden="true" /> {{ t("search.people") }}
           <span v-if="!peopleResults.loading.value && peopleResults.total.value !== undefined" class="badge badge-ghost badge-xs">{{ countLabel(peopleResults.total.value) }}</span>
         </button>
       </div>
@@ -136,7 +136,7 @@ const countLabel = (count: number | undefined) => (count === undefined ? "" : co
         <div v-else class="grid gap-3 sm:grid-cols-2">
           <RouterLink v-for="person in peopleResults.items.value" :key="person.id" :to="`/profile/${person.id}`" class="ax-panel transition-shadow hover:shadow-sm">
             <span class="card-body flex-row items-center gap-3 p-4">
-              <Avatar :name="person.userName" />
+              <Avatar :name="person.userName" :picture="person.profilePicture" />
               <span class="min-w-0 flex-1">
                 <strong class="block truncate"><Highlighted :text="person.fullName || person.userName" :terms="terms" /></strong>
                 <small class="ax-muted block truncate">@<Highlighted :text="person.userName" :terms="terms" /></small>

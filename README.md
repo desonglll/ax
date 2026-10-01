@@ -11,7 +11,7 @@ the front. One database, no other services.
 | Part      | Technology                                                                 |
 |-----------|-----------------------------------------------------------------------------|
 | Backend   | Rust, [Actix-web](https://actix.rs), [SQLx](https://github.com/launchbadge/sqlx) (compile-time checked SQL), cookie sessions |
-| Database  | PostgreSQL 16 — triggers keep counters and notifications consistent        |
+| Database  | PostgreSQL 17 — triggers keep counters and notifications consistent        |
 | Frontend  | Vue 3, TypeScript, Vite, Tailwind CSS 4, daisyUI 5, Pinia, vue-i18n (English / 简体中文) |
 | Optional  | Any OpenAI-compatible API for auto-titling posts                           |
 

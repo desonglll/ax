@@ -1,4 +1,7 @@
+use std::collections::HashMap;
+
 use sqlx::PgPool;
+use uuid::Uuid;
 
 use crate::{
     errors::AxError,
@@ -70,21 +73,27 @@ pub async fn list(
 }
 
 /// Applies only the fields present in `update`; everything else is kept.
+/// An empty `full_name` / `bio` clears it; `profile_picture: Some(None)`
+/// removes the avatar.
 pub async fn update(pool: &PgPool, id: i32, update: UpdateUser) -> Result<User, AxError> {
     let password_hash = match &update.password {
         Some(password) => Some(hash_password(password)?),
         None => None,
     };
+    let changes_picture = update.changes_picture();
+    let picture = update.profile_picture.flatten();
     let row = sqlx::query_as!(
         User,
         "update users set
             user_name = coalesce($2, user_name),
             email = coalesce($3, email),
             password_hash = coalesce($4, password_hash),
-            full_name = coalesce($5, full_name),
+            full_name = case when $5::text is null then full_name else nullif($5, '') end,
             phone = coalesce($6, phone),
             is_active = coalesce($7, is_active),
             is_admin = coalesce($8, is_admin),
+            bio = case when $9::text is null then bio else nullif($9, '') end,
+            profile_picture = case when $10 then $11 else profile_picture end,
             updated_at = now()
          where id = $1
          returning *",
@@ -95,7 +104,10 @@ pub async fn update(pool: &PgPool, id: i32, update: UpdateUser) -> Result<User, 
         update.full_name,
         update.phone,
         update.is_active,
-        update.is_admin
+        update.is_admin,
+        update.bio,
+        changes_picture,
+        picture
     )
     .fetch_one(pool)
     .await
@@ -104,6 +116,21 @@ pub async fn update(pool: &PgPool, id: i32, update: UpdateUser) -> Result<User, 
         other => other.into(),
     })?;
     Ok(row)
+}
+
+/// `user id -> avatar file id` for the given users that have one.
+pub async fn avatars(pool: &PgPool, ids: &[i32]) -> Result<HashMap<i32, Uuid>, AxError> {
+    let rows = sqlx::query!(
+        r#"select id, profile_picture as "profile_picture!" from users
+           where id = any($1) and profile_picture is not null"#,
+        ids
+    )
+    .fetch_all(pool)
+    .await?;
+    Ok(rows
+        .into_iter()
+        .map(|r| (r.id, r.profile_picture))
+        .collect())
 }
 
 pub async fn delete(pool: &PgPool, id: i32) -> Result<User, AxError> {

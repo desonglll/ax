@@ -36,6 +36,10 @@ pub struct PostDetail {
     pub comment_count: i64,
     /// `"Like"` / `"Dislike"` for the signed-in viewer, otherwise `None`.
     pub viewer_reaction: Option<String>,
+    /// Whether the signed-in viewer saved this post; `false` for guests.
+    pub viewer_bookmarked: bool,
+    /// The author's avatar file, if they set one.
+    pub author_avatar: Option<Uuid>,
 }
 
 #[derive(Deserialize, Debug, Clone)]

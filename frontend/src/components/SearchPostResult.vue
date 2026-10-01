@@ -34,7 +34,7 @@ const open = (event: MouseEvent) => {
   <article class="ax-panel cursor-pointer transition-shadow hover:shadow-sm" @click="open">
     <div class="card-body gap-2 p-4">
       <header class="flex items-center gap-2 text-sm">
-        <RouterLink :to="`/profile/${view.userId}`"><Avatar :name="view.userName" size="xs" /></RouterLink>
+        <RouterLink :to="`/profile/${view.userId}`"><Avatar :name="view.userName" :picture="view.authorAvatar" size="xs" /></RouterLink>
         <RouterLink :to="`/profile/${view.userId}`" class="font-semibold hover:underline">{{ view.userName }}</RouterLink>
         <span class="ax-muted">·</span>
         <time class="ax-muted" :datetime="view.createdAt" :title="fullDate(view.createdAt)">{{ timeAgo(view.createdAt) }}</time>
@@ -44,9 +44,9 @@ const open = (event: MouseEvent) => {
       </h2>
       <p class="ax-muted break-words text-sm leading-relaxed"><Highlighted :text="body" :terms="terms" /></p>
       <footer class="ax-muted flex items-center gap-4 text-xs">
-        <span class="flex items-center gap-1" :aria-label="t('search.likes', { count: view.likeCount })"><ThumbsUp :size="13" /> {{ view.likeCount }}</span>
-        <span class="flex items-center gap-1" :aria-label="t('search.comments', { count: view.commentCount })"><MessageCircle :size="13" /> {{ view.commentCount }}</span>
-        <span v-if="view.attachments?.length" class="flex items-center gap-1" :aria-label="t('search.attachments', { count: view.attachments.length })"><Paperclip :size="13" /> {{ view.attachments.length }}</span>
+        <span class="flex items-center gap-1" :aria-label="t('search.likes', { count: view.likeCount })"><ThumbsUp :size="13" aria-hidden="true" /> {{ view.likeCount }}</span>
+        <span class="flex items-center gap-1" :aria-label="t('search.comments', { count: view.commentCount })"><MessageCircle :size="13" aria-hidden="true" /> {{ view.commentCount }}</span>
+        <span v-if="view.attachments?.length" class="flex items-center gap-1" :aria-label="t('search.attachments', { count: view.attachments.length })"><Paperclip :size="13" aria-hidden="true" /> {{ view.attachments.length }}</span>
       </footer>
     </div>
   </article>

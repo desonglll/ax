@@ -2,6 +2,7 @@
 //! `db`, shape the response. No SQL lives here.
 
 pub mod auth;
+pub mod bookmark;
 pub mod comment;
 pub mod file;
 pub mod follow;

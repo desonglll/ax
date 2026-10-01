@@ -1,6 +1,7 @@
 import { api } from "./client";
 import type {
   ApiResponse,
+  BookmarkState,
   Comment,
   FileRecord,
   FollowStats,
@@ -26,7 +27,8 @@ export const userApi = {
   register: (payload: { userName: string; email: string; password: string }) => unwrap(api.post<ApiResponse<User>>("/users", payload)),
   list: (params?: Page) => unwrap(api.get<ApiResponse<User[]>>("/users", { params })),
   get: (id: number) => unwrap(api.get<ApiResponse<User>>(`/users/${id}`)),
-  update: (id: number, payload: Partial<Pick<User, "userName" | "email" | "fullName" | "phone" | "isActive" | "isAdmin">> & { password?: string }) =>
+  /** `profilePicture: null` removes the avatar; an empty `fullName` / `bio` clears it. */
+  update: (id: number, payload: Partial<Pick<User, "userName" | "email" | "fullName" | "phone" | "bio" | "profilePicture" | "isActive" | "isAdmin">> & { password?: string }) =>
     unwrap(api.put<ApiResponse<User>>(`/users/${id}`, payload)),
   delete: (id: number) => unwrap(api.delete<ApiResponse<User>>(`/users/${id}`)),
 };
@@ -52,6 +54,12 @@ export const postApi = {
 export const searchApi = {
   posts: (q: string, params?: Page) => unwrap(api.get<ApiResponse<Post[]>>("/search/posts", { params: { q, ...params } })),
   users: (q: string, params?: Page) => unwrap(api.get<ApiResponse<User[]>>("/search/users", { params: { q, ...params } })),
+};
+
+export const bookmarkApi = {
+  add: (postId: string) => unwrap(api.put<ApiResponse<BookmarkState>>(`/posts/${postId}/bookmark`)),
+  remove: (postId: string) => unwrap(api.delete<ApiResponse<BookmarkState>>(`/posts/${postId}/bookmark`)),
+  list: (params?: Page) => unwrap(api.get<ApiResponse<Post[]>>("/bookmarks", { params })),
 };
 
 export const commentApi = {
