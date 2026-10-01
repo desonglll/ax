@@ -49,6 +49,11 @@ export const postApi = {
   delete: (id: string) => unwrap(api.delete<ApiResponse<Post>>(`/posts/${id}`)),
 };
 
+export const searchApi = {
+  posts: (q: string, params?: Page) => unwrap(api.get<ApiResponse<Post[]>>("/search/posts", { params: { q, ...params } })),
+  users: (q: string, params?: Page) => unwrap(api.get<ApiResponse<User[]>>("/search/users", { params: { q, ...params } })),
+};
+
 export const commentApi = {
   create: (payload: { content: string; replyTo: string; attachments?: string[] }) => unwrap(api.post<ApiResponse<Comment>>("/comments", payload)),
   list: (params: Page & { replyTo: string }) => unwrap(api.get<ApiResponse<Comment[]>>("/comments", { params })),
