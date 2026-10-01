@@ -48,7 +48,7 @@ on the workstream branch.
 ## Status
 
 - [x] PostgreSQL 17 compose + `just run` offline compile (`4b41276`)
-- [ ] Search
+- [x] Search (merged)
 - [x] Bookmarks + profile editing (merged)
 - [ ] Backend performance + hardening
 - [x] Frontend performance + a11y (merged)
